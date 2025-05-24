@@ -1,4 +1,0 @@
-# Crossings between 2 provinces over water
-# These must be between provinces that are not adjacent in the province map.
-from,to,startx,starty,endx,endy
-2,4,684,275,683,256

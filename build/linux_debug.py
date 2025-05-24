@@ -1,0 +1,53 @@
+# debug stuff
+custom_modules = "../gsg/src"
+optimize = "debug"
+use_llvm = "yes"
+
+# stuff to make compiling faster
+fast_unsafe = "yes"
+use_static_cpp = "no"
+linker = "mold"
+progress = "no"
+engine_update_check = "no"
+
+# only for my computer
+speechd = "no"
+touch = "no"
+
+# arch-linux specific packages to link dynamically
+builtin_zstd = "no"
+builtin_zlib = "no"
+builtin_pcre2 = "no"
+builtin_openxr = "no"
+builtin_mbedtls = "no"
+builtin_libwebp = "no"
+builtin_libvorbis = "no"
+builtin_libpng = "no"
+builtin_libogg = "no"
+builtin_graphite = "no"
+builtin_freetype = "no"
+builtin_enet = "no"
+builtin_embree = "no"
+builtin_brotli = "no"
+
+# disabled modules
+module_basis_universal_enabled = "no"
+module_bmp_enabled = "no"
+module_enet_enabled = "no"
+module_gridmap_enabled = "no"
+module_jpg_enabled = "no"
+module_ktx_enabled = "no"
+module_mbedtls_enabled = "no"
+module_mobile_vr_enabled = "no"
+module_multiplayer_enabled = "no"
+module_ogg_enabled = "no"
+module_openxr_enabled = "no"
+module_tga_enabled = "no"
+module_theora_enabled = "no"
+module_tinyexr_enabled = "no"
+module_upnp_enabled = "no"
+module_vorbis_enabled = "no"
+module_webp_enabled = "no"
+module_webrtc_enabled = "no"
+module_websocket_enabled = "no"
+module_webxr_enabled = "no"
