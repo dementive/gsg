@@ -79,12 +79,4 @@ struct Provinces {
 	}
 };
 
-struct test {
-	Provinces x;
-
-	void test_thing() {
-		x.init(100);
-	}
-};
-
 }

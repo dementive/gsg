@@ -261,7 +261,7 @@ func load_map_config() -> Dictionary:
 	for section: String in region_config.get_sections():
 		var region_id: int = section.to_int()
 		var name: String = region_config.get_value(section, "name")
-		var color: Color = region_config.get_value(section, "color", get_random_color())
+		var color: Color = region_config.get_value(section, "color", get_random_area_color())
 		var region_areas: PackedInt32Array = region_config.get_value(section, "areas")
 		var capital: int = region_config.get_value(section, "capital")
 		

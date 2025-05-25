@@ -52,4 +52,5 @@ public:
 	Image get_lookup_image();
 	ProvinceColorMap get_color_to_id_map();
 };
+
 }
