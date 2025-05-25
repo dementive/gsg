@@ -217,7 +217,7 @@ func calculate_orientation(polygon: PackedVector2Array, centroid: Vector2) -> fl
 
 	return 0.5 * atan2(2 * mu11, mu20 - mu02)
 
-func get_random_color() -> Color:
+func get_random_area_color() -> Color:
 	return Color(clamp(randf(), 0.3, 0.7), clamp(randf(), 0.3, 0.7), clamp(randf(), 0.3, 0.7))
 
 func load_map_config() -> Dictionary:
@@ -246,7 +246,7 @@ func load_map_config() -> Dictionary:
 	for section: String in area_config.get_sections():
 		var area_id: int = section.to_int()
 		var name: String = area_config.get_value(section, "name")
-		var color: Color = area_config.get_value(section, "color", get_random_color())
+		var color: Color = area_config.get_value(section, "color", get_random_area_color())
 		var area_provinces: PackedInt32Array = area_config.get_value(section, "provinces")
 		var capital: int = area_config.get_value(section, "capital")
 		
@@ -314,7 +314,7 @@ func load_map_config() -> Dictionary:
 	return provinces_map
 
 # Load provinces.png and province data and then create a lookup image from the data
-func load_map(p_map: Map3D) -> void:
+func load_map(p_map: MapGD3D) -> void:
 	var provinces_map: Dictionary[Color, int] = load_map_config() # province map color to province id
 	var borders: Dictionary[PackedInt32Array, PackedVector4Array] = {} # should be Pair<int, int> instead of PackedInt32Array
 	var pixel_dict: Dictionary[Color, PackedVector2Array] = {}

@@ -1,0 +1,203 @@
+# Commented out parameters are those with the same value as base LLVM style.
+# We can uncomment them if we want to change their value, or enforce the
+# chosen value in case the base style changes (last sync: Clang 14.0).
+---
+### General config, applies to all languages ###
+BasedOnStyle:  LLVM
+AccessModifierOffset: -4
+AlignAfterOpenBracket: DontAlign
+# AlignArrayOfStructures: None
+# AlignConsecutiveMacros: None
+# AlignConsecutiveAssignments: None
+# AlignConsecutiveBitFields: None
+# AlignConsecutiveDeclarations: None
+# AlignEscapedNewlines: Right
+AlignOperands:   DontAlign
+AlignTrailingComments: false
+# AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
+# AllowShortEnumsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortCaseExpressionOnASingleLine: true
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+  AlignCaseColons: false
+# AllowShortFunctionsOnASingleLine: All
+# AllowShortLambdasOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: Never
+# AllowShortLoopsOnASingleLine: false
+# AlwaysBreakAfterDefinitionReturnType: None
+# AlwaysBreakAfterReturnType: None
+# AlwaysBreakBeforeMultilineStrings: false
+# AlwaysBreakTemplateDeclarations: MultiLine
+# AttributeMacros:
+#   - __capability
+# BinPackArguments: true
+# BinPackParameters: true
+# BraceWrapping:
+#   AfterCaseLabel:  false
+#   AfterClass:      false
+#   AfterControlStatement: Never
+#   AfterEnum:       false
+#   AfterFunction:   false
+#   AfterNamespace:  false
+#   AfterObjCDeclaration: false
+#   AfterStruct:     false
+#   AfterUnion:      false
+#   AfterExternBlock: false
+#   BeforeCatch:     false
+#   BeforeElse:      false
+#   BeforeLambdaBody: false
+#   BeforeWhile:     false
+#   IndentBraces:    false
+#   SplitEmptyFunction: true
+#   SplitEmptyRecord: true
+#   SplitEmptyNamespace: true
+# BreakBeforeBinaryOperators: None
+# BreakBeforeConceptDeclarations: true
+# BreakBeforeBraces: Attach
+# BreakBeforeInheritanceComma: false
+# BreakInheritanceList: BeforeColon
+# BreakBeforeTernaryOperators: true
+# BreakConstructorInitializersBeforeComma: false
+BreakConstructorInitializers: AfterColon
+# BreakStringLiterals: true
+ColumnLimit:     190
+# CommentPragmas:  '^ IWYU pragma:'
+QualifierAlignment: Left
+# CompactNamespaces: false
+ConstructorInitializerIndentWidth: 8
+ContinuationIndentWidth: 8
+Cpp11BracedListStyle: false
+# DeriveLineEnding: true
+# DerivePointerAlignment: false
+# DisableFormat:   false
+# EmptyLineAfterAccessModifier: Never
+# EmptyLineBeforeAccessModifier: LogicalBlock
+# ExperimentalAutoDetectBinPacking: false
+# PackConstructorInitializers: BinPack
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+# AllowAllConstructorInitializersOnNextLine: true
+# FixNamespaceComments: true
+# ForEachMacros:
+#   - foreach
+#   - Q_FOREACH
+#   - BOOST_FOREACH
+# IfMacros:
+#   - KJ_IF_MAYBE
+IncludeBlocks:   Regroup
+IncludeCategories:
+  - Regex:           '^"(godot_cpp)/'
+    Priority:        1
+    SortPriority:    1
+    CaseSensitive:   true
+  - Regex:           '".*"'
+    Priority:        2
+    SortPriority:    2
+
+# IncludeIsMainRegex: '(Test)?$'
+# IncludeIsMainSourceRegex: ''
+# IndentAccessModifiers: false
+IndentCaseLabels: true
+# IndentCaseBlocks: false
+# IndentGotoLabels: true
+# IndentPPDirectives: None
+# IndentExternBlock: AfterExternBlock
+# IndentRequires:  false
+IndentWidth:     4
+# IndentWrappedFunctionNames: false
+# InsertTrailingCommas: None
+# JavaScriptQuotes: Leave
+# JavaScriptWrapImports: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+# LambdaBodyIndentation: Signature
+# MacroBlockBegin: ''
+# MacroBlockEnd:   ''
+# MaxEmptyLinesToKeep: 1
+# NamespaceIndentation: None
+# PenaltyBreakAssignment: 2
+# PenaltyBreakBeforeFirstCallParameter: 19
+# PenaltyBreakComment: 300
+# PenaltyBreakFirstLessLess: 120
+# PenaltyBreakOpenParenthesis: 0
+# PenaltyBreakString: 1000
+# PenaltyBreakTemplateDeclaration: 10
+# PenaltyExcessCharacter: 1000000
+# PenaltyReturnTypeOnItsOwnLine: 60
+# PenaltyIndentedWhitespace: 0
+# PointerAlignment: Right
+# PPIndentWidth:   -1
+# ReferenceAlignment: Pointer
+# ReflowComments:  true
+RemoveBracesLLVM: true
+# SeparateDefinitionBlocks: Leave
+# ShortNamespaceLines: 1
+SortIncludes:    CaseInsensitive
+# SortJavaStaticImport: Before
+# SortUsingDeclarations: true
+# SpaceAfterCStyleCast: false
+# SpaceAfterLogicalNot: false
+# SpaceAfterTemplateKeyword: true
+# SpaceBeforeAssignmentOperators: true
+# SpaceBeforeCaseColon: false
+# SpaceBeforeCpp11BracedList: false
+# SpaceBeforeCtorInitializerColon: true
+# SpaceBeforeInheritanceColon: true
+# SpaceBeforeParens: ControlStatements
+# SpaceBeforeParensOptions:
+#   AfterControlStatements: true
+#   AfterForeachMacros: true
+#   AfterFunctionDefinitionName: false
+#   AfterFunctionDeclarationName: false
+#   AfterIfMacros:   true
+#   AfterOverloadedOperator: false
+#   BeforeNonEmptyParentheses: false
+# SpaceAroundPointerQualifiers: Default
+# SpaceBeforeRangeBasedForLoopColon: true
+# SpaceInEmptyBlock: false
+# SpaceInEmptyParentheses: false
+# SpacesBeforeTrailingComments: 1
+# SpacesInAngles:  Never
+# SpacesInConditionalStatement: false
+# SpacesInContainerLiterals: true
+# SpacesInCStyleCastParentheses: false
+SpacesInLineCommentPrefix:
+  Minimum:         1
+  Maximum:         1
+# SpacesInParentheses: false
+# SpacesInSquareBrackets: false
+# SpaceBeforeSquareBrackets: false
+# BitFieldColonSpacing: Both
+# StatementAttributeLikeMacros:
+#   - Q_EMIT
+# StatementMacros:
+#   - Q_UNUSED
+#   - QT_REQUIRE_VERSION
+TabWidth:        4
+# UseCRLF:         false
+UseTab:          Always
+WhitespaceSensitiveMacros:
+  - EDITOR_CODE
+  - DEBUG_CODE
+  - SOA
+---
+### C++ specific config ###
+Language:        Cpp
+Standard:        Latest # TODO - set to C++23 when possible...
+RequiresClausePosition: SingleLine
+---
+### ObjC specific config ###
+Language:        ObjC
+# ObjCBinPackProtocolList: Auto
+ObjCBlockIndentWidth: 4
+# ObjCBreakBeforeNestedBlockParam: true
+# ObjCSpaceAfterProperty: false
+# ObjCSpaceBeforeProtocolList: true
+---
+### Java specific config ###
+Language:        Java
+# BreakAfterJavaFieldAnnotations: false
+JavaImportGroups: ['org.godotengine', 'android', 'androidx', 'com.android', 'com.google', 'java', 'javax']

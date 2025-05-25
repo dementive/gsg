@@ -1,6 +1,6 @@
 #@tool
 extends Node3D
-class_name Map3D
+class_name MapGD3D
 
 var map: Map
 @onready var map_mesh: MeshInstance3D = %MapMesh

@@ -1,11 +1,13 @@
 #include "register_types.h"
-#include "core/string/print_string.h"
+#include "nodes/Map3D.hpp"
+
+using namespace CG;
 
 void initialize_src_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE)
 		return;
 
-	print_line("Hello World!");
+	GDREGISTER_RUNTIME_CLASS(Map3D)
 }
 
 void uninitialize_src_module(ModuleInitializationLevel p_level) {
