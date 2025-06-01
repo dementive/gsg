@@ -24,7 +24,7 @@ case "$1" in
     scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options use_llvm=no;;
   static|linux_debug_static)
     # Statically links the module into the godot binary
-    scons profile=$scripts_dir/linux_debug.py; $debug_options;;
+    scons profile=$scripts_dir/linux_debug.py $debug_options;;
   linux_release)
     scons profile=$scripts_dir/linux_release.py ;;
   windows_debug)

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/templates/local_vector.h"
-#include "core/variant/variant.h"
 #include "defs/soa.hpp"
 
 namespace CG {
@@ -57,22 +56,56 @@ inline bool is_navigable_water_province(ProvinceType p_type) {
 	return true ? p_type == ProvinceType::Ocean or p_type == ProvinceType::River : false;
 }
 
-struct Provinces {
-	FixedSizeSOA(8,
-		LocalVector<ProvinceType>, type,
+// Crossing over water between land provinces.
+struct ProvinceCrossing {
+	Singleton(ProvinceCrossing)
+	FixedSizeSOA(
+		ProvinceCrossing, 2,
+		Entity, adjacency_entity,
+		Vector4, crossing_locator // xy = start coord zw = end coord, read from crossings.txt
+	)
+};
+
+struct ProvinceAdjacency {
+	Singleton(ProvinceAdjacency)
+	FixedSizeSOA(
+		ProvinceAdjacency, 4,
+		ProvinceAdjacencyType, type,
+		ProvinceEntity, to,
+		ProvinceEntity, from,
+		ProvinceCrossingEntity, crossing
+	)
+};
+
+struct ProvinceBorder {
+	Singleton(ProvinceBorder)
+	FixedSizeSOA(
+		ProvinceBorder, 4,
+		ProvinceBorderType, type,
+		ProvinceEntity, to,
+		ProvinceEntity, from,
+		RID, rid
+	)
+};
+
+struct Province {
+	Singleton(Province)
+	FixedSizeSOA(
+		Province, 8,
+		ProvinceType, type,
 		String, name, // loc key
 		Vector2, centroid, // mean point in province
 		float, orientation, // angle in radians
-		Entity, owner, // id of owning country
-		Entity, area, // area id
-		LocalVector<Entity>, adjacencies, // ProvinceAdjacency ids
-		LocalVector<Entity>, borders // ProvinceBorder ids
+		CountryEntity, owner, // id of owning country
+		AreaEntity, area, // area id
+		TightLocalVector<ProvinceAdjacencyEntity>, adjacencies, // ProvinceAdjacency ids
+		TightLocalVector<ProvinceBorderEntity>, borders // ProvinceBorder ids
 	)
 
 	void initialize(Entity p_size) {
 		init(p_size);
 
-		Entity *ptr = owner.ptr();
+		CountryEntity *ptr = owner.ptr();
 		for (Entity i = 0; i < p_size; ++i) {
 			ptr[i] = ENTITY_MAX;
 		}

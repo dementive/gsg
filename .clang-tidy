@@ -6,6 +6,7 @@ Checks: '
 clang-analyzer-*,-clang-analyzer-osx*,bugprone-*,concurrency-*,cppcoreguidelines-*,misc-*,modernize-*,performance-*,portability-*,readability-*,
 -modernize-use-trailing-return-type,-modernize-use-nodiscard,-modernize-use-auto,-modernize-macro-to-enum,-modernize-avoid-c-arrays,
 -misc-include-cleaner,-misc-unused-parameters,
+-misc-non-private-member-variables-in-classes,-cppcoreguidelines-non-private-member-variables-in-classes,
 -readability-braces-around-statements,-readability-else-after-return,-readability-magic-numbers,-readability-simplify-boolean-expr,
 -bugprone-macro-parentheses,-bugprone-narrowing-conversions,-bugprone-easily-swappable-parameters,-bugprone-switch-missing-default-case,-bugprone-unhandled-self-assignment,
 -cppcoreguidelines-pro-type-union-access,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-macro-usage,-cppcoreguidelines-special-member-functions,
@@ -15,7 +16,5 @@ clang-analyzer-*,-clang-analyzer-osx*,bugprone-*,concurrency-*,cppcoreguidelines
 FormatStyle: file
 HeaderFilterRegex: (src)/
 CheckOptions:
-    - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
-      value: 1
     - key: cppcoreguidelines-avoid-non-const-global-variables.AllowInternalLinkage
       value: 1
