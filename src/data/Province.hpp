@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/templates/local_vector.h"
+#include "templates/Vec.hpp"
 #include "defs/soa.hpp"
 
 namespace CG {
@@ -98,8 +98,8 @@ struct Province {
 		float, orientation, // angle in radians
 		CountryEntity, owner, // id of owning country
 		AreaEntity, area, // area id
-		TightLocalVector<ProvinceAdjacencyEntity>, adjacencies, // ProvinceAdjacency ids
-		TightLocalVector<ProvinceBorderEntity>, borders // ProvinceBorder ids
+		TightVec<ProvinceAdjacencyEntity>, adjacencies, // ProvinceAdjacency ids
+		TightVec<ProvinceBorderEntity>, borders // ProvinceBorder ids
 	)
 
 	void initialize(Entity p_size) {
@@ -110,6 +110,14 @@ struct Province {
 			ptr[i] = ENTITY_MAX;
 		}
 	}
+
+	ProvinceEntity size() const {
+		return type.size();
+	}
 };
+
+inline bool province_has_owner(ProvinceEntity p_entity) {
+	return Province::self->get_owner(p_entity) == ENTITY_MAX ? true : false;
+}
 
 }

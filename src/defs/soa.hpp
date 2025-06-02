@@ -5,9 +5,9 @@
 #include "defs/types.hpp"
 #include "core/variant/variant.h"
 
-#define SOA_MAP_TYPE std::unordered_map<SoaVectorSizeType, SoaVectorSizeType>
-#define SOA_MAP_AT_FUNC(m_entity_id) index_map.at(m_entity_id)
-#define SOA_MAP_VALUE_NAME ->second
+#define SOA_MAP_TYPE AHashMap<SoaVectorSizeType, SoaVectorSizeType>
+#define SOA_MAP_AT_FUNC(m_entity_id) index_map[m_entity_id]
+#define SOA_MAP_VALUE_NAME ->value
 
 #define SOA_FIXED_VECTOR_TYPE(m_type) soa::SoaVector<m_type>
 #define SOA_DYNAMIC_VECTOR_TYPE(m_type) soa::SoaVector<m_type>
@@ -98,6 +98,7 @@ private:                                                                        
 		soa_capacity = static_cast<SoaVectorSizeType>(soa_capacity * 1.5);                                                                                                                   \
 		const SoaVectorSizeType p_size = soa_capacity;                                                                                                                                       \
                                                                                                                                                                                              \
+		index_map.reserve(p_size); \
 		uint64_t total_size = 0;                                                                                                                                                             \
 		int mem_offset_idx = 0;                                                                                                                                                              \
 		uint64_t memory_offsets[m_total_columns];                                                                                                                                            \
@@ -112,6 +113,7 @@ private:                                                                        
                                                                                                                                                                                              \
 public:                                                                                                                                                                                      \
 	void init(const SoaVectorSizeType p_size) {                                                                                                                                              \
+		index_map.reserve(p_size); \
 		uint64_t total_size = 0;                                                                                                                                                             \
 		int mem_offset_idx = 0;                                                                                                                                                              \
 		uint64_t memory_offsets[m_total_columns];                                                                                                                                            \
@@ -123,7 +125,7 @@ public:                                                                         
 		FOR_EACH_TWO_ARGS(SOA_DEFAULT_CONSTRUCT, __VA_OPT__(__VA_ARGS__, ))                                                                                                                  \
 	}                                                                                                                                                                                        \
 	void erase(SoaVectorSizeType p_entity_id) {                                                                                                                                              \
-		if (!index_map.contains(p_entity_id)) {                                                                                                                                              \
+		if (!index_map.has(p_entity_id)) {                                                                                                                                              \
 			return;                                                                                                                                                                          \
 		}                                                                                                                                                                                    \
                                                                                                                                                                                              \

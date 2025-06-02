@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/templates/local_vector.h"
 #include "defs/soa.hpp"
+#include "templates/Vec.hpp"
 
 namespace CG {
 
@@ -10,7 +10,7 @@ struct Area {
 	FixedSizeSOA(
 		Area,5,
 		String, name,
-		TightLocalVector<ProvinceEntity>, provinces,
+		TightVec<ProvinceEntity>, provinces,
 		RegionEntity, region,
 		ProvinceEntity, capital,
 		Color, color

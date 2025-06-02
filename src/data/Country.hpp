@@ -1,16 +1,17 @@
 #pragma once
 
-#include "core/templates/local_vector.h"
+#include "templates/Vec.hpp"
+#include "core/templates/a_hash_map.h"
 #include "defs/soa.hpp"
 
 namespace CG {
 
 struct Country {
 	Singleton(Country)
-	FixedSizeSOA(
+	MutableSOA(
 		Country,4,
 		String, name,
-		LocalVector<ProvinceEntity>, owned_provinces,
+		Vec<ProvinceEntity>, owned_provinces,
 		ProvinceEntity, capital,
 		Color, color
 	)
