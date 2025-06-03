@@ -48,11 +48,9 @@ if env_game.debug_features:
 	    CXXFLAGS=[
 	    	"-Wall",
 	    	"-Wextra",
-	    	"-Wshadow",
+	    	# "-Wshadow", # ENTT v3.15.0 throws a ton of shadowed var warnings, should renable this when upgrading to a new version.
 	    	# Disable warnings from GDCLASS stuff
 	    	"-Wno-unused-parameter",
-	    	# Disable warnings from entt
-	    	"-Wno-shadow-uncaptured-local"
 	    ]
 	)
 

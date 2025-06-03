@@ -9,7 +9,7 @@
 #include "data/Country.hpp"
 #include "data/Locator.hpp"
 
-#include <entt/entity/registry.hpp>
+#include "defs/Entity.hpp"
 
 using namespace CG;
 
@@ -31,11 +31,7 @@ ProvinceLocator
 
 struct Name : String {};
 
-using TerritoryEntity = entt::entity;
-
-using NationEntity = entt::entity;
-
-static void update(entt::registry &registry) {
+static void update(Registry &registry) {
     auto view = registry.view<const Name>();
 
     for(auto [entity, name]: view.each()) {
@@ -43,42 +39,39 @@ static void update(entt::registry &registry) {
     	//registry.destroy(entity);
     	// view.get<Name>(entity);
     }
-}
 
-// Stores the Entity ids of every entity type and wraps entt::registry.
-struct EntityRegistry {
-	Vec<TerritoryEntity> territories;
-	entt::registry registry;
-};
+    auto provinces_view = registry.view<EntityTag::Province>();
+    for(const EntityType::Province entity: provinces_view) {
+    	print_line(vformat("Territory Entity: %d name: %s", static_cast<int>(entity), registry.get<Name>(entity)));
+    	//registry.destroy(entity);
+    	// view.get<Name>(entity);
+    }
+}
 
 void initialize_src_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE)
 		return;
 
+
 	singleton_allocator.init();
 
-	EntityRegistry entity_registry;
-	entt::registry registry;
-	entity_registry.territories.resize(10);
+	Registry *registry = new Registry;
 
 	// create provinces
 	for(int i = 0; i < 10; ++i) {
-		const TerritoryEntity entity = registry.create();
-		registry.emplace<Name>(entity, "Ohio");
-		entity_registry.territories[i] = entity;
+		const EntityType::Province entity = registry->create_entity<EntityTag::Province>();
+		registry->emplace<Name>(entity, "Ohio");
 	}
 
 	// create nations
 	for(int i = 0; i < 10; ++i) {
-		const NationEntity entity = registry.create();
-		registry.emplace<Name>(entity, "Rome");
+		const EntityType::Country entity = registry->create_entity<EntityTag::Country>();
+		registry->emplace<Name>(entity, "Rome");
 	}
 
-	for (const TerritoryEntity entity: entity_registry.territories) {
-		print_line(vformat("Territory Entity: %d name: %s", static_cast<int>(entity), registry.get<Name>(entity)));
-	}
+	update(*registry);
 
-	update(registry);
+	delete registry;
 
 	GDREGISTER_RUNTIME_CLASS(Map3D)
 }
