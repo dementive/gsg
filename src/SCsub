@@ -27,6 +27,9 @@ def using_gcc(env):
 # Clone module env
 env_game = env_modules.Clone()
 
+# Add dependencies
+SConscript("../deps/SCsub", "env_game")
+
 # Get sources
 sources = find_cpp_files(env_game)
 env_game.Append(CPPPATH=find_header_dirs())
@@ -48,6 +51,8 @@ if env_game.debug_features:
 	    	"-Wshadow",
 	    	# Disable warnings from GDCLASS stuff
 	    	"-Wno-unused-parameter",
+	    	# Disable warnings from entt
+	    	"-Wno-shadow-uncaptured-local"
 	    ]
 	)
 
