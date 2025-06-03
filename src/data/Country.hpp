@@ -7,7 +7,7 @@
 namespace CG {
 
 struct Country {
-	Singleton(Country)
+	SINGLETON(Country)
 	MutableSOA(
 		Country,4,
 		String, name,

@@ -17,16 +17,18 @@ enum class ProvinceBorderType : uint8_t;
 using ProvinceColorMap = HashMap<Color, ProvinceEntity>;
 
 class Map {
+SINGLETON(Map)
 private:
 	using Polygon = Vector<Vector2>;
 	using Border = Pair<ProvinceEntity, ProvinceEntity>;
 
 	ProvinceColorMap color_to_id_map; // lookup image color -> province id
-	Ref<Image> look_up_image;
+	Ref<Image> lookup_image;
 
 	static Vector2 calculate_centroid(const Polygon &p_polygon);
 	static float calculate_orientation(const Polygon &p_polygon, const Vector2 &p_centroid);
 	static Color get_random_area_color();
+	static Color get_lookup_color(ProvinceEntity p_province_id);
 	ProvinceColorMap load_map_config();
 
 	static bool is_lake_border(const Border &p_border);

@@ -17,7 +17,6 @@ constexpr uint8_t TINY_ENTITY_MAX = UINT8_MAX;
 using ProvinceEntity = SmallEntity;
 using ProvinceBorderEntity = Entity;
 using ProvinceAdjacencyEntity = Entity;
-using ProvinceCrossingEntity = SmallEntity;
 
 using AreaEntity = SmallEntity;
 using RegionEntity = SmallEntity;

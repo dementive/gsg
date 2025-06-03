@@ -6,7 +6,7 @@
 namespace CG {
 
 struct Area {
-	Singleton(Area)
+	SINGLETON(Area)
 	FixedSizeSOA(
 		Area,5,
 		String, name,

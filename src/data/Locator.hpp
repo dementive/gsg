@@ -14,7 +14,7 @@ struct Locator {
 };
 
 struct ProvinceLocator {
-	Singleton(ProvinceLocator)
+	SINGLETON(ProvinceLocator)
 	Locator text;
 	Locator unit;
 

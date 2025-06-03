@@ -57,30 +57,26 @@ inline bool is_navigable_water_province(ProvinceType p_type) {
 }
 
 // Crossing over water between land provinces.
+// Every Crossing is also an Adjacency and they are loaded before other adjacencies, so can get the crossing locator from the adjacency id.
 struct ProvinceCrossing {
-	Singleton(ProvinceCrossing)
-	FixedSizeSOA(
-		ProvinceCrossing, 2,
-		Entity, adjacency_entity,
-		Vector4, crossing_locator // xy = start coord zw = end coord, read from crossings.txt
-	)
+	SINGLETON(ProvinceCrossing)
+	Vec<Vector4> crossing_locator; // xy = start coord zw = end coord, read from crossings.txt
 };
 
 struct ProvinceAdjacency {
-	Singleton(ProvinceAdjacency)
+	SINGLETON(ProvinceAdjacency)
 	FixedSizeSOA(
-		ProvinceAdjacency, 4,
+		ProvinceAdjacency, 3,
 		ProvinceAdjacencyType, type,
 		ProvinceEntity, to,
-		ProvinceEntity, from,
-		ProvinceCrossingEntity, crossing
+		ProvinceEntity, from
 	)
 };
 
 struct ProvinceBorder {
-	Singleton(ProvinceBorder)
+	SINGLETON(ProvinceBorder)
 	FixedSizeSOA(
-		ProvinceBorder, 4,
+		ProvinceBorder, 3,
 		ProvinceBorderType, type,
 		ProvinceEntity, to,
 		ProvinceEntity, from,
@@ -89,7 +85,7 @@ struct ProvinceBorder {
 };
 
 struct Province {
-	Singleton(Province)
+	SINGLETON(Province)
 	FixedSizeSOA(
 		Province, 8,
 		ProvinceType, type,

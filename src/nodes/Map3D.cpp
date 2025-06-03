@@ -1,5 +1,8 @@
 #include "Map3D.hpp"
+#include "cg/Map.hpp"
 #include "core/input/input_event.h"
+#include "data/Province.hpp"
+#include "scene/3d/mesh_instance_3d.h"
 #include "scene/main/viewport.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/resources/3d/world_3d.h"
@@ -12,18 +15,14 @@ void Map3D::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_READY: {
 			set_process_unhandled_input(true);
-			// map = Map.new()
-			// map.load_map(self)
-			// map_mesh.get_mesh().surface_get_material(0).set_shader_parameter('color_texture', map.get_color_texture())
-			// map_mesh.get_mesh().surface_get_material(0).set_shader_parameter('lookup_texture', map.get_lookup_texture())
-		} break;
-		case NOTIFICATION_WM_CLOSE_REQUEST: {
-			// if map != null:
-			// 	map.free()
+			Map::self = memnew(Map);
+			Map::self->load_map(this);
+			// Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
+			// material->set_shader_parameter("color_texture", Map::self->get_country_map_mode());
+			// material->set_shader_parameter("lookup_texture", Map::self->get_lookup_texture());
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
-			// if map != null:
-			// 	map.free()
+			memdelete_notnull(Map::self);
 		} break;
 	}
 }
@@ -48,14 +47,16 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 	if (click_position.x > map_dimensions.x or click_position.x < 0 or click_position.y > map_dimensions.y or click_position.y < 0)
 		return;
 
-	// Color province_color = map.get_lookup_image().get_pixelv(click_position);
-	// int province_id = map.get_color_to_id_map().get(province_color);
+	Color province_color = Map::self->get_lookup_image()->get_pixelv(click_position);
+	ProvinceEntity province_id = Map::self->get_color_to_id_map().get(province_color);
 
-	//if (!province_id)
-	//	return;
-	//Map::ProvinceType province_type = map.get_provinces().type[province_id]
-	// if (province_type == Map::ProvinceType::Land) {
-	// 	map_mesh.get_mesh().surface_get_material(0).set_shader_parameter('selected_area', province_color.linear_to_srgb());
-	// 	vp->set_input_as_handled();
-	// }
+	if (province_id == 0)
+		return;
+
+	ProvinceType province_type = Province::self->get_type(province_id);
+	if (province_type == ProvinceType::Land) {
+		Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
+		material->set_shader_parameter("selected_area", province_color.linear_to_srgb());
+		vp->set_input_as_handled();
+	}
 }

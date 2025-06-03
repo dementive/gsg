@@ -98,7 +98,6 @@ private:                                                                        
 		soa_capacity = static_cast<SoaVectorSizeType>(soa_capacity * 1.5);                                                                                                                   \
 		const SoaVectorSizeType p_size = soa_capacity;                                                                                                                                       \
                                                                                                                                                                                              \
-		index_map.reserve(p_size); \
 		uint64_t total_size = 0;                                                                                                                                                             \
 		int mem_offset_idx = 0;                                                                                                                                                              \
 		uint64_t memory_offsets[m_total_columns];                                                                                                                                            \
@@ -113,7 +112,6 @@ private:                                                                        
                                                                                                                                                                                              \
 public:                                                                                                                                                                                      \
 	void init(const SoaVectorSizeType p_size) {                                                                                                                                              \
-		index_map.reserve(p_size); \
 		uint64_t total_size = 0;                                                                                                                                                             \
 		int mem_offset_idx = 0;                                                                                                                                                              \
 		uint64_t memory_offsets[m_total_columns];                                                                                                                                            \
