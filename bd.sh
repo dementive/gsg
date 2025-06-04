@@ -17,11 +17,15 @@ case "$1" in
     # To fix this have to delete the existing binaries and rebuild them, this takes about 5-15 extra seconds than only targeting the .so though.
     rm -f ./bin/*
     scons game_shared=yes profile=$scripts_dir/linux_debug.py compiledb=yes $debug_options $llvm_so
-    scons game_shared=yes profile=$scripts_dir/linux_debug.py compiledb=yes $debug_options;;
+    if [ $? -eq 0 ]; then # only build the link the engine if there are no compiler errors so the errors don't show twice.
+      scons game_shared=yes profile=$scripts_dir/linux_debug.py compiledb=yes $debug_options
+    fi;;
   linux_debug_engine_gcc)
     rm -f ./bin/*
     scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options use_llvm=no $gcc_so
-    scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options use_llvm=no;;
+    if [ $? -eq 0 ]; then
+      scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options use_llvm=no
+    fi;;
   static|linux_debug_static)
     # Statically links the module into the godot binary
     scons profile=$scripts_dir/linux_debug.py $debug_options;;

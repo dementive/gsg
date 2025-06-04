@@ -9,8 +9,6 @@
 
 #include "nodes/Map3D.hpp"
 #include "core/io/config_file.h"
-#include "data/Area.hpp"
-#include "data/Country.hpp"
 #include "data/Province.hpp"
 #include "Map.hpp"
 #include "csv.hpp"
@@ -53,7 +51,7 @@ Color Map::get_random_area_color() {
 	};
 }
 
-Color Map::get_lookup_color(ProvinceEntity p_province_id) {
+Color Map::get_lookup_color(ProvinceMapLookupIndex p_province_id) {
 	return {
 		float(int(p_province_id) % COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1),
 		floor(float(p_province_id) / COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1),
@@ -84,187 +82,206 @@ ProvinceColorMap Map::load_map_config() {
 	region_config->get_sections(&region_sections);
 	area_config->get_sections(&area_sections);
 
-	Area *area = Area::self;
-	Province *province = Province::self;
-	Country *country = Country::self;
-
-	province->initialize(province_sections.size());
-	country->init(country_sections.size());
-	area->init(area_sections.size());
-	//region->init(region_sections.size());
-
-	for (const String &section : area_sections) {
-		const AreaEntity area_id = section.to_int();
-		const String name = area_config->get_value(section, "name");
-		const Color color = area_config->get_value(section, "color", get_random_area_color());
-		const PackedInt32Array area_provinces = area_config->get_value(section, "provinces");
-		const ProvinceEntity capital = area_config->get_value(section, "capital");
-
-		area->set_capital(area_id, capital);
-		area->set_name(area_id, name);
-		area->set_color(area_id, color);
-		area->set_provinces(area_id, area_provinces);
-
-		for (const ProvinceEntity province_id : area_provinces) {
-			province->set_area(province_id, area_id);
-		}
-	}
-
-	for (const String &section : region_sections) {
-		const RegionEntity region_id = section.to_int();
-		const String name = region_config->get_value(section, "name");
-		const Color color = region_config->get_value(section, "color", get_random_area_color());
-		const PackedInt32Array region_areas = region_config->get_value(section, "areas");
-		const ProvinceEntity capital = region_config->get_value(section, "capital");
-
-		//create_entity
-		Registry &registry = *Registry::self;
-		entt::entity entity = registry.create_entity<EntityTag::Region>();
-
-		registry.emplace<Color>(entity, color);
-		//registry.emplace<ProvinceComponent>(entity, entity);
-
-		// region->set_capital(region_id, capital);
-		// region->set_name(region_id, name);
-		// region->set_color(region_id, color);
-		// region->set_areas(region_id, region_areas);
-
-		for (const AreaEntity area_id : region_areas) {
-			area->set_region(area_id, region_id);
-		}
-	}
-
-	for (const String &section : country_sections) {
-		const CountryEntity country_id = section.to_int();
-		const String name = country_config->get_value(section, "name");
-		const Color color = country_config->get_value(section, "color", get_random_area_color());
-		const PackedInt32Array country_provinces = country_config->get_value(section, "provinces");
-		const ProvinceEntity capital = country_config->get_value(section, "capital");
-
-		country->set_capital(country_id, capital);
-		country->set_name(country_id, name);
-		country->set_color(country_id, Color::from_rgba8(color.r, color.g, color.b, color.a));
-		country->set_owned_provinces(country_id, country_provinces);
-
-		for (const ProvinceEntity province_id : country_provinces) {
-			const CountryEntity owner = province->get_owner(province_id);
-			ERR_CONTINUE_MSG(owner != ENTITY_MAX, vformat("Province %s has multiple owners. Provinces can only have one owner, fix countries.cfg.", province_id));
-			province->set_owner(province_id, country_id);
-		}
-	}
+	Registry &registry = *Registry::self;
 
 	for (const String &section : province_sections) {
 		Color map_color = province_config->get_value(section, "color");
 		map_color = Color::from_rgba8(map_color.r, map_color.g, map_color.b, map_color.a);
 
 		const ProvinceType province_type = province_type_string_to_enum(province_config->get_value(section, "type", "land"));
-		const ProvinceEntity province_id = section.to_int();
+		const ProvinceMapLookupIndex province_id = section.to_int();
 
-		province->set_type(province_id, province_type);
-		province->set_name(province_id, String("PROV") + uitos(province_id));
+		const auto province_entity = registry.create_entity<ProvinceTag>(province_id);
+		registry.emplace<ProvinceType>(province_entity, province_type);
+		registry.emplace<String>(province_entity, String("PROV") + uitos(province_id));
+		//province->set_type(province_id, province_type);
+		//province->set_name(province_id, String("PROV") + uitos(province_id));
 		provinces_map[map_color] = province_id;
 
 		const Color lookup_color = get_lookup_color(province_id);
 		color_to_id_map[lookup_color] = province_id;
 	}
 
+	// Area *area = Area::self;
+	// Province *province = Province::self;
+	// Country *country = Country::self;
+
+	// province->initialize(province_sections.size());
+	// country->init(country_sections.size());
+	// area->init(area_sections.size());
+	// //region->init(region_sections.size());
+
+	// for (const String &section : area_sections) {
+	// 	const AreaEntity area_id = section.to_int();
+	// 	const String name = area_config->get_value(section, "name");
+	// 	const Color color = area_config->get_value(section, "color", get_random_area_color());
+	// 	const PackedInt32Array area_provinces = area_config->get_value(section, "provinces");
+	// 	const ProvinceEntity capital = area_config->get_value(section, "capital");
+
+	// 	area->set_capital(area_id, capital);
+	// 	area->set_name(area_id, name);
+	// 	area->set_color(area_id, color);
+	// 	area->set_provinces(area_id, area_provinces);
+
+	// 	for (const ProvinceEntity province_id : area_provinces) {
+	// 		province->set_area(province_id, area_id);
+	// 	}
+	// }
+
+	// for (const String &section : region_sections) {
+	// 	const RegionEntity region_id = section.to_int();
+	// 	const String name = region_config->get_value(section, "name");
+	// 	const Color color = region_config->get_value(section, "color", get_random_area_color());
+	// 	const PackedInt32Array region_areas = region_config->get_value(section, "areas");
+	// 	const ProvinceEntity capital = region_config->get_value(section, "capital");
+
+	// 	//create_entity
+	// 	Registry &registry = *Registry::self;
+	// 	entt::entity entity = registry.create_entity<EntityTag::Region>();
+
+	// 	registry.emplace<Color>(entity, color);
+
+	// 	// region->set_capital(region_id, capital);
+	// 	// region->set_name(region_id, name);
+	// 	// region->set_color(region_id, color);
+	// 	// region->set_areas(region_id, region_areas);
+
+	// 	for (const AreaEntity area_id : region_areas) {
+	// 		area->set_region(area_id, region_id);
+	// 	}
+	// }
+
+	// for (const String &section : country_sections) {
+	// 	const CountryEntity country_id = section.to_int();
+	// 	const String name = country_config->get_value(section, "name");
+	// 	const Color color = country_config->get_value(section, "color", get_random_area_color());
+	// 	const PackedInt32Array country_provinces = country_config->get_value(section, "provinces");
+	// 	const ProvinceEntity capital = country_config->get_value(section, "capital");
+
+	// 	country->set_capital(country_id, capital);
+	// 	country->set_name(country_id, name);
+	// 	country->set_color(country_id, Color::from_rgba8(color.r, color.g, color.b, color.a));
+	// 	country->set_owned_provinces(country_id, country_provinces);
+
+	// 	for (const ProvinceEntity province_id : country_provinces) {
+	// 		const CountryEntity owner = province->get_owner(province_id);
+	// 		ERR_CONTINUE_MSG(owner != ENTITY_MAX, vformat("Province %s has multiple owners. Provinces can only have one owner, fix countries.cfg.", province_id));
+	// 		province->set_owner(province_id, country_id);
+	// 	}
+	// }
+
+	// for (const String &section : province_sections) {
+	// 	Color map_color = province_config->get_value(section, "color");
+	// 	map_color = Color::from_rgba8(map_color.r, map_color.g, map_color.b, map_color.a);
+
+	// 	const ProvinceType province_type = province_type_string_to_enum(province_config->get_value(section, "type", "land"));
+	// 	const ProvinceEntity province_id = section.to_int();
+
+	// 	province->set_type(province_id, province_type);
+	// 	province->set_name(province_id, String("PROV") + uitos(province_id));
+	// 	provinces_map[map_color] = province_id;
+
+	// 	const Color lookup_color = get_lookup_color(province_id);
+	// 	color_to_id_map[lookup_color] = province_id;
+	// }
+
 	return provinces_map;
 }
 
 bool Map::is_lake_border(const Border &p_border) {
-	ProvinceType to_type = Province::self->get_type(p_border.first);
-	ProvinceType from_type = Province::self->get_type(p_border.second);
+	// ProvinceType to_type = Province::self->get_type(p_border.first);
+	// ProvinceType from_type = Province::self->get_type(p_border.second);
 
-	if (to_type == ProvinceType::Lake or from_type == ProvinceType::Lake)
-		return true;
-	else
-		return false;
+	// if (to_type == ProvinceType::Lake or from_type == ProvinceType::Lake)
+	// 	return true;
+	// else
+	// 	return false;
 }
 
 Vector<Ref<ShaderMaterial>> Map::create_border_materials() {
-	Ref<Shader> border_shader = ResourceLoader::load("res://gfx/shaders/border.gdshader");
-	Vector<Ref<ShaderMaterial>> border_materials;
-	const int material_count = static_cast<int>(ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX);
-	border_materials.resize(material_count);
+	// Ref<Shader> border_shader = ResourceLoader::load("res://gfx/shaders/border.gdshader");
+	// Vector<Ref<ShaderMaterial>> border_materials;
+	// const int material_count = static_cast<int>(ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX);
+	// border_materials.resize(material_count);
 
-	#define inc_enum(i) ((decltype(i)) (static_cast<int>(i) + 1))
-	for(ProvinceBorderType i = ProvinceBorderType::Country; i < ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX; i = inc_enum(i)) {
-		Ref<ShaderMaterial> border_material = memnew(ShaderMaterial);
-		border_material->set_shader(border_shader);
-		switch (i) {
-			case ProvinceBorderType::Country: {
-				border_material->set_shader_parameter("border_color", Color(0,0,0,1));
-			} break;
-			case ProvinceBorderType::Area: {
-				border_material->set_shader_parameter("border_color", Color(0.26,0.26,0.26,1));
-			} break;
-			case ProvinceBorderType::Province: {
-				border_material->set_shader_parameter("border_color", Color(0.31,0.31,0.31,0.9));
-			} break;
-			case ProvinceBorderType::Impassable: {
-				border_material->set_shader_parameter("border_color", Color(0.423,0,0,0.878));
-			} break;
-			case ProvinceBorderType::Water: {
-				border_material->set_shader_parameter("border_color", Color(0,0,0,1));
-			} break;
-			case ProvinceBorderType::Coastal: {
-				border_material->set_shader_parameter("border_color", Color(0.23,0.23,0.23,0.95));
-			} break;
-			case ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX: break;
-		}
+	// #define inc_enum(i) ((decltype(i)) (static_cast<int>(i) + 1))
+	// for(ProvinceBorderType i = ProvinceBorderType::Country; i < ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX; i = inc_enum(i)) {
+	// 	Ref<ShaderMaterial> border_material = memnew(ShaderMaterial);
+	// 	border_material->set_shader(border_shader);
+	// 	switch (i) {
+	// 		case ProvinceBorderType::Country: {
+	// 			border_material->set_shader_parameter("border_color", Color(0,0,0,1));
+	// 		} break;
+	// 		case ProvinceBorderType::Area: {
+	// 			border_material->set_shader_parameter("border_color", Color(0.26,0.26,0.26,1));
+	// 		} break;
+	// 		case ProvinceBorderType::Province: {
+	// 			border_material->set_shader_parameter("border_color", Color(0.31,0.31,0.31,0.9));
+	// 		} break;
+	// 		case ProvinceBorderType::Impassable: {
+	// 			border_material->set_shader_parameter("border_color", Color(0.423,0,0,0.878));
+	// 		} break;
+	// 		case ProvinceBorderType::Water: {
+	// 			border_material->set_shader_parameter("border_color", Color(0,0,0,1));
+	// 		} break;
+	// 		case ProvinceBorderType::Coastal: {
+	// 			border_material->set_shader_parameter("border_color", Color(0.23,0.23,0.23,0.95));
+	// 		} break;
+	// 		case ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX: break;
+	// 	}
 
-		border_materials.push_back(border_material);
-	}
+	// 	border_materials.push_back(border_material);
+	// }
 
-	return border_materials;
+	// return border_materials;
 }
 
 void Map::fill_province_adjacency_data(ProvinceAdjacencyEntity p_adjacency_id, const Border &p_border) {
-	const ProvinceType to_type = Province::self->get_type(p_border.first);
-	const ProvinceType from_type = Province::self->get_type(p_border.second);
-	ProvinceAdjacencyType adjacency_type = ProvinceAdjacencyType::Land;
+	// const ProvinceType to_type = Province::self->get_type(p_border.first);
+	// const ProvinceType from_type = Province::self->get_type(p_border.second);
+	// ProvinceAdjacencyType adjacency_type = ProvinceAdjacencyType::Land;
 
-	if (is_navigable_water_province(to_type) and is_navigable_water_province(from_type)) {
-		adjacency_type = ProvinceAdjacencyType::Water;
-	} else if (is_impassable_province(to_type) or is_impassable_province(from_type)) {
-		adjacency_type = ProvinceAdjacencyType::Impassable;
-	} else if ((to_type == ProvinceType::Ocean and from_type == ProvinceType::Land) or (to_type == ProvinceType::Land and from_type == ProvinceType::Ocean)) {
-		adjacency_type = ProvinceAdjacencyType::Coastal;
-	}
+	// if (is_navigable_water_province(to_type) and is_navigable_water_province(from_type)) {
+	// 	adjacency_type = ProvinceAdjacencyType::Water;
+	// } else if (is_impassable_province(to_type) or is_impassable_province(from_type)) {
+	// 	adjacency_type = ProvinceAdjacencyType::Impassable;
+	// } else if ((to_type == ProvinceType::Ocean and from_type == ProvinceType::Land) or (to_type == ProvinceType::Land and from_type == ProvinceType::Ocean)) {
+	// 	adjacency_type = ProvinceAdjacencyType::Coastal;
+	// }
 
-	ProvinceAdjacency::self->set_from(p_adjacency_id, p_border.first);
-	ProvinceAdjacency::self->set_to(p_adjacency_id, p_border.second);
-	ProvinceAdjacency::self->set_type(p_adjacency_id, adjacency_type);
+	// ProvinceAdjacency::self->set_from(p_adjacency_id, p_border.first);
+	// ProvinceAdjacency::self->set_to(p_adjacency_id, p_border.second);
+	// ProvinceAdjacency::self->set_type(p_adjacency_id, adjacency_type);
 }
 
 ProvinceBorderType Map::fill_province_border_data(ProvinceBorderEntity p_border_id, const Border &p_border) {
-	const ProvinceType to_type = Province::self->get_type(p_border.first);
-	const ProvinceType from_type = Province::self->get_type(p_border.second);
+	// const ProvinceType to_type = Province::self->get_type(p_border.first);
+	// const ProvinceType from_type = Province::self->get_type(p_border.second);
 
-	const int to_area = Province::self->get_area(p_border.first);
-	const int from_area = Province::self->get_area(p_border.second);
-	const int to_owner = Province::self->get_owner(p_border.first);
-	const int from_owner = Province::self->get_owner(p_border.second);
-	ProvinceBorderType border_type = ProvinceBorderType::Country;
+	// const int to_area = Province::self->get_area(p_border.first);
+	// const int from_area = Province::self->get_area(p_border.second);
+	// const int to_owner = Province::self->get_owner(p_border.first);
+	// const int from_owner = Province::self->get_owner(p_border.second);
+	// ProvinceBorderType border_type = ProvinceBorderType::Country;
 
-	if ((province_has_owner(p_border.first) and province_has_owner(p_border.second) and from_owner != to_owner))
-		border_type = ProvinceBorderType::Country;
-	else if (is_navigable_water_province(to_type) and is_navigable_water_province(from_type))
-		border_type = ProvinceBorderType::Water;
-	else if (is_impassable_province(to_type) or is_impassable_province(from_type))
-		border_type = ProvinceBorderType::Impassable;
-	else if ((to_type == ProvinceType::Ocean and from_type == ProvinceType::Land) or (to_type == ProvinceType::Land and from_type == ProvinceType::Ocean))
-		border_type = ProvinceBorderType::Coastal;
-	else if (from_area != to_area)
-		border_type = ProvinceBorderType::Area;
-	else if (from_area == to_area)
-		border_type = ProvinceBorderType::Province;
+	// if ((province_has_owner(p_border.first) and province_has_owner(p_border.second) and from_owner != to_owner))
+	// 	border_type = ProvinceBorderType::Country;
+	// else if (is_navigable_water_province(to_type) and is_navigable_water_province(from_type))
+	// 	border_type = ProvinceBorderType::Water;
+	// else if (is_impassable_province(to_type) or is_impassable_province(from_type))
+	// 	border_type = ProvinceBorderType::Impassable;
+	// else if ((to_type == ProvinceType::Ocean and from_type == ProvinceType::Land) or (to_type == ProvinceType::Land and from_type == ProvinceType::Ocean))
+	// 	border_type = ProvinceBorderType::Coastal;
+	// else if (from_area != to_area)
+	// 	border_type = ProvinceBorderType::Area;
+	// else if (from_area == to_area)
+	// 	border_type = ProvinceBorderType::Province;
 
-	ProvinceBorder::self->set_from(p_border_id, p_border.second);
-	ProvinceBorder::self->set_to(p_border_id, p_border.first);
-	ProvinceBorder::self->set_type(p_border_id, border_type);
+	// ProvinceBorder::self->set_from(p_border_id, p_border.second);
+	// ProvinceBorder::self->set_to(p_border_id, p_border.first);
+	// ProvinceBorder::self->set_type(p_border_id, border_type);
 
-	return border_type;
+	// return border_type;
 }
 
 void Map::add_rounded_border_corners(Ref<SurfaceTool> &p_st, const Vector2 &p_v1, const Vector2 &p_v2, float p_radius) {
@@ -313,166 +330,166 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vector<Vector4> &p_segments, float 
 
 
 void Map::create_map_labels(Map3D *p_map, int p_map_width, int p_map_height) {
-	Province *provinces = Province::self;
-	for (ProvinceEntity i = 0; i < Province::self->size(); ++i) {
-		ProvinceType type = Province::self->get_type(i);
-		if (type != ProvinceType::Land) continue;
+	// Province *provinces = Province::self;
+	// for (ProvinceEntity i = 0; i < Province::self->size(); ++i) {
+	// 	ProvinceType type = Province::self->get_type(i);
+	// 	if (type != ProvinceType::Land) continue;
 
-		Label3D *label = memnew(Label3D);
+	// 	Label3D *label = memnew(Label3D);
 
-		Vector2 centroid = provinces->centroid[i];
-		float orientation = provinces->orientation[i];
+	// 	Vector2 centroid = provinces->centroid[i];
+	// 	float orientation = provinces->orientation[i];
 		
-		label->set_position(Vector3(centroid.x-(p_map_width/2.0), label_map_layer, centroid.y-(p_map_height/2.0)));
-		label->set_rotation(Vector3(Math::deg_to_rad(-90.0),orientation,0.0));
-		label->set_scale(Vector3(100.0, 100.0, 100.0));
+	// 	label->set_position(Vector3(centroid.x-(p_map_width/2.0), label_map_layer, centroid.y-(p_map_height/2.0)));
+	// 	label->set_rotation(Vector3(Math::deg_to_rad(-90.0),orientation,0.0));
+	// 	label->set_scale(Vector3(100.0, 100.0, 100.0));
 		
-		label->set_text(label->tr(provinces->name[i])); // TODO - make spaces new lines?
-		label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
-		label->set_modulate(Color(0,0,0));
-		label->set_outline_modulate(Color(1,1,1,0));
+	// 	label->set_text(label->tr(provinces->name[i])); // TODO - make spaces new lines?
+	// 	label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
+	// 	label->set_modulate(Color(0,0,0));
+	// 	label->set_outline_modulate(Color(1,1,1,0));
 
-		p_map->call_deferred("add_child", label);
-	}
+	// 	p_map->call_deferred("add_child", label);
+	// }
 }
 
 void Map::load_map(Map3D  *p_map) {
 	ProvinceColorMap provinces_map = load_map_config();
-	HashMap<Border, PackedVector4Array, PairHash<ProvinceEntity, ProvinceEntity>> borders;
-	HashMap<Color, PackedVector2Array> pixel_dict;
+	// HashMap<Border, PackedVector4Array, PairHash<ProvinceEntity, ProvinceEntity>> borders;
+	// HashMap<Color, PackedVector2Array> pixel_dict;
 
 	// Load provinces.png
-	Ref<Texture2D> province_texture = ResourceLoader::load("res://gfx/map/provinces.png");
-	Ref<Image> province_image = province_texture->get_image();
-	int province_image_width = province_image->get_width();
-	int province_image_height = province_image->get_width();
+	// Ref<Texture2D> province_texture = ResourceLoader::load("res://gfx/map/provinces.png");
+	// Ref<Image> province_image = province_texture->get_image();
+	// int province_image_width = province_image->get_width();
+	// int province_image_height = province_image->get_width();
 
-	// Set Map3D node position, makes the world coords the same as the map coords
-	p_map->set_position(Vector3(province_image_width/2.0, 0, province_image_height/2.0));
+	// // Set Map3D node position, makes the world coords the same as the map coords
+	// p_map->set_position(Vector3(province_image_width/2.0, 0, province_image_height/2.0));
 
-	// Create lookup texture
-	lookup_image = Image::create_empty(province_image_width, province_image_height, false, Image::FORMAT_RGF);
+	// // Create lookup texture
+	// lookup_image = Image::create_empty(province_image_width, province_image_height, false, Image::FORMAT_RGF);
 
-	for (int x = 0; x < province_image_width; ++x) {
-		for (int y = 0; y < province_image_height; ++y) {
-			const Color current_color = province_image->get_pixel(x,y);
+	// for (int x = 0; x < province_image_width; ++x) {
+	// 	for (int y = 0; y < province_image_height; ++y) {
+	// 		const Color current_color = province_image->get_pixel(x,y);
 
-			// Set lookup texture pixels
-			const int province_id = provinces_map[current_color];
-			const Color lookup_color = get_lookup_color(province_id);
-			lookup_image->set_pixel(x, y, lookup_color);
+	// 		// Set lookup texture pixels
+	// 		const int province_id = provinces_map[current_color];
+	// 		const Color lookup_color = get_lookup_color(province_id);
+	// 		lookup_image->set_pixel(x, y, lookup_color);
 
-			// Make pixel dict for polygon calculations
-			if (!pixel_dict.has(current_color))
-				pixel_dict[current_color] = PackedVector2Array();
-			pixel_dict[current_color].append(Vector2(x, y));
+	// 		// Make pixel dict for polygon calculations
+	// 		if (!pixel_dict.has(current_color))
+	// 			pixel_dict[current_color] = PackedVector2Array();
+	// 		pixel_dict[current_color].append(Vector2(x, y));
 
-			// Get border segments
-			if (x + 1 < province_image_width) {
-				const Color right_color = province_image->get_pixel(x + 1, y);
-				if (current_color != right_color) {
-					const ProvinceEntity to = provinces_map[current_color];
-					const ProvinceEntity from = provinces_map[right_color];
-					Border key;
-					if (to > from) // sort by largest to prevent duplicates
-						key = Border(to, from);
-					else
-						key = Border(from, to);
+	// 		// Get border segments
+	// 		if (x + 1 < province_image_width) {
+	// 			const Color right_color = province_image->get_pixel(x + 1, y);
+	// 			if (current_color != right_color) {
+	// 				const ProvinceEntity to = provinces_map[current_color];
+	// 				const ProvinceEntity from = provinces_map[right_color];
+	// 				Border key;
+	// 				if (to > from) // sort by largest to prevent duplicates
+	// 					key = Border(to, from);
+	// 				else
+	// 					key = Border(from, to);
 
-					// Filter out borders and adjacencies with lakes
-					// movement to/from lakes is impossible and borders should never be draw on lake provinces.
-					if (is_lake_border(key))
-						continue;
+	// 				// Filter out borders and adjacencies with lakes
+	// 				// movement to/from lakes is impossible and borders should never be draw on lake provinces.
+	// 				if (is_lake_border(key))
+	// 					continue;
 
-					if (!borders.has(key))
-						borders[key] = PackedVector4Array();
-					borders[key].append(Vector4(x + 1, y, x + 1, y + 1));
-				}
-			}
+	// 				if (!borders.has(key))
+	// 					borders[key] = PackedVector4Array();
+	// 				borders[key].append(Vector4(x + 1, y, x + 1, y + 1));
+	// 			}
+	// 		}
 
-			// Compare bottom neighbor if exists
-			if (y + 1 < province_image_height) {
-				const Color bottom_color = province_image->get_pixel(x, y + 1);
-				if (current_color != bottom_color) {
-					const ProvinceEntity to = provinces_map[current_color];
-					const ProvinceEntity from = provinces_map[bottom_color];
-					Border key;
-					if (to > from) // sort by largest to prevent duplicates
-						key = Border(to, from);
-					else
-						key = Border(from, to);
+	// 		// Compare bottom neighbor if exists
+	// 		if (y + 1 < province_image_height) {
+	// 			const Color bottom_color = province_image->get_pixel(x, y + 1);
+	// 			if (current_color != bottom_color) {
+	// 				const ProvinceEntity to = provinces_map[current_color];
+	// 				const ProvinceEntity from = provinces_map[bottom_color];
+	// 				Border key;
+	// 				if (to > from) // sort by largest to prevent duplicates
+	// 					key = Border(to, from);
+	// 				else
+	// 					key = Border(from, to);
 
-					// Filter out borders and adjacencies with lakes
-					// movement to/from lakes is impossible and borders should never be draw on lake provinces.
-					if (is_lake_border(key))
-						continue;
+	// 				// Filter out borders and adjacencies with lakes
+	// 				// movement to/from lakes is impossible and borders should never be draw on lake provinces.
+	// 				if (is_lake_border(key))
+	// 					continue;
 
-					if (!borders.has(key))
-						borders[key] = PackedVector4Array();
-					borders[key].append(Vector4(x, y + 1, x + 1, y + 1));
-				}
-			}
-		}	
-	}
+	// 				if (!borders.has(key))
+	// 					borders[key] = PackedVector4Array();
+	// 				borders[key].append(Vector4(x, y + 1, x + 1, y + 1));
+	// 			}
+	// 		}
+	// 	}	
+	// }
 
-	// Fill in Provinces data from pixel data
-	Province *provinces = Province::self;
-	for (const KeyValue<Color, PackedVector2Array> &kv : pixel_dict) {
-		const ProvinceEntity province_id = provinces_map[kv.key];
-		const Vector2 centroid = calculate_centroid(kv.value);
-		provinces->set_centroid(province_id, centroid);
-		if (provinces->get_type(province_id) != ProvinceType::Land)
-			provinces->set_orientation(province_id, 0.0);
-		else
-			provinces->set_orientation(province_id, calculate_orientation(Geometry2D::convex_hull(kv.value), centroid));
-	}
+	// // Fill in Provinces data from pixel data
+	// Province *provinces = Province::self;
+	// for (const KeyValue<Color, PackedVector2Array> &kv : pixel_dict) {
+	// 	const ProvinceEntity province_id = provinces_map[kv.key];
+	// 	const Vector2 centroid = calculate_centroid(kv.value);
+	// 	provinces->set_centroid(province_id, centroid);
+	// 	if (provinces->get_type(province_id) != ProvinceType::Land)
+	// 		provinces->set_orientation(province_id, 0.0);
+	// 	else
+	// 		provinces->set_orientation(province_id, calculate_orientation(Geometry2D::convex_hull(kv.value), centroid));
+	// }
 
-	// Setup map labels
-	create_map_labels(p_map, province_image_width, province_image_height);
+	// // Setup map labels
+	// create_map_labels(p_map, province_image_width, province_image_height);
 
-	// Parse border crossings
-	Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
+	// // Parse border crossings
+	// Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
 
-	ProvinceAdjacency *province_adjacency = ProvinceAdjacency::self;
-	province_adjacency->init(borders.size() + crossings.size());
-	ProvinceBorder::self->init(borders.size());
-	ProvinceCrossing::self->crossing_locator.resize(crossings.size());
+	// ProvinceAdjacency *province_adjacency = ProvinceAdjacency::self;
+	// province_adjacency->init(borders.size() + crossings.size());
+	// ProvinceBorder::self->init(borders.size());
+	// ProvinceCrossing::self->crossing_locator.resize(crossings.size());
 
-	// Fill in crossing adjacencies
-	ProvinceAdjacencyEntity province_adjacency_id = 0;
-	for (const Vector<Variant> &crossing: crossings) {
-		province_adjacency->set_from(province_adjacency_id, crossing[0]);
-		province_adjacency->set_to(province_adjacency_id, crossing[1]);
-		province_adjacency->set_type(province_adjacency_id, ProvinceAdjacencyType::Crossing);
+	// // Fill in crossing adjacencies
+	// ProvinceAdjacencyEntity province_adjacency_id = 0;
+	// for (const Vector<Variant> &crossing: crossings) {
+	// 	province_adjacency->set_from(province_adjacency_id, crossing[0]);
+	// 	province_adjacency->set_to(province_adjacency_id, crossing[1]);
+	// 	province_adjacency->set_type(province_adjacency_id, ProvinceAdjacencyType::Crossing);
 
-		ProvinceCrossing::self->crossing_locator.push_back(Vector4(
-			crossing[2], crossing[3], crossing[4], crossing[5]
-		));
+	// 	ProvinceCrossing::self->crossing_locator.push_back(Vector4(
+	// 		crossing[2], crossing[3], crossing[4], crossing[5]
+	// 	));
 
-		province_adjacency_id++;
-	}
+	// 	province_adjacency_id++;
+	// }
 
-	// // Create border materials
-	Vector<Ref<ShaderMaterial>> border_materials = create_border_materials();
+	// // // Create border materials
+	// Vector<Ref<ShaderMaterial>> border_materials = create_border_materials();
 
-	// Create border meshes
-	for (ProvinceBorderEntity province_border_id = 0; const KeyValue<Border, PackedVector4Array> &kv: borders) {
-		Ref<Mesh> border_mesh = create_border_mesh(kv.value, 0.75, 0.75);
-		//MeshInstance3D *border_mesh_instance = memnew(MeshInstance3D);
+	// // Create border meshes
+	// for (ProvinceBorderEntity province_border_id = 0; const KeyValue<Border, PackedVector4Array> &kv: borders) {
+	// 	Ref<Mesh> border_mesh = create_border_mesh(kv.value, 0.75, 0.75);
+	// 	//MeshInstance3D *border_mesh_instance = memnew(MeshInstance3D);
 
-		ProvinceBorderType border_type = fill_province_border_data(province_border_id, kv.key);
-		ProvinceBorder::self->set_rid(province_border_id, border_mesh->get_rid());
-		fill_province_adjacency_data(province_adjacency_id, kv.key);
+	// 	ProvinceBorderType border_type = fill_province_border_data(province_border_id, kv.key);
+	// 	ProvinceBorder::self->set_rid(province_border_id, border_mesh->get_rid());
+	// 	fill_province_adjacency_data(province_adjacency_id, kv.key);
 
-		province_border_id++;
-		province_adjacency_id++;
+	// 	province_border_id++;
+	// 	province_adjacency_id++;
 
-		// border_mesh_instance->set_rotation_degrees(Vector3(90, 0, 0));
-		// border_mesh_instance->set_position(Vector3(-province_image_width / 2.0, border_map_layer, -province_image_height / 2.0));
-		// border_mesh_instance->set_mesh(border_mesh);
-		// border_mesh->surface_set_material(0, border_materials[static_cast<int>(border_type)]);
-		// p_map->call_deferred("add_child", border_mesh_instance);
-	}
+	// 	border_mesh_instance->set_rotation_degrees(Vector3(90, 0, 0));
+	// 	border_mesh_instance->set_position(Vector3(-province_image_width / 2.0, border_map_layer, -province_image_height / 2.0));
+	// 	border_mesh_instance->set_mesh(border_mesh);
+	// 	border_mesh->surface_set_material(0, border_materials[static_cast<int>(border_type)]);
+	// 	p_map->call_deferred("add_child", border_mesh_instance);
+	// }
 }
 
 Ref<ImageTexture> Map::get_lookup_texture() {
@@ -488,19 +505,19 @@ ProvinceColorMap Map::get_color_to_id_map() {
 }
 
 Ref<ImageTexture> Map::get_country_map_mode() {
-	Ref<Image> country_map_map_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
+	// Ref<Image> country_map_map_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
 
-	for (ProvinceEntity i = 0; i < color_to_id_map.size(); ++i) {
-		Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
-		int owner = Province::self->get_owner(i);
-		Color country_color;
-		if (owner == INT_MAX)
-			country_color = discard_color;
-		else
-			country_color = Country::self->color[owner];
-		country_map_map_image->set_pixel(uv.x, uv.y, country_color);
+	// for (ProvinceEntity i = 0; i < color_to_id_map.size(); ++i) {
+	// 	Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
+	// 	int owner = Province::self->get_owner(i);
+	// 	Color country_color;
+	// 	if (owner == INT_MAX)
+	// 		country_color = discard_color;
+	// 	else
+	// 		country_color = Country::self->color[owner];
+	// 	country_map_map_image->set_pixel(uv.x, uv.y, country_color);
 
-	}
+	// }
 	
-	return ImageTexture::create_from_image(country_map_map_image);
+	// return ImageTexture::create_from_image(country_map_map_image);
 }

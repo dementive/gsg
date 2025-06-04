@@ -2,6 +2,7 @@
 #include "core/string/print_string.h"
 
 struct Name : String {};
+using namespace CG;
 
 static void update(Registry &registry) {
     auto view = registry.view<const Name>();
@@ -10,18 +11,18 @@ static void update(Registry &registry) {
     	print_line(vformat("Entity: %d name: %s", static_cast<int>(entity), name));
     }
 
-    auto provinces_view = registry.view<EntityTag::Province>();
-    for(const EntityType::Province entity: provinces_view) {
+    auto provinces_view = registry.view<ProvinceTag>();
+    for(const ProvinceEntity entity: provinces_view) {
     	print_line(vformat("Territory Entity: %d name: %s", static_cast<int>(entity), registry.get<Name>(entity)));
     }
 
-    auto provinces_name_view = registry.view<EntityTag::Province, Name>();
+    auto provinces_name_view = registry.view<ProvinceTag, Name>();
     for(auto [entity, name]: provinces_name_view.each()) {
     	print_line(vformat("Entity: %d name: %s", static_cast<int>(entity), name));
     }
 }
 
-void entt_example() {
+inline void entt_example() {
 	// Using different storage type for components
 	entt::registry reg;
 
@@ -48,23 +49,20 @@ void entt_example() {
 
 	// create provinces
 	for(int i = 0; i < 10; ++i) {
-		const EntityType::Province entity = registry->create_entity<EntityTag::Province>();
+		const ProvinceEntity entity = registry->create_entity<ProvinceTag>(i);
 		registry->emplace<Name>(entity, "Ohio");
 	}
 
 	// create nations
 	for(int i = 0; i < 10; ++i) {
-		const EntityType::Country entity = registry->create_entity<EntityTag::Country>();
+		const CountryEntity entity = registry->create_entity<CountryTag>(i);
 		registry->emplace<Name>(entity, "Rome");
 	}
 
-	const EntityType::Country entity = registry->create_entity<EntityTag::Country>();
-	registry->emplace<Name>(entity, "Dude");
-
-	auto provinces_name_view = registry->view<EntityTag::Province, Name>();
+	auto provinces_name_view = registry->view<ProvinceTag, Name>();
 
 	// Check if all province names are "Rome"
-	if (std::ranges::all_of(provinces_name_view, [&](EntityType::Province p_entity) {
+	if (std::ranges::all_of(provinces_name_view, [&](ProvinceEntity p_entity) {
 		return provinces_name_view.get<Name>(p_entity) == "Ohio";
 	})) {
 		print_line("All Ohio\n");
@@ -74,7 +72,7 @@ void entt_example() {
 
 	// Find the first province with the name "Ohio"
 	String search_string = "Ohio";
-	auto it_found = std::ranges::find_if(provinces_name_view, [&](EntityType::Province p_entity) {
+	auto it_found = std::ranges::find_if(provinces_name_view, [&](ProvinceEntity p_entity) {
 		return provinces_name_view.get<Name>(p_entity) == search_string;
 	});
 
@@ -85,18 +83,17 @@ void entt_example() {
 	}
 
 	// Check if any province is named "California"
-	bool any_california = std::ranges::any_of(provinces_name_view, [&](EntityType::Province p_entity) {
+	bool any_california = std::ranges::any_of(provinces_name_view, [&](ProvinceEntity p_entity) {
 		return provinces_name_view.get<Name>(p_entity) == "California";
 	});
 
 	// Count how many provinces are named "Ohio"
-	auto count_ohio = std::ranges::count_if(provinces_name_view, [&](EntityType::Province p_entity) {
+	auto count_ohio = std::ranges::count_if(provinces_name_view, [&](ProvinceEntity p_entity) {
 		return provinces_name_view.get<Name>(p_entity) == "Ohio";
 	});
 
 	print_line("Number of provinces named Ohio: ", count_ohio, "\n");
 	print_line("Cali? : ", any_california, "\n");
-
 
 	for(auto [entity, name]: provinces_name_view.each()) {
 		print_line(vformat("Entity: %d name: %s", static_cast<int>(entity), name));

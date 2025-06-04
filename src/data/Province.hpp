@@ -1,7 +1,6 @@
 #pragma once
 
 #include "templates/Vec.hpp"
-#include "defs/soa.hpp"
 
 namespace CG {
 
@@ -58,62 +57,62 @@ inline bool is_navigable_water_province(ProvinceType p_type) {
 
 // Crossing over water between land provinces.
 // Every Crossing is also an Adjacency and they are loaded before other adjacencies, so can get the crossing locator from the adjacency id.
-struct ProvinceCrossing {
-	SINGLETON(ProvinceCrossing)
-	Vec<Vector4> crossing_locator; // xy = start coord zw = end coord, read from crossings.txt
-};
+// struct ProvinceCrossing {
+// 	SINGLETON(ProvinceCrossing)
+// 	Vec<Vector4> crossing_locator; // xy = start coord zw = end coord, read from crossings.txt
+// };
 
-struct ProvinceAdjacency {
-	SINGLETON(ProvinceAdjacency)
-	FixedSizeSOA(
-		ProvinceAdjacency, 3,
-		ProvinceAdjacencyType, type,
-		ProvinceEntity, to,
-		ProvinceEntity, from
-	)
-};
+// struct ProvinceAdjacency {
+// 	SINGLETON(ProvinceAdjacency)
+// 	FixedSizeSOA(
+// 		ProvinceAdjacency, 3,
+// 		ProvinceAdjacencyType, type,
+// 		ProvinceEntity, to,
+// 		ProvinceEntity, from
+// 	)
+// };
 
-struct ProvinceBorder {
-	SINGLETON(ProvinceBorder)
-	FixedSizeSOA(
-		ProvinceBorder, 3,
-		ProvinceBorderType, type,
-		ProvinceEntity, to,
-		ProvinceEntity, from,
-		RID, rid
-	)
-};
+// struct ProvinceBorder {
+// 	SINGLETON(ProvinceBorder)
+// 	FixedSizeSOA(
+// 		ProvinceBorder, 3,
+// 		ProvinceBorderType, type,
+// 		ProvinceEntity, to,
+// 		ProvinceEntity, from,
+// 		RID, rid
+// 	)
+// };
 
-struct Province {
-	SINGLETON(Province)
-	FixedSizeSOA(
-		Province, 8,
-		ProvinceType, type,
-		String, name, // loc key
-		Vector2, centroid, // mean point in province
-		float, orientation, // angle in radians
-		CountryEntity, owner, // id of owning country
-		AreaEntity, area, // area id
-		TightVec<ProvinceAdjacencyEntity>, adjacencies, // ProvinceAdjacency ids
-		TightVec<ProvinceBorderEntity>, borders // ProvinceBorder ids
-	)
+// struct Province {
+// 	SINGLETON(Province)
+// 	FixedSizeSOA(
+// 		Province, 8,
+// 		ProvinceType, type,
+// 		String, name, // loc key
+// 		Vector2, centroid, // mean point in province
+// 		float, orientation, // angle in radians
+// 		CountryEntity, owner, // id of owning country
+// 		AreaEntity, area, // area id
+// 		TightVec<ProvinceAdjacencyEntity>, adjacencies, // ProvinceAdjacency ids
+// 		TightVec<ProvinceBorderEntity>, borders // ProvinceBorder ids
+// 	)
 
-	void initialize(Entity p_size) {
-		init(p_size);
+// 	void initialize(Entity p_size) {
+// 		init(p_size);
 
-		CountryEntity *ptr = owner.ptr();
-		for (Entity i = 0; i < p_size; ++i) {
-			ptr[i] = ENTITY_MAX;
-		}
-	}
+// 		CountryEntity *ptr = owner.ptr();
+// 		for (Entity i = 0; i < p_size; ++i) {
+// 			ptr[i] = ENTITY_MAX;
+// 		}
+// 	}
 
-	ProvinceEntity size() const {
-		return type.size();
-	}
-};
+// 	ProvinceEntity size() const {
+// 		return type.size();
+// 	}
+// };
 
-inline bool province_has_owner(ProvinceEntity p_entity) {
-	return Province::self->get_owner(p_entity) == ENTITY_MAX ? true : false;
-}
+// inline bool province_has_owner(ProvinceEntity p_entity) {
+// 	return Province::self->get_owner(p_entity) == ENTITY_MAX ? true : false;
+// }
 
 }
