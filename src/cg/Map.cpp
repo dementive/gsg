@@ -1,4 +1,6 @@
+#include "Entity.hpp"
 #include "core/math/geometry_2d.h"
+#include "entt/core/fwd.hpp"
 #include "scene/3d/label_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/resources/mesh.h"
@@ -11,7 +13,6 @@
 #include "data/Area.hpp"
 #include "data/Country.hpp"
 #include "data/Province.hpp"
-#include "data/Region.hpp"
 #include "Map.hpp"
 #include "csv.hpp"
 
@@ -87,7 +88,6 @@ ProvinceColorMap Map::load_map_config() {
 	Area *area = Area::self;
 	Province *province = Province::self;
 	Country *country = Country::self;
-	Region *region = Region::self;
 
 	province->initialize(province_sections.size());
 	country->init(country_sections.size());
@@ -111,22 +111,29 @@ ProvinceColorMap Map::load_map_config() {
 		}
 	}
 
-	// for (const String &section : region_sections) {
-	// 	const RegionEntity region_id = section.to_int();
-	// 	const String name = region_config->get_value(section, "name");
-	// 	const Color color = region_config->get_value(section, "color", get_random_area_color());
-	// 	const PackedInt32Array region_areas = region_config->get_value(section, "areas");
-	// 	const ProvinceEntity capital = region_config->get_value(section, "capital");
+	for (const String &section : region_sections) {
+		const RegionEntity region_id = section.to_int();
+		const String name = region_config->get_value(section, "name");
+		const Color color = region_config->get_value(section, "color", get_random_area_color());
+		const PackedInt32Array region_areas = region_config->get_value(section, "areas");
+		const ProvinceEntity capital = region_config->get_value(section, "capital");
 
-	// 	region->set_capital(region_id, capital);
-	// 	region->set_name(region_id, name);
-	// 	region->set_color(region_id, color);
-	// 	region->set_areas(region_id, region_areas);
+		//create_entity
+		Registry &registry = *Registry::self;
+		entt::entity entity = registry.create_entity<EntityTag::Region>();
 
-	// 	for (const AreaEntity area_id : region_areas) {
-	// 		area->set_region(area_id, region_id);
-	// 	}
-	// }
+		registry.emplace<Color>(entity, color);
+		//registry.emplace<ProvinceComponent>(entity, entity);
+
+		// region->set_capital(region_id, capital);
+		// region->set_name(region_id, name);
+		// region->set_color(region_id, color);
+		// region->set_areas(region_id, region_areas);
+
+		for (const AreaEntity area_id : region_areas) {
+			area->set_region(area_id, region_id);
+		}
+	}
 
 	for (const String &section : country_sections) {
 		const CountryEntity country_id = section.to_int();
