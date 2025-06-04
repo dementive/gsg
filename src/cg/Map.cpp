@@ -1,6 +1,5 @@
-#include "Entity.hpp"
+#include "ecs/Registry.hpp"
 #include "core/math/geometry_2d.h"
-#include "entt/core/fwd.hpp"
 #include "scene/3d/label_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/resources/mesh.h"

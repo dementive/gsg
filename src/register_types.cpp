@@ -11,7 +11,7 @@
 #include "data/Country.hpp"
 #include "data/Locator.hpp"
 
-#include "defs/Entity.hpp"
+#include "ecs/Registry.hpp"
 
 using namespace CG;
 

@@ -1,4 +1,4 @@
-#include "Entity.hpp"
+#include "Registry.hpp"
 #include "core/string/print_string.h"
 
 struct Name : String {};
