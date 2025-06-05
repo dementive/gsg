@@ -15,8 +15,8 @@ namespace CG {
 class Map3D;
 enum class ProvinceBorderType : uint8_t;
 
-using ProvinceMapLookupIndex = int; // Index into the province lookup texture.
-using ProvinceColorMap = HashMap<Color, ProvinceMapLookupIndex>;
+using ProvinceIndex = int; // Index into the province lookup texture.
+using ProvinceColorMap = HashMap<Color, ProvinceIndex>;
 
 class Map {
 SINGLETON(Map)
@@ -30,7 +30,7 @@ private:
 	static Vector2 calculate_centroid(const Polygon &p_polygon);
 	static float calculate_orientation(const Polygon &p_polygon, const Vector2 &p_centroid);
 	static Color get_random_area_color();
-	static Color get_lookup_color(ProvinceMapLookupIndex p_province_id);
+	static Color get_lookup_color(ProvinceIndex p_province_id);
 	ProvinceColorMap load_map_config();
 
 	static bool is_lake_border(const Border &p_border);

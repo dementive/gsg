@@ -1,5 +1,6 @@
 #include "ecs/Registry.hpp"
 #include "core/math/geometry_2d.h"
+#include "entt/core/type_traits.hpp"
 #include "scene/3d/label_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/resources/mesh.h"
@@ -51,7 +52,7 @@ Color Map::get_random_area_color() {
 	};
 }
 
-Color Map::get_lookup_color(ProvinceMapLookupIndex p_province_id) {
+Color Map::get_lookup_color(ProvinceIndex p_province_id) {
 	return {
 		float(int(p_province_id) % COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1),
 		floor(float(p_province_id) / COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1),
@@ -89,17 +90,33 @@ ProvinceColorMap Map::load_map_config() {
 		map_color = Color::from_rgba8(map_color.r, map_color.g, map_color.b, map_color.a);
 
 		const ProvinceType province_type = province_type_string_to_enum(province_config->get_value(section, "type", "land"));
-		const ProvinceMapLookupIndex province_id = section.to_int();
+		const ProvinceIndex province_id = section.to_int();
 
-		const auto province_entity = registry.create_entity<ProvinceTag>(province_id);
+		const ProvinceEntity province_entity = registry.create_entity<ProvinceTag>(province_id);
 		registry.emplace<ProvinceType>(province_entity, province_type);
-		registry.emplace<String>(province_entity, String("PROV") + uitos(province_id));
-		//province->set_type(province_id, province_type);
-		//province->set_name(province_id, String("PROV") + uitos(province_id));
+		registry.emplace<Name>(province_entity, String("PROV") + uitos(province_id));
 		provinces_map[map_color] = province_id;
 
 		const Color lookup_color = get_lookup_color(province_id);
 		color_to_id_map[lookup_color] = province_id;
+	}
+
+	for (const String &section : area_sections) {
+		const Color color = area_config->get_value(section, "color", get_random_area_color());
+		PackedInt32Array area_provinces = area_config->get_value(section, "provinces");
+		const int capital = area_config->get_value(section, "capital");
+		const ProvinceEntity capital_entity = registry.get_entity<ProvinceTag>(capital);
+
+		const AreaEntity area_entity = registry.create_entity<AreaTag>(section);
+		registry.emplace<Color>(area_entity, color);
+		registry.emplace<Capital>(area_entity, capital_entity);
+		registry.emplace<Name>(area_entity, section);
+		registry.emplace<AreaProvinces>(area_entity, area_provinces);
+
+		for (const int province_id : area_provinces) {
+			const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(province_id);
+			registry.emplace<AreaComponent>(province_entity, area_entity); // province stores the area it is in.
+		}
 	}
 
 	// Area *area = Area::self;
@@ -111,22 +128,6 @@ ProvinceColorMap Map::load_map_config() {
 	// area->init(area_sections.size());
 	// //region->init(region_sections.size());
 
-	// for (const String &section : area_sections) {
-	// 	const AreaEntity area_id = section.to_int();
-	// 	const String name = area_config->get_value(section, "name");
-	// 	const Color color = area_config->get_value(section, "color", get_random_area_color());
-	// 	const PackedInt32Array area_provinces = area_config->get_value(section, "provinces");
-	// 	const ProvinceEntity capital = area_config->get_value(section, "capital");
-
-	// 	area->set_capital(area_id, capital);
-	// 	area->set_name(area_id, name);
-	// 	area->set_color(area_id, color);
-	// 	area->set_provinces(area_id, area_provinces);
-
-	// 	for (const ProvinceEntity province_id : area_provinces) {
-	// 		province->set_area(province_id, area_id);
-	// 	}
-	// }
 
 	// for (const String &section : region_sections) {
 	// 	const RegionEntity region_id = section.to_int();

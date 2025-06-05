@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Entity.hpp"
+#include "Components.hpp"
 
 #include <entt/entity/registry.hpp> // Only include entt ECS, don't care about other parts.
-#include "Vec.hpp"
 #include "core/templates/a_hash_map.h"
 #include "singleton.hpp"
 

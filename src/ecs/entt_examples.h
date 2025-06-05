@@ -1,7 +1,6 @@
 #include "Registry.hpp"
 #include "core/string/print_string.h"
 
-struct Name : String {};
 using namespace CG;
 
 static void update(Registry &registry) {
