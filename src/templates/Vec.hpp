@@ -69,23 +69,6 @@ private:
 public:
 	NEW_VEC_CONSTRUCTORS
 
-	_FORCE_INLINE_ Vec(const Vector<int> &p_from) requires(std::is_same_v<T, entt::entity>) {
-		resize(p_from.size());
-		const int *from_ptr = p_from.ptr();
-		for (U i = 0; i < p_from.size(); i++) {
-			data[i] = static_cast<entt::entity>(from_ptr[i]);
-		}
-	}
-
-	Vec &operator=(const Vector<int> &p_from) requires(std::is_same_v<T, entt::entity>) {
-		resize(p_from.size());
-		const int *from_ptr = p_from.ptr();
-		for (U i = 0; i < p_from.size(); i++) {
-			data[i] = static_cast<entt::entity>(from_ptr[i]);
-		}
-		return *this;
-	}
-	
 	T *ptr() {
 		return data;
 	}

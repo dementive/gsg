@@ -103,7 +103,9 @@ ProvinceColorMap Map::load_map_config() {
 
 	for (const String &section : area_sections) {
 		const Color color = area_config->get_value(section, "color", get_random_area_color());
-		PackedInt32Array area_provinces = area_config->get_value(section, "provinces");
+		PackedInt32Array area_provinces_config = area_config->get_value(section, "provinces");
+		TightVec<Entity> area_provinces = registry.convert_packed_array<ProvinceTag, TightVec<Entity>>(area_provinces_config);
+
 		const int capital = area_config->get_value(section, "capital");
 		const ProvinceEntity capital_entity = registry.get_entity<ProvinceTag>(capital);
 
@@ -113,78 +115,50 @@ ProvinceColorMap Map::load_map_config() {
 		registry.emplace<Name>(area_entity, section);
 		registry.emplace<AreaProvinces>(area_entity, area_provinces);
 
-		for (const int province_id : area_provinces) {
-			const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(province_id);
+		for (const ProvinceEntity province_entity : area_provinces) {
 			registry.emplace<AreaComponent>(province_entity, area_entity); // province stores the area it is in.
 		}
 	}
 
-	// Area *area = Area::self;
-	// Province *province = Province::self;
-	// Country *country = Country::self;
+	for (const String &section : region_sections) {
+		const Color color = region_config->get_value(section, "color", get_random_area_color());
+		const PackedStringArray region_areas_config = region_config->get_value(section, "areas");
+		TightVec<Entity> region_areas = registry.convert_packed_array<AreaTag, TightVec<Entity>>(region_areas_config);
 
-	// province->initialize(province_sections.size());
-	// country->init(country_sections.size());
-	// area->init(area_sections.size());
-	// //region->init(region_sections.size());
+		const int capital = region_config->get_value(section, "capital");
+		const ProvinceEntity capital_entity = registry.get_entity<ProvinceTag>(capital);
 
+		const RegionEntity region_entity = registry.create_entity<RegionTag>(section);
+		registry.emplace<Color>(region_entity, color);
+		registry.emplace<Name>(region_entity, section);
+		registry.emplace<Capital>(region_entity, capital_entity);
+		registry.emplace<RegionAreas>(region_entity, region_areas);
 
-	// for (const String &section : region_sections) {
-	// 	const RegionEntity region_id = section.to_int();
-	// 	const String name = region_config->get_value(section, "name");
-	// 	const Color color = region_config->get_value(section, "color", get_random_area_color());
-	// 	const PackedInt32Array region_areas = region_config->get_value(section, "areas");
-	// 	const ProvinceEntity capital = region_config->get_value(section, "capital");
+		for (const AreaEntity &area_entity : region_areas) {
+			registry.emplace<RegionComponent>(area_entity, region_entity);
+		}
+	}
 
-	// 	//create_entity
-	// 	Registry &registry = *Registry::self;
-	// 	entt::entity entity = registry.create_entity<EntityTag::Region>();
+	for (const String &section : country_sections) {
+		const String name = country_config->get_value(section, "name");
+		const Color color = country_config->get_value(section, "color", get_random_area_color());
+		const PackedInt32Array owned_provinces_config = country_config->get_value(section, "provinces");
+		Vec<Entity> owned_provinces = registry.convert_packed_array<ProvinceTag>(owned_provinces_config);
 
-	// 	registry.emplace<Color>(entity, color);
+		const int capital = country_config->get_value(section, "capital");
+		const ProvinceEntity capital_entity = registry.get_entity<ProvinceTag>(capital);
 
-	// 	// region->set_capital(region_id, capital);
-	// 	// region->set_name(region_id, name);
-	// 	// region->set_color(region_id, color);
-	// 	// region->set_areas(region_id, region_areas);
+		const CountryEntity country_entity = registry.create_entity<CountryTag>(section);
+		registry.emplace<Color>(country_entity, Color::from_rgba8(color.r, color.g, color.b, color.a));
+		registry.emplace<Name>(country_entity, section);
+		registry.emplace<Capital>(country_entity, capital_entity);
+		registry.emplace<OwnedProvinces>(country_entity, owned_provinces);
 
-	// 	for (const AreaEntity area_id : region_areas) {
-	// 		area->set_region(area_id, region_id);
-	// 	}
-	// }
-
-	// for (const String &section : country_sections) {
-	// 	const CountryEntity country_id = section.to_int();
-	// 	const String name = country_config->get_value(section, "name");
-	// 	const Color color = country_config->get_value(section, "color", get_random_area_color());
-	// 	const PackedInt32Array country_provinces = country_config->get_value(section, "provinces");
-	// 	const ProvinceEntity capital = country_config->get_value(section, "capital");
-
-	// 	country->set_capital(country_id, capital);
-	// 	country->set_name(country_id, name);
-	// 	country->set_color(country_id, Color::from_rgba8(color.r, color.g, color.b, color.a));
-	// 	country->set_owned_provinces(country_id, country_provinces);
-
-	// 	for (const ProvinceEntity province_id : country_provinces) {
-	// 		const CountryEntity owner = province->get_owner(province_id);
-	// 		ERR_CONTINUE_MSG(owner != ENTITY_MAX, vformat("Province %s has multiple owners. Provinces can only have one owner, fix countries.cfg.", province_id));
-	// 		province->set_owner(province_id, country_id);
-	// 	}
-	// }
-
-	// for (const String &section : province_sections) {
-	// 	Color map_color = province_config->get_value(section, "color");
-	// 	map_color = Color::from_rgba8(map_color.r, map_color.g, map_color.b, map_color.a);
-
-	// 	const ProvinceType province_type = province_type_string_to_enum(province_config->get_value(section, "type", "land"));
-	// 	const ProvinceEntity province_id = section.to_int();
-
-	// 	province->set_type(province_id, province_type);
-	// 	province->set_name(province_id, String("PROV") + uitos(province_id));
-	// 	provinces_map[map_color] = province_id;
-
-	// 	const Color lookup_color = get_lookup_color(province_id);
-	// 	color_to_id_map[lookup_color] = province_id;
-	// }
+		for (const ProvinceEntity province_entity : owned_provinces) {
+			ERR_CONTINUE_MSG(registry.all_of<Owner>(province_entity), vformat("Province %d assigned multiple owners. Provinces can only have one owner, fix countries.cfg.", static_cast<int>(province_entity)));
+			registry.emplace<Owner>(province_entity, country_entity);
+		}
+	}
 
 	return provinces_map;
 }
