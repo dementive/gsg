@@ -89,14 +89,54 @@ ConstructorInitializerAllOnOneLineOrOnePerLine: true
 # IfMacros:
 #   - KJ_IF_MAYBE
 IncludeBlocks:   Regroup
+
 IncludeCategories:
-  - Regex:           '^"(godot_cpp)/'
+  - Regex:           ^<.*
+    Priority:        0
+    SortPriority:    0
+  - Regex:           '^"(core)/'
     Priority:        1
     SortPriority:    1
     CaseSensitive:   true
-  - Regex:           '".*"'
-    Priority:        2
+  - Regex:           '^"(main)/'
+    Priority:        1
     SortPriority:    2
+    CaseSensitive:   true
+  - Regex:           '^"(servers)/'
+    Priority:        1
+    SortPriority:    3
+    CaseSensitive:   true
+  - Regex:           '^"(scene)/'
+    Priority:        2
+    SortPriority:    4
+    CaseSensitive:   true
+  - Regex:           '^"(editor)/'
+    Priority:        2
+    SortPriority:    5
+    CaseSensitive:   true
+  - Regex:           '^"(modules)/'
+    Priority:        3
+    SortPriority:    6
+    CaseSensitive:   true
+  - Regex:           '^"(cg)/'
+    Priority:        4
+    SortPriority:    7
+    CaseSensitive:   true
+  - Regex:           '^"(entt)/'
+    Priority:        5
+    SortPriority:    8
+    CaseSensitive:   true
+  - Regex:           '^"(ecs)/'
+    Priority:        5
+    SortPriority:    9
+    CaseSensitive:   true
+  - Regex:           '^"(templates)/'
+    Priority:        6
+    SortPriority:    10
+    CaseSensitive:   true
+  - Regex:           '".*"'
+    Priority:        7
+    SortPriority:    11
 
 # IncludeIsMainRegex: '(Test)?$'
 # IncludeIsMainSourceRegex: ''

@@ -1,48 +1,68 @@
 #pragma once
 
-#include "Vec.hpp"
 #include "core/string/ustring.h"
+
 #include "Entity.hpp"
+#include "Vec.hpp"
 
 namespace CG {
 
-struct Name : String {};
+#define MAKE_SAME(m_class, m_type, m_name)                                                                                                                                                   \
+	m_type m_name;                                                                                                                                                                           \
+	m_class(const m_type &p_##m_name) : m_name(p_##m_name) {}                                                                                                                                \
+	operator m_type &() { return m_name; }                                                                                                                                                   \
+	operator const m_type &() const { return m_name; }
 
-struct AreaProvinces : TightVec<Entity> {};
-struct RegionAreas : TightVec<Entity> {};
-struct OwnedProvinces : Vec<Entity> {};
+struct Name : String {};
+struct Centroid : Vector2 {};
+struct Orientation {
+	MAKE_SAME(Orientation, float, value)
+};
+
+// Provinces in an area
+struct AreaProvinces : TightVec<ProvinceEntity> {};
+
+// Areas in a region
+struct RegionAreas : TightVec<AreaEntity> {};
+
+// Country owned provinces
+struct OwnedProvinces : Vec<ProvinceEntity> {};
 
 struct Owner {
-	CountryEntity entity;
-
-	Owner(const CountryEntity &p_entity) : entity(p_entity) {}
-	operator CountryEntity &() { return entity; }
-	operator const CountryEntity &() const { return entity; }
+	MAKE_SAME(Owner, CountryEntity, entity)
 };
 
 struct Capital {
-	ProvinceEntity entity;
-
-	Capital(const ProvinceEntity &p_entity) : entity(p_entity) {}
-	operator ProvinceEntity &() { return entity; }
-	operator const ProvinceEntity &() const { return entity; }
+	MAKE_SAME(Capital, ProvinceEntity, entity)
 };
 
 struct AreaComponent {
-	AreaEntity entity;
-
-	AreaComponent(const AreaEntity &p_entity) : entity(p_entity) {}
-	operator AreaEntity &() { return entity; }
-	operator const AreaEntity &() const { return entity; }
+	MAKE_SAME(AreaComponent, AreaEntity, entity)
 };
 
 struct RegionComponent {
-	RegionEntity entity;
-
-	RegionComponent(const RegionEntity &p_entity) : entity(p_entity) {}
-	operator RegionEntity &() { return entity; }
-	operator const RegionEntity &() const { return entity; }
+	MAKE_SAME(RegionComponent, RegionEntity, entity)
 };
 
+// Province Adjacency/Border components
+struct AdjacencyTo {
+	MAKE_SAME(AdjacencyTo, ProvinceEntity, entity)
+};
 
-}
+struct AdjacencyFrom {
+	MAKE_SAME(AdjacencyFrom, ProvinceEntity, entity)
+};
+
+struct CrossingLocator {
+	MAKE_SAME(CrossingLocator, Vector4, locator)
+};
+
+struct ProvinceBorderMeshRID : RID {};
+
+// Each province's adjacencies and borders
+struct ProvinceAdjacencies : TightVec<ProvinceAdjacencyEntity> {};
+struct ProvinceBorders : TightVec<ProvinceBorderEntity> {};
+
+#undef MAKE_SAME
+
+} // namespace CG

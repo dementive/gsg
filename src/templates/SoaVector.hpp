@@ -29,11 +29,10 @@ public:
 	// Do not use this directly, it has to be public. Use push_X in the SOA struct instead.
 	// Invalidates pointers if additional memory is needed.
 	SoaVectorSizeType push_soa_member(const T &p_elem) {
-		if constexpr (!std::is_trivially_constructible_v<T>) {
+		if constexpr (!std::is_trivially_constructible_v<T>)
 			new (&data[count++]) T(p_elem);
-		} else {
+		else
 			data[count++] = std::move(p_elem);
-		}
 
 		return count;
 	}
@@ -44,17 +43,15 @@ public:
 			data = reinterpret_cast<T *>(memcpy(static_cast<std::byte *>(new_data) + p_memory_offset, data, p_new_capacity * sizeof(T)));
 		} else {
 			T *new_column_data = align_ptr(new_data, p_new_capacity, p_memory_offset);
-			for (SoaVectorSizeType i = 0; i < size(); i++) {
+			for (SoaVectorSizeType i = 0; i < size(); i++)
 				new (&new_column_data[i]) T(std::move(data[i]));
-			}
 			data = new_column_data;
 		}
 	}
 
 	void destroy_at(SoaVectorSizeType p_index) {
-		if constexpr (!std::is_trivially_destructible_v<T>) {
+		if constexpr (!std::is_trivially_destructible_v<T>)
 			data[p_index].~T();
-		}
 	}
 
 	void post_erase(SoaVectorSizeType p_index_to_erase, SoaVectorSizeType p_end_index) {
@@ -63,25 +60,22 @@ public:
 		memcpy(destination, source, sizeof(T));
 
 		// Only update count if the index is last value in this vector. Its possible that another SoaVector member has a larger size so the end index might not be this Vectors end index.
-		if (count - 1 == p_end_index) {
+		if (count - 1 == p_end_index)
 			count--;
-		}
 	}
 
 	void init(void *p_data, SoaVectorSizeType p_size, uint64_t p_memory_offset) {
-		if constexpr (std::is_trivially_constructible_v<T>) {
+		if constexpr (std::is_trivially_constructible_v<T>)
 			data = reinterpret_cast<T *>(static_cast<std::byte *>(p_data) + p_memory_offset);
-		} else {
+		else
 			data = align_ptr(p_data, p_size, p_memory_offset);
-		}
 	}
 
 	void init_fixed(void *p_data, SoaVectorSizeType p_size, uint64_t p_memory_offset) {
-		if constexpr (std::is_trivially_constructible_v<T>) {
+		if constexpr (std::is_trivially_constructible_v<T>)
 			data = reinterpret_cast<T *>(static_cast<std::byte *>(p_data) + p_memory_offset);
-		} else {
+		else
 			data = align_ptr(p_data, p_size, p_memory_offset);
-		}
 		count = p_size; // for dynamic Vectors count updates when you push_back, init count for fixed vectors.
 	}
 
@@ -97,20 +91,17 @@ public:
 		}
 
 		if (p_size < count) {
-			if constexpr (!std::is_trivially_destructible_v<T>) {
-				for (SoaVectorSizeType i = p_size; i < count; i++) {
+			if constexpr (!std::is_trivially_destructible_v<T>)
+				for (SoaVectorSizeType i = p_size; i < count; i++)
 					data[i].~T();
-				}
-			}
 		}
 		count = p_size;
 	}
 
 	void reset() {
 		clear();
-		if (data) {
+		if (data)
 			data = nullptr;
-		}
 	}
 
 	[[nodiscard]] bool is_empty() const { return count == 0; }
@@ -121,11 +112,9 @@ public:
 	T &operator[](SoaVectorSizeType p_index) { return data[p_index]; }
 
 	[[nodiscard]] SoaVectorSizeType find(const T &p_val, SoaVectorSizeType p_from = 0) const {
-		for (SoaVectorSizeType i = p_from; i < count; i++) {
-			if (data[i] == p_val) {
+		for (SoaVectorSizeType i = p_from; i < count; i++)
+			if (data[i] == p_val)
 				return i;
-			}
-		}
 		return -1;
 	}
 

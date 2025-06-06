@@ -22,4 +22,4 @@ namespace CG {
 // 	}
 // };
 
-}
+} // namespace CG

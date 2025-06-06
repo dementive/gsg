@@ -10,7 +10,7 @@ class Map3D : public Node3D {
 	GDCLASS(Map3D, Node3D)
 private:
 	MeshInstance3D *map_mesh{};
-	const Vector2i map_dimensions{1024, 1024};
+	const Vector2i map_dimensions{ 1024, 1024 };
 
 protected:
 	static void _bind_methods();
@@ -18,4 +18,4 @@ protected:
 	void unhandled_input(const Ref<InputEvent> &p_event) final;
 };
 
-} // namespace GSG
+} // namespace CG
