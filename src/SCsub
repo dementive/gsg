@@ -41,6 +41,7 @@ if not env_game.msvc:
 else:
 	env_game["CXXFLAGS"].remove("/std:c++17")
 	env_game["CXXFLAGS"].insert(0, "/std:c++23")
+	env_game["CXXFLAGS"].insert(0, "/Zc:preprocessor")
 
 # Enable warnings in debug mode
 if env_game.debug_features:

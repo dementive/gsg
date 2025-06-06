@@ -1,4 +1,3 @@
-export LD_LIBRARY_PATH="../../godot/bin/"
 cd game
 case "$1" in
   editor)

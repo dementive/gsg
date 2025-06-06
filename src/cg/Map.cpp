@@ -84,11 +84,14 @@ ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 	area_config->get_sections(&area_sections);
 
 	for (const String &section : province_sections) {
+		const ProvinceIndex province_id = section.to_int();
+		if (province_id == 0) // Skip first ID to avoid problems with lookup texture.
+			continue;
+
 		Color map_color = province_config->get_value(section, "color");
-		map_color = Color::from_rgba8(map_color.r, map_color.g, map_color.b, map_color.a);
+		map_color = Color::from_rgba8(map_color.r, map_color.g, map_color.b);
 
 		const String &province_type = province_config->get_value(section, "type", "land");
-		const ProvinceIndex province_id = section.to_int();
 
 		const ProvinceEntity province_entity = p_registry.create_entity<ProvinceTag>(province_id);
 		if (province_type == "land")
@@ -321,24 +324,31 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vector<Vector4> &p_segments, float 
 void Map::create_map_labels(const Registry &p_registry, Map3D *p_map, int p_map_width, int p_map_height) {
 	const auto province_view = p_registry.view<ProvinceTag, Centroid, Orientation, Name>();
 
-	for (auto [entity, centroid, orientation, name] : province_view.each()) {
-		// if (!p_registry.all_of<LandProvinceTag>(entity))
-		// 	continue;
+	const auto tag_view = p_registry.view<LandProvinceTag>();
 
-		Label3D *label = memnew(Label3D);
+	// for (auto entity : tag_view) {
+	// 	print_line("Tag entity: ", static_cast<int>(entity));
+	// 	print_line(vformat("Adding label to province: %s, %s", p_registry.get<Name>(entity), p_registry.get<Centroid>(entity)));
+	// }
 
-		print_line(vformat("Adding label to province: %s %s", name, centroid));
-		label->set_position(Vector3(centroid.x - (p_map_width / 2.0), label_map_layer, centroid.y - (p_map_height / 2.0)));
-		label->set_rotation(Vector3(Math::deg_to_rad(-90.0), orientation, 0.0));
-		label->set_scale(Vector3(100.0, 100.0, 100.0));
+	// for (auto [entity, centroid, orientation, name] : province_view.each()) {
+	//  if (!p_registry.all_of<LandProvinceTag>(entity))
+	//  	continue;
 
-		label->set_text(label->tr(name)); // TODO - make spaces new lines?
-		label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
-		label->set_modulate(Color(0, 0, 0));
-		label->set_outline_modulate(Color(1, 1, 1, 0));
+	// print_line(vformat("Adding label to province: %s %s", name, centroid));
 
-		p_map->call_deferred("add_child", label);
-	}
+	// Label3D *label = memnew(Label3D);
+	// label->set_position(Vector3(centroid.x - (p_map_width / 2.0), label_map_layer, centroid.y - (p_map_height / 2.0)));
+	// label->set_rotation(Vector3(Math::deg_to_rad(-90.0), orientation, 0.0));
+	// label->set_scale(Vector3(100.0, 100.0, 100.0));
+
+	// label->set_text(label->tr(name)); // TODO - make spaces new lines?
+	// label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
+	// label->set_modulate(Color(0, 0, 0));
+	// label->set_outline_modulate(Color(1, 1, 1, 0));
+
+	// p_map->call_deferred("add_child", label);
+	//}
 }
 
 void Map::load_map(Map3D *p_map) {
@@ -379,7 +389,6 @@ void Map::load_map(Map3D *p_map) {
 				if (current_color != right_color) {
 					const ProvinceEntity to = registry.get_entity<ProvinceTag>(provinces_map[current_color]);
 					const ProvinceEntity from = registry.get_entity<ProvinceTag>(provinces_map[right_color]);
-					;
 					Border key;
 					if (to > from) // sort by largest to prevent duplicates
 						key = Border(to, from);
@@ -403,7 +412,6 @@ void Map::load_map(Map3D *p_map) {
 				if (current_color != bottom_color) {
 					const ProvinceEntity to = registry.get_entity<ProvinceTag>(provinces_map[current_color]);
 					const ProvinceEntity from = registry.get_entity<ProvinceTag>(provinces_map[bottom_color]);
-					;
 					Border key;
 					if (to > from) // sort by largest to prevent duplicates
 						key = Border(to, from);
@@ -489,7 +497,8 @@ Ref<ImageTexture> Map::get_country_map_mode() {
 	Registry &registry = *Registry::self;
 	Ref<Image> country_map_map_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
 
-	for (uint32_t i = 0; i < color_to_id_map.size(); ++i) {
+	// Iteration starts at 1 because province ID 0 does not exist.
+	for (uint32_t i = 1; i < color_to_id_map.size(); ++i) {
 		Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
 		ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(i);
 
