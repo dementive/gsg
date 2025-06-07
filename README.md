@@ -15,15 +15,21 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 ## TODO
 
+- Map camera
+
 - Map labels for regions, areas, and countries
 
 - More map modes
 
 - Map locators
 
+- Map editor for quick locator placement
+
 - Province adjacency and crossings
 
-- Military unit selection and path finding between provinces.
+- Military unit selection.
+
+- Unit path finding between province unit locators for ships and land units.
 
 - Tooltip that shows up when hovering over a province with info about it.
 
@@ -37,15 +43,23 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 - 3D map objects like trees
 
-- Map editor for quick locator placement
-
 - Roads spline network
+
+- Subdivide map mesh into a bunch of quads so culling will work. Will need to figure out correct number of subdivisions, generate the meshes, and then do some UV adjustments in the Map vertex shader.
+
+- Use RenderingServer to create border meshes instead of using MeshInstance3D. On a real map there will be way too many of these to have each mesh be a Node.
+
+- Make a simpler version of Label3D that doesn't have to be a Node or Object for drawing map labels. On a real map there will be way too many of these to have each label be a Node.
+
+- Figure out how to draw curved text. I sorta got this working with a vertex shader on a TextMesh but it didn't work very well when scaling the text or when it had to change size.
 
 - Improve border mesh generation and shader. UVs are broken right now so the shader is scuffed. Should also be able to specify a different texture for each border type. Border rounding should also be better so there are no sharp corners.
 
 - Unsigned distance field gradient country border rendering
 
 - Transfer province ownership to a different country without everything exploding.
+
+- Camera zoom steps to display different map data layers.
 
 ## Compiling on linux for C++ module development
 
