@@ -9,9 +9,43 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 - Generated province border meshes with different shader materials depending on the type of border.
 
-- Map labels for provinces, regions, areas, and countries
+- Map labels for provinces
 
-- Flatmap texture that allows drawing of oceans, rivers, lakes, trees, or other map objects map.
+- Flatmap texture that allows drawing of oceans, rivers, lakes, trees, or other map objects.
+
+## TODO
+
+- Map labels for regions, areas, and countries
+
+- More map modes
+
+- Map locators
+
+- Province adjacency and crossings
+
+- Military unit selection and path finding between provinces.
+
+- Tooltip that shows up when hovering over a province with info about it.
+
+- Dynamic map objects placed at locator positions (ports, cities, special buildings, etc...)
+
+- Player country selection
+
+- Fog of war system
+
+- Surround map clouds shader
+
+- 3D map objects like trees
+
+- Map editor for quick locator placement
+
+- Roads spline network
+
+- Improve border mesh generation and shader. UVs are broken right now so the shader is scuffed. Should also be able to specify a different texture for each border type. Border rounding should also be better so there are no sharp corners.
+
+- Unsigned distance field gradient country border rendering
+
+- Transfer province ownership to a different country without everything exploding.
 
 ## Compiling on linux for C++ module development
 
@@ -27,3 +61,8 @@ Using the shared library method has some problems though (see bd.sh for more det
 ## Compiling on windows
 
 The build script won't work on windows, you'll have to write a different version of bd.sh or just run `scons profile=../gsg/build/windows_debug.py` in the godot directory. As far as I know building as a shared library isn't possible on windows either so you'll have to always statically link the module.
+
+
+# Images
+
+![Map Screenshot](/assets/map.png)

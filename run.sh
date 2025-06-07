@@ -4,6 +4,8 @@ case "$1" in
 	../../godot/bin/godot.linuxbsd.editor.x86_64.llvm -e ./project.godot $2 ;;
   editor_gcc)
 	../../godot/bin/godot.linuxbsd.editor.x86_64 -e ./project.godot $2 ;;
+  game_gcc)
+	../../godot/bin/godot.linuxbsd.editor.x86_64 scenes/map.tscn $2 ;;
   game)
 	../../godot/bin/godot.linuxbsd.editor.x86_64.llvm scenes/map.tscn $2 ;;
   *)

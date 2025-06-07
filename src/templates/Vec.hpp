@@ -9,8 +9,6 @@
 #include "core/templates/vector.h"
 #include "core/variant/variant.h"
 
-#include "entt/entity/fwd.hpp"
-
 namespace CG {
 
 #define MAKE_VARIANT_CONSTRUCTOR(m_variant_vec_type, m_variant_type, m_concept)                                                                                                              \

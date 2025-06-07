@@ -25,8 +25,7 @@ gdscript/warnings/inferred_declaration=2
 folder_colors={
 "res://data/": "gray",
 "res://gfx/": "purple",
-"res://scenes/": "green",
-"res://scripts/": "blue"
+"res://scenes/": "green"
 }
 
 [rendering]

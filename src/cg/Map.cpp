@@ -2,7 +2,6 @@
 
 #include "core/io/config_file.h"
 #include "core/math/geometry_2d.h"
-#include "core/string/print_string.h"
 
 #include "scene/3d/label_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
@@ -11,13 +10,13 @@
 #include "scene/resources/shader.h"
 #include "scene/resources/surface_tool.h"
 
+#include "cg/csv.hpp"
+
 #include "ecs/Provinces.hpp"
 #include "ecs/Registry.hpp"
 
 #include "templates/ConstMap.hpp"
 
-#include "csv.hpp"
-#include "data/Province.hpp"
 #include "nodes/Map3D.hpp"
 
 using namespace CG;
@@ -322,33 +321,21 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vector<Vector4> &p_segments, float 
 }
 
 void Map::create_map_labels(const Registry &p_registry, Map3D *p_map, int p_map_width, int p_map_height) {
-	const auto province_view = p_registry.view<ProvinceTag, Centroid, Orientation, Name>();
+	const auto province_view = p_registry.view<LandProvinceTag, Centroid, Orientation, Name>();
 
-	const auto tag_view = p_registry.view<LandProvinceTag>();
+	for (auto [entity, centroid, orientation, name] : province_view.each()) {
+		Label3D *label = memnew(Label3D);
+		label->set_position(Vector3(centroid.x - (p_map_width / 2.0), label_map_layer, centroid.y - (p_map_height / 2.0)));
+		label->set_rotation(Vector3(Math::deg_to_rad(-90.0), orientation, 0.0));
+		label->set_scale(Vector3(100.0, 100.0, 100.0));
 
-	// for (auto entity : tag_view) {
-	// 	print_line("Tag entity: ", static_cast<int>(entity));
-	// 	print_line(vformat("Adding label to province: %s, %s", p_registry.get<Name>(entity), p_registry.get<Centroid>(entity)));
-	// }
+		label->set_text(label->tr(name)); // TODO - make spaces new lines?
+		label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
+		label->set_modulate(Color(0, 0, 0));
+		label->set_outline_modulate(Color(1, 1, 1, 0));
 
-	// for (auto [entity, centroid, orientation, name] : province_view.each()) {
-	//  if (!p_registry.all_of<LandProvinceTag>(entity))
-	//  	continue;
-
-	// print_line(vformat("Adding label to province: %s %s", name, centroid));
-
-	// Label3D *label = memnew(Label3D);
-	// label->set_position(Vector3(centroid.x - (p_map_width / 2.0), label_map_layer, centroid.y - (p_map_height / 2.0)));
-	// label->set_rotation(Vector3(Math::deg_to_rad(-90.0), orientation, 0.0));
-	// label->set_scale(Vector3(100.0, 100.0, 100.0));
-
-	// label->set_text(label->tr(name)); // TODO - make spaces new lines?
-	// label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
-	// label->set_modulate(Color(0, 0, 0));
-	// label->set_outline_modulate(Color(1, 1, 1, 0));
-
-	// p_map->call_deferred("add_child", label);
-	//}
+		p_map->call_deferred("add_child", label);
+	}
 }
 
 void Map::load_map(Map3D *p_map) {
@@ -436,7 +423,7 @@ void Map::load_map(Map3D *p_map) {
 		const Vector2 centroid = calculate_centroid(kv.value);
 
 		registry.emplace<Centroid>(province_entity, centroid);
-		if (registry.all_of<LandProvinceTag>(province_entity))
+		if (!registry.all_of<LandProvinceTag>(province_entity))
 			registry.emplace<Orientation>(province_entity, 0.0);
 		else
 			registry.emplace<Orientation>(province_entity, calculate_orientation(Geometry2D::convex_hull(kv.value), centroid));
@@ -498,7 +485,7 @@ Ref<ImageTexture> Map::get_country_map_mode() {
 	Ref<Image> country_map_map_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
 
 	// Iteration starts at 1 because province ID 0 does not exist.
-	for (uint32_t i = 1; i < color_to_id_map.size(); ++i) {
+	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
 		Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
 		ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(i);
 
@@ -509,6 +496,7 @@ Ref<ImageTexture> Map::get_country_map_mode() {
 			CountryEntity owner = registry.get<Owner>(province_entity);
 			country_color = registry.get<Color>(owner);
 		}
+
 		country_map_map_image->set_pixel(uv.x, uv.y, country_color);
 	}
 
