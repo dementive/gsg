@@ -1,5 +1,7 @@
 #include "register_types.h"
 
+#include "cg/MapCamera.hpp"
+
 #include "ecs/Registry.hpp"
 
 #include "templates/SingletonAllocator.hpp"
@@ -23,6 +25,7 @@ void initialize_src_module(ModuleInitializationLevel p_level) {
 
 	entt_singleton_allocator.init();
 	GDREGISTER_RUNTIME_CLASS(Map3D)
+	GDREGISTER_RUNTIME_CLASS(MapCamera)
 }
 
 void uninitialize_src_module(ModuleInitializationLevel p_level) {

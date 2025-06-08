@@ -15,8 +15,6 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 ## TODO
 
-- Map camera
-
 - Map labels for regions, areas, and countries
 
 - More map modes
