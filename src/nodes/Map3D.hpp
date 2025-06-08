@@ -10,7 +10,7 @@ class Map3D : public Node3D {
 	GDCLASS(Map3D, Node3D)
 private:
 	MeshInstance3D *map_mesh{};
-	const Vector2i map_dimensions{ 1024, 1024 };
+	static inline Vector2i map_dimensions{ 1024, 1024 }; // TODO don't hardcode.
 
 protected:
 	static void _bind_methods();

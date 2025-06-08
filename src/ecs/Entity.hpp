@@ -26,8 +26,8 @@ struct EntityHasher {
 
 template <typename F, typename S> struct EntityPairHash {
 	static uint32_t hash(const Pair<F, S> &P) {
-		uint64_t h1 = EntityHasher::hash(P.first);
-		uint64_t h2 = EntityHasher::hash(P.second);
+		const uint64_t h1 = EntityHasher::hash(P.first);
+		const uint64_t h2 = EntityHasher::hash(P.second);
 		return hash_one_uint64((h1 << 32) | h2);
 	}
 };

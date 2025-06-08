@@ -29,15 +29,13 @@ _ALWAYS_INLINE_ Vector<Variant> convert_types(const Vector<String> &p_values, co
 	Variant *ptr = arr.ptrw();
 
 	for (int i = 0; const String &value : p_values) {
-		Variant::Type type = p_types[i];
-		Variant new_value;
+		const Variant::Type type = p_types[i];
+		Variant new_value = value;
 
 		if (type == Variant::Type::INT)
 			new_value = value.to_int();
 		else if (type == Variant::Type::FLOAT)
 			new_value = value.to_float();
-		else
-			new_value = value;
 
 		ptr[i] = new_value;
 		i++;
@@ -48,18 +46,17 @@ _ALWAYS_INLINE_ Vector<Variant> convert_types(const Vector<String> &p_values, co
 } // namespace
 
 Vector<Vector<Variant>> parse_file(const String &p_file_name) {
-	Ref<FileAccess> file = FileAccess::open(p_file_name, FileAccess::READ);
+	const Ref<FileAccess> file = FileAccess::open(p_file_name, FileAccess::READ);
 
 	String line = file->get_line(); // skip csv header
 	while (line.begins_with("#")) // ignore comments at start of file
 		line = file->get_line();
 
-	Vector<String> first_line_data = file->get_csv_line();
-	Vector<Variant::Type> types = determine_types(first_line_data);
-	Vector<Variant> start_data = convert_types(first_line_data, types);
+	const Vector<String> first_line_data = file->get_csv_line();
+	const Vector<Variant::Type> types = determine_types(first_line_data);
 
 	Vector<Vector<Variant>> data{};
-	data.append(start_data);
+	data.append(convert_types(first_line_data, types));
 
 	while (!file->eof_reached()) {
 		Vector<String> line_strings = file->get_csv_line();

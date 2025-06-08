@@ -38,8 +38,8 @@ float Map::calculate_orientation(const Polygon &p_polygon, const Vector2 &p_cent
 	float mu20 = 0.0;
 	float mu02 = 0.0;
 	for (const Vector2 &point : p_polygon) {
-		float x = point.x - p_centroid.x;
-		float y = point.y - p_centroid.y;
+		const float x = point.x - p_centroid.x;
+		const float y = point.y - p_centroid.y;
 		mu20 += x * x;
 		mu02 += y * y;
 		mu11 += x * y;
@@ -58,10 +58,10 @@ Color Map::get_lookup_color(ProvinceIndex p_province_id) {
 ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 	ProvinceColorMap provinces_map{};
 
-	Ref<ConfigFile> province_config = memnew(ConfigFile());
-	Ref<ConfigFile> area_config = memnew(ConfigFile());
-	Ref<ConfigFile> region_config = memnew(ConfigFile());
-	Ref<ConfigFile> country_config = memnew(ConfigFile());
+	const Ref<ConfigFile> province_config = memnew(ConfigFile());
+	const Ref<ConfigFile> area_config = memnew(ConfigFile());
+	const Ref<ConfigFile> region_config = memnew(ConfigFile());
+	const Ref<ConfigFile> country_config = memnew(ConfigFile());
 
 	if (province_config->load("res://data/provinces.cfg") != OK)
 		return provinces_map;
@@ -112,8 +112,8 @@ ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 
 	for (const String &section : area_sections) {
 		const Color color = area_config->get_value(section, "color", get_random_area_color());
-		PackedInt32Array area_provinces_config = area_config->get_value(section, "provinces");
-		TightVec<Entity> area_provinces = p_registry.convert_packed_array<ProvinceTag, TightVec<Entity>>(area_provinces_config);
+		const PackedInt32Array area_provinces_config = area_config->get_value(section, "provinces");
+		const TightVec<Entity> area_provinces = p_registry.convert_packed_array<ProvinceTag, TightVec<Entity>>(area_provinces_config);
 
 		const int capital = area_config->get_value(section, "capital");
 		const ProvinceEntity capital_entity = p_registry.get_entity<ProvinceTag>(capital);
@@ -131,7 +131,7 @@ ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 	for (const String &section : region_sections) {
 		const Color color = region_config->get_value(section, "color", get_random_area_color());
 		const PackedStringArray region_areas_config = region_config->get_value(section, "areas");
-		TightVec<Entity> region_areas = p_registry.convert_packed_array<AreaTag, TightVec<Entity>>(region_areas_config);
+		const TightVec<Entity> region_areas = p_registry.convert_packed_array<AreaTag, TightVec<Entity>>(region_areas_config);
 
 		const int capital = region_config->get_value(section, "capital");
 		const ProvinceEntity capital_entity = p_registry.get_entity<ProvinceTag>(capital);
@@ -149,7 +149,7 @@ ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 	for (const String &section : country_sections) {
 		const Color color = country_config->get_value(section, "color", get_random_area_color());
 		const PackedInt32Array owned_provinces_config = country_config->get_value(section, "provinces");
-		Vec<Entity> owned_provinces = p_registry.convert_packed_array<ProvinceTag>(owned_provinces_config);
+		const Vec<Entity> owned_provinces = p_registry.convert_packed_array<ProvinceTag>(owned_provinces_config);
 
 		const int capital = country_config->get_value(section, "capital");
 		const ProvinceEntity capital_entity = p_registry.get_entity<ProvinceTag>(capital);
@@ -178,14 +178,14 @@ bool Map::is_lake_border(const Registry &p_registry, const Border &p_border) {
 }
 
 Vector<Ref<ShaderMaterial>> Map::create_border_materials() {
-	Ref<Shader> border_shader = ResourceLoader::load("res://gfx/shaders/border.gdshader");
+	const Ref<Shader> border_shader = ResourceLoader::load("res://gfx/shaders/border.gdshader");
 	Vector<Ref<ShaderMaterial>> border_materials;
 	const int material_count = static_cast<int>(ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX);
 	border_materials.resize(material_count);
 
 #define inc_enum(i) ((decltype(i))(static_cast<int>(i) + 1))
 	for (ProvinceBorderType i = ProvinceBorderType::Country; i < ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX; i = inc_enum(i)) {
-		Ref<ShaderMaterial> border_material = memnew(ShaderMaterial);
+		const Ref<ShaderMaterial> border_material = memnew(ShaderMaterial);
 		border_material->set_shader(border_shader);
 		switch (i) {
 			case ProvinceBorderType::Country: {
@@ -277,15 +277,15 @@ ProvinceBorderType Map::fill_province_border_data(Registry &p_registry, const Bo
 }
 
 void Map::add_rounded_border_corners(Ref<SurfaceTool> &p_st, const Vector2 &p_v1, const Vector2 &p_v2, float p_radius) {
-	Vector2 center = (p_v1 + p_v2) / 2;
-	float angle_start = atan2(p_v2.y - p_v1.y, p_v2.x - p_v1.x) + (std::numbers::pi / 2);
-	float angle_end = angle_start + std::numbers::pi;
+	const Vector2 center = (p_v1 + p_v2) / 2;
+	const float angle_start = atan2(p_v2.y - p_v1.y, p_v2.x - p_v1.x) + (std::numbers::pi / 2);
+	const float angle_end = angle_start + std::numbers::pi;
 
-	int segments = 2;
+	const int segments = 2;
 	for (int i = 0; i < segments + 1; ++i) {
-		float angle = angle_start + ((angle_end - angle_start) * (i / float(segments)));
-		float x = center.x + (cos(angle) * p_radius);
-		float y = center.y + (sin(angle) * p_radius);
+		const float angle = angle_start + ((angle_end - angle_start) * (i / float(segments)));
+		const float x = center.x + (cos(angle) * p_radius);
+		const float y = center.y + (sin(angle) * p_radius);
 		p_st->add_vertex(Vector3(x, y, 0));
 	}
 }
@@ -295,15 +295,15 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vector<Vector4> &p_segments, float 
 	st->begin(Mesh::PRIMITIVE_TRIANGLES);
 
 	for (const Vector4 &seg : p_segments) {
-		Vector2 start = Vector2(seg.x, seg.y);
-		Vector2 end = Vector2(seg.z, seg.w);
-		Vector2 dir = (end - start).normalized();
-		Vector2 perp = Vector2(-dir.y, dir.x);
+		const Vector2 start = Vector2(seg.x, seg.y);
+		const Vector2 end = Vector2(seg.z, seg.w);
+		const Vector2 dir = (end - start).normalized();
+		const Vector2 perp = Vector2(-dir.y, dir.x);
 
-		Vector2 v0 = start + perp * p_border_thickness;
-		Vector2 v1 = start - perp * p_border_thickness;
-		Vector2 v2 = end - perp * p_border_thickness;
-		Vector2 v3 = end + perp * p_border_thickness;
+		const Vector2 v0 = start + perp * p_border_thickness;
+		const Vector2 v1 = start - perp * p_border_thickness;
+		const Vector2 v2 = end - perp * p_border_thickness;
+		const Vector2 v3 = end + perp * p_border_thickness;
 
 		st->add_vertex(Vector3(v0.x, v0.y, 0));
 		st->add_vertex(Vector3(v1.x, v1.y, 0));
@@ -345,8 +345,8 @@ void Map::load_map(Map3D *p_map) {
 	HashMap<Color, PackedVector2Array> pixel_dict;
 
 	// Load provinces.png
-	Ref<Texture2D> province_texture = ResourceLoader::load("res://gfx/map/provinces.png");
-	Ref<Image> province_image = province_texture->get_image();
+	const Ref<Texture2D> province_texture = ResourceLoader::load("res://gfx/map/provinces.png");
+	const Ref<Image> province_image = province_texture->get_image();
 	const int province_image_width = province_image->get_width();
 	const int province_image_height = province_image->get_width();
 
@@ -366,15 +366,13 @@ void Map::load_map(Map3D *p_map) {
 			lookup_image->set_pixel(x, y, lookup_color);
 
 			// Make pixel dict for polygon calculations
-			if (!pixel_dict.has(current_color))
-				pixel_dict[current_color] = PackedVector2Array();
 			pixel_dict[current_color].append(Vector2(x, y));
 
 			// Get border segments
 			if (x + 1 < province_image_width) {
 				const Color right_color = province_image->get_pixel(x + 1, y);
 				if (current_color != right_color) {
-					const ProvinceEntity to = registry.get_entity<ProvinceTag>(provinces_map[current_color]);
+					const ProvinceEntity to = registry.get_entity<ProvinceTag>(province_id);
 					const ProvinceEntity from = registry.get_entity<ProvinceTag>(provinces_map[right_color]);
 					Border key;
 					if (to > from) // sort by largest to prevent duplicates
@@ -387,8 +385,6 @@ void Map::load_map(Map3D *p_map) {
 					if (is_lake_border(registry, key))
 						continue;
 
-					if (!borders.has(key))
-						borders[key] = PackedVector4Array();
 					borders[key].append(Vector4(x + 1, y, x + 1, y + 1));
 				}
 			}
@@ -397,7 +393,7 @@ void Map::load_map(Map3D *p_map) {
 			if (y + 1 < province_image_height) {
 				const Color bottom_color = province_image->get_pixel(x, y + 1);
 				if (current_color != bottom_color) {
-					const ProvinceEntity to = registry.get_entity<ProvinceTag>(provinces_map[current_color]);
+					const ProvinceEntity to = registry.get_entity<ProvinceTag>(province_id);
 					const ProvinceEntity from = registry.get_entity<ProvinceTag>(provinces_map[bottom_color]);
 					Border key;
 					if (to > from) // sort by largest to prevent duplicates
@@ -408,8 +404,6 @@ void Map::load_map(Map3D *p_map) {
 					if (is_lake_border(registry, key))
 						continue;
 
-					if (!borders.has(key))
-						borders[key] = PackedVector4Array();
 					borders[key].append(Vector4(x, y + 1, x + 1, y + 1));
 				}
 			}
@@ -433,7 +427,7 @@ void Map::load_map(Map3D *p_map) {
 	create_map_labels(registry, p_map, province_image_width, province_image_height);
 
 	// Parse border crossings
-	Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
+	const Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
 	static constexpr ConstMap<std::string_view, int, 6> adjacency_config{ { "to", 0 }, { "from", 1 }, { "startx", 2 }, { "starty", 3 }, { "endx", 4 }, { "endy", 5 } };
 
 	// Fill in crossing adjacencies
@@ -456,14 +450,14 @@ void Map::load_map(Map3D *p_map) {
 	}
 
 	// Create border materials
-	Vector<Ref<ShaderMaterial>> border_materials = create_border_materials();
+	const Vector<Ref<ShaderMaterial>> border_materials = create_border_materials();
 
 	// Create border meshes
 	for (const KeyValue<Border, PackedVector4Array> &kv : borders) {
-		Ref<Mesh> border_mesh = create_border_mesh(kv.value, 0.75, 0.75);
+		const Ref<Mesh> border_mesh = create_border_mesh(kv.value, 0.75, 0.75);
 		MeshInstance3D *border_mesh_instance = memnew(MeshInstance3D);
 
-		ProvinceBorderType border_type = fill_province_border_data(registry, kv.key, border_mesh->get_rid());
+		const ProvinceBorderType border_type = fill_province_border_data(registry, kv.key, border_mesh->get_rid());
 		fill_province_adjacency_data(registry, kv.key);
 
 		border_mesh_instance->set_rotation_degrees(Vector3(90, 0, 0));
@@ -481,18 +475,16 @@ Ref<Image> Map::get_lookup_image() { return lookup_image; }
 ProvinceColorMap Map::get_color_to_id_map() { return color_to_id_map; }
 
 Ref<ImageTexture> Map::get_country_map_mode() {
-	Registry &registry = *Registry::self;
-	Ref<Image> country_map_map_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
+	const Registry &registry = *Registry::self;
+	const Ref<Image> country_map_map_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
 
 	// Iteration starts at 1 because province ID 0 does not exist.
 	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
-		Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
-		ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(i);
+		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
+		const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(i);
 
-		Color country_color;
-		if (!registry.all_of<Owner>(province_entity)) {
-			country_color = discard_color;
-		} else {
+		Color country_color = discard_color;
+		if (registry.all_of<Owner>(province_entity)) {
 			CountryEntity owner = registry.get<Owner>(province_entity);
 			country_color = registry.get<Color>(owner);
 		}
