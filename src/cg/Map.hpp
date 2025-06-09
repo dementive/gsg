@@ -1,11 +1,13 @@
 #pragma once
 
 #include "core/io/image.h"
-#include "core/templates/hash_map.h"
+#include "core/templates/a_hash_map.h"
 
 #include "scene/resources/image_texture.h"
 
 #include "ecs/Entity.hpp"
+
+#include "templates/Vec.hpp"
 
 #include "defs/singleton.hpp"
 
@@ -20,7 +22,7 @@ struct Registry;
 enum class ProvinceBorderType : uint8_t;
 
 using ProvinceIndex = int; // Index into the province lookup texture.
-using ProvinceColorMap = HashMap<Color, ProvinceIndex>;
+using ProvinceColorMap = AHashMap<Color, ProvinceIndex>;
 
 class Map {
 	SINGLETON(Map)
@@ -40,7 +42,7 @@ private:
 
 	static void add_rounded_border_corners(Ref<SurfaceTool> &p_st, const Vector2 &p_v1, const Vector2 &p_v2, float p_radius);
 	static Vector<Ref<ShaderMaterial>> create_border_materials();
-	static Ref<ArrayMesh> create_border_mesh(const Vector<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
+	static Ref<ArrayMesh> create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
 	static void create_map_labels(const Registry &p_registry, Map3D *p_map, int p_map_width, int p_map_height);
 
 public:

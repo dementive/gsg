@@ -178,7 +178,7 @@ bool Map::is_lake_border(const Registry &p_registry, const Border &p_border) {
 }
 
 Vector<Ref<ShaderMaterial>> Map::create_border_materials() {
-	const Ref<Shader> border_shader = ResourceLoader::load("res://gfx/shaders/border.gdshader");
+	const Ref<Shader> border_shader = ResourceLoader::load("res://gfx/shaders/border.gdshader", "Shader", ResourceFormatLoader::CACHE_MODE_IGNORE_DEEP);
 	Vector<Ref<ShaderMaterial>> border_materials;
 	const int material_count = static_cast<int>(ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX);
 	border_materials.resize(material_count);
@@ -290,7 +290,7 @@ void Map::add_rounded_border_corners(Ref<SurfaceTool> &p_st, const Vector2 &p_v1
 	}
 }
 
-Ref<ArrayMesh> Map::create_border_mesh(const Vector<Vector4> &p_segments, float p_border_thickness, float p_border_rounding) {
+Ref<ArrayMesh> Map::create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding) {
 	Ref<SurfaceTool> st = memnew(SurfaceTool);
 	st->begin(Mesh::PRIMITIVE_TRIANGLES);
 
@@ -341,11 +341,11 @@ void Map::create_map_labels(const Registry &p_registry, Map3D *p_map, int p_map_
 void Map::load_map(Map3D *p_map) {
 	Registry &registry = *Registry::self;
 	ProvinceColorMap provinces_map = load_map_config(registry);
-	HashMap<Border, PackedVector4Array, EntityPairHash<ProvinceEntity, ProvinceEntity>> borders;
-	HashMap<Color, PackedVector2Array> pixel_dict;
+	AHashMap<Border, Vec<Vector4>, EntityPairHash<ProvinceEntity, ProvinceEntity>> borders;
+	AHashMap<ProvinceEntity, Vec<Vector2>, EntityHasher> pixel_dict;
 
 	// Load provinces.png
-	const Ref<Texture2D> province_texture = ResourceLoader::load("res://gfx/map/provinces.png");
+	const Ref<Texture2D> province_texture = ResourceLoader::load("res://gfx/map/provinces.png", "Texture2D", ResourceFormatLoader::CACHE_MODE_IGNORE_DEEP);
 	const Ref<Image> province_image = province_texture->get_image();
 	const int province_image_width = province_image->get_width();
 	const int province_image_height = province_image->get_width();
@@ -353,8 +353,11 @@ void Map::load_map(Map3D *p_map) {
 	// // Set Map3D node position, makes the world coords the same as the map coords
 	p_map->set_position(Vector3(province_image_width / 2.0, 0, province_image_height / 2.0));
 
-	// Create lookup texture
-	lookup_image = Image::create_empty(province_image_width, province_image_height, false, Image::FORMAT_RGF);
+	// Create lookup texture as RGF Image
+	Vector<uint8_t> lookup_image_data;
+	lookup_image_data.resize(static_cast<size_t>(province_image_width) * province_image_height * 2 * sizeof(float));
+	uint8_t *lookup_ptr = lookup_image_data.ptrw();
+	float *lookup_write_ptr = reinterpret_cast<float *>(lookup_ptr);
 
 	for (int x = 0; x < province_image_width; ++x) {
 		for (int y = 0; y < province_image_height; ++y) {
@@ -363,29 +366,31 @@ void Map::load_map(Map3D *p_map) {
 			// Set lookup texture pixels
 			const ProvinceIndex province_id = provinces_map[current_color];
 			const Color lookup_color = get_lookup_color(province_id);
-			lookup_image->set_pixel(x, y, lookup_color);
+			size_t lookup_index = (static_cast<size_t>(y) * province_image_width + x) * 2;
+			lookup_write_ptr[lookup_index + 0] = lookup_color.r;
+			lookup_write_ptr[lookup_index + 1] = lookup_color.g;
 
 			// Make pixel dict for polygon calculations
-			pixel_dict[current_color].append(Vector2(x, y));
+			const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(province_id);
+			pixel_dict[province_entity].push_back(Vector2(x, y));
 
 			// Get border segments
 			if (x + 1 < province_image_width) {
 				const Color right_color = province_image->get_pixel(x + 1, y);
 				if (current_color != right_color) {
-					const ProvinceEntity to = registry.get_entity<ProvinceTag>(province_id);
 					const ProvinceEntity from = registry.get_entity<ProvinceTag>(provinces_map[right_color]);
 					Border key;
-					if (to > from) // sort by largest to prevent duplicates
-						key = Border(to, from);
+					if (province_entity > from) // sort by largest to prevent duplicates
+						key = Border(province_entity, from);
 					else
-						key = Border(from, to);
+						key = Border(from, province_entity);
 
 					// Filter out borders and adjacencies with lakes
 					// movement to/from lakes is impossible and borders should never be draw on lake provinces.
 					if (is_lake_border(registry, key))
 						continue;
 
-					borders[key].append(Vector4(x + 1, y, x + 1, y + 1));
+					borders[key].push_back(Vector4(x + 1, y, x + 1, y + 1));
 				}
 			}
 
@@ -393,34 +398,34 @@ void Map::load_map(Map3D *p_map) {
 			if (y + 1 < province_image_height) {
 				const Color bottom_color = province_image->get_pixel(x, y + 1);
 				if (current_color != bottom_color) {
-					const ProvinceEntity to = registry.get_entity<ProvinceTag>(province_id);
 					const ProvinceEntity from = registry.get_entity<ProvinceTag>(provinces_map[bottom_color]);
 					Border key;
-					if (to > from) // sort by largest to prevent duplicates
-						key = Border(to, from);
+					if (province_entity > from) // sort by largest to prevent duplicates
+						key = Border(province_entity, from);
 					else
-						key = Border(from, to);
+						key = Border(from, province_entity);
 
 					if (is_lake_border(registry, key))
 						continue;
 
-					borders[key].append(Vector4(x, y + 1, x + 1, y + 1));
+					borders[key].push_back(Vector4(x, y + 1, x + 1, y + 1));
 				}
 			}
 		}
 	}
 
-	// Fill in Provinces data from pixel data
-	for (const KeyValue<Color, PackedVector2Array> &kv : pixel_dict) {
-		const ProvinceIndex province_id = provinces_map[kv.key];
-		const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(province_id);
-		const Vector2 centroid = calculate_centroid(kv.value);
+	// Create lookup image from bytes
+	lookup_image = Image::create_from_data(province_image_width, province_image_height, false, Image::FORMAT_RGF, lookup_image_data);
 
-		registry.emplace<Centroid>(province_entity, centroid);
-		if (!registry.all_of<LandProvinceTag>(province_entity))
-			registry.emplace<Orientation>(province_entity, 0.0);
+	// Fill in Provinces data from pixel data
+	for (const KeyValue<ProvinceEntity, Vec<Vector2>> &kv : pixel_dict) {
+		const Vector2 centroid = calculate_centroid(kv.value);
+		registry.emplace<Centroid>(kv.key, centroid);
+
+		if (!registry.all_of<LandProvinceTag>(kv.key))
+			registry.emplace<Orientation>(kv.key, 0.0);
 		else
-			registry.emplace<Orientation>(province_entity, calculate_orientation(Geometry2D::convex_hull(kv.value), centroid));
+			registry.emplace<Orientation>(kv.key, calculate_orientation(Geometry2D::convex_hull(kv.value), centroid));
 	}
 
 	// Setup map labels
@@ -453,7 +458,7 @@ void Map::load_map(Map3D *p_map) {
 	const Vector<Ref<ShaderMaterial>> border_materials = create_border_materials();
 
 	// Create border meshes
-	for (const KeyValue<Border, PackedVector4Array> &kv : borders) {
+	for (const KeyValue<Border, Vec<Vector4>> &kv : borders) {
 		const Ref<Mesh> border_mesh = create_border_mesh(kv.value, 0.75, 0.75);
 		MeshInstance3D *border_mesh_instance = memnew(MeshInstance3D);
 
