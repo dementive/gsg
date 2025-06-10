@@ -15,6 +15,7 @@
 #include "editor/plugins/editor_plugin.h"
 #include "editor/plugins/node_3d_editor_plugin.h"
 
+#include "Map.hpp"
 #include "singleton.hpp"
 
 namespace CG {
@@ -26,6 +27,17 @@ class MapEditorNode : public Node3D {
 
 protected:
 	static void _bind_methods() {}
+	void _notification(int p_what) {
+		switch (p_what) {
+			case NOTIFICATION_READY: {
+				Map::self = memnew(Map);
+				Map::self->load_map<true>(this);
+			} break;
+			case NOTIFICATION_WM_CLOSE_REQUEST: {
+				memdelete_notnull(Map::self);
+			} break;
+		}
+	}
 };
 
 class MapEditor : public Control {

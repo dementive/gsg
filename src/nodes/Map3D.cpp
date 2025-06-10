@@ -20,7 +20,7 @@ void Map3D::_notification(int p_what) {
 		case NOTIFICATION_READY: {
 			set_process_unhandled_input(true);
 			Map::self = memnew(Map);
-			Map::self->load_map(this);
+			Map::self->load_map<false>(this);
 			map_mesh = Object::cast_to<MeshInstance3D>(get_node(NodePath("%MapMesh")));
 
 			const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);

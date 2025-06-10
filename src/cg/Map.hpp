@@ -14,10 +14,10 @@
 class SurfaceTool;
 class ArrayMesh;
 class ShaderMaterial;
+class Node3D;
 
 namespace CG {
 
-class Map3D;
 struct Registry;
 enum class ProvinceBorderType : uint8_t;
 
@@ -43,10 +43,11 @@ private:
 	static void add_rounded_border_corners(Ref<SurfaceTool> &p_st, const Vector2 &p_v1, const Vector2 &p_v2, float p_radius);
 	static Vector<Ref<ShaderMaterial>> create_border_materials();
 	static Ref<ArrayMesh> create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
-	static void create_map_labels(const Registry &p_registry, Map3D *p_map, int p_map_width, int p_map_height);
+	static void create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map_width, int p_map_height);
 
 public:
-	void load_map(Map3D *p_map);
+	template <bool is_map_editor> void load_map(Node3D *p_map);
+
 	Ref<Image> get_lookup_image();
 	Ref<ImageTexture> get_lookup_texture();
 	ProvinceColorMap get_color_to_id_map();

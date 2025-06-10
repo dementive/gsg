@@ -17,8 +17,6 @@
 
 #include "templates/ConstMap.hpp"
 
-#include "nodes/Map3D.hpp"
-
 using namespace CG;
 
 constexpr int COLOR_TEXTURE_DIMENSIONS = 255;
@@ -320,7 +318,7 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vec<Vector4> &p_segments, float p_b
 	return st->commit();
 }
 
-void Map::create_map_labels(const Registry &p_registry, Map3D *p_map, int p_map_width, int p_map_height) {
+void Map::create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map_width, int p_map_height) {
 	const auto province_view = p_registry.view<LandProvinceTag, Centroid, Orientation, Name>();
 
 	for (auto [entity, centroid, orientation, name] : province_view.each()) {
@@ -338,7 +336,10 @@ void Map::create_map_labels(const Registry &p_registry, Map3D *p_map, int p_map_
 	}
 }
 
-void Map::load_map(Map3D *p_map) {
+template void Map::load_map<false>(Node3D *p_map);
+template void Map::load_map<true>(Node3D *p_map);
+
+template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	Registry &registry = *Registry::self;
 	ProvinceColorMap provinces_map = load_map_config(registry);
 	AHashMap<Border, Vec<Vector4>, EntityPairHash<ProvinceEntity, ProvinceEntity>> borders;
@@ -350,14 +351,17 @@ void Map::load_map(Map3D *p_map) {
 	const int province_image_width = province_image->get_width();
 	const int province_image_height = province_image->get_width();
 
-	// // Set Map3D node position, makes the world coords the same as the map coords
+	// Set Map node position, makes the world coords the same as the map coords
 	p_map->set_position(Vector3(province_image_width / 2.0, 0, province_image_height / 2.0));
 
 	// Create lookup texture as RGF Image
+	float *lookup_write_ptr{};
 	Vector<uint8_t> lookup_image_data;
-	lookup_image_data.resize(static_cast<size_t>(province_image_width) * province_image_height * 2 * sizeof(float));
-	uint8_t *lookup_ptr = lookup_image_data.ptrw();
-	float *lookup_write_ptr = reinterpret_cast<float *>(lookup_ptr);
+	if constexpr (!is_map_editor) {
+		lookup_image_data.resize(static_cast<size_t>(province_image_width) * province_image_height * 2 * sizeof(float));
+		uint8_t *lookup_ptr = lookup_image_data.ptrw();
+		lookup_write_ptr = reinterpret_cast<float *>(lookup_ptr);
+	}
 
 	for (int x = 0; x < province_image_width; ++x) {
 		for (int y = 0; y < province_image_height; ++y) {
@@ -365,10 +369,12 @@ void Map::load_map(Map3D *p_map) {
 
 			// Set lookup texture pixels
 			const ProvinceIndex province_id = provinces_map[current_color];
-			const Color lookup_color = get_lookup_color(province_id);
-			size_t lookup_index = (static_cast<size_t>(y) * province_image_width + x) * 2;
-			lookup_write_ptr[lookup_index + 0] = lookup_color.r;
-			lookup_write_ptr[lookup_index + 1] = lookup_color.g;
+			if constexpr (!is_map_editor) {
+				const Color lookup_color = get_lookup_color(province_id);
+				size_t lookup_index = (static_cast<size_t>(y) * province_image_width + x) * 2;
+				lookup_write_ptr[lookup_index + 0] = lookup_color.r;
+				lookup_write_ptr[lookup_index + 1] = lookup_color.g;
+			}
 
 			// Make pixel dict for polygon calculations
 			const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(province_id);
@@ -414,8 +420,10 @@ void Map::load_map(Map3D *p_map) {
 		}
 	}
 
-	// Create lookup image from bytes
-	lookup_image = Image::create_from_data(province_image_width, province_image_height, false, Image::FORMAT_RGF, lookup_image_data);
+	if constexpr (!is_map_editor) {
+		// Create lookup image from bytes
+		lookup_image = Image::create_from_data(province_image_width, province_image_height, false, Image::FORMAT_RGF, lookup_image_data);
+	}
 
 	// Fill in Provinces data from pixel data
 	for (const KeyValue<ProvinceEntity, Vec<Vector2>> &kv : pixel_dict) {
@@ -428,30 +436,32 @@ void Map::load_map(Map3D *p_map) {
 			registry.emplace<Orientation>(kv.key, calculate_orientation(Geometry2D::convex_hull(kv.value), centroid));
 	}
 
-	// Setup map labels
-	create_map_labels(registry, p_map, province_image_width, province_image_height);
+	if constexpr (!is_map_editor) {
+		// Setup map labels
+		create_map_labels(registry, p_map, province_image_width, province_image_height);
 
-	// Parse border crossings
-	const Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
-	static constexpr ConstMap<std::string_view, int, 6> adjacency_config{ { "to", 0 }, { "from", 1 }, { "startx", 2 }, { "starty", 3 }, { "endx", 4 }, { "endy", 5 } };
+		// Parse border crossings
+		const Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
+		static constexpr ConstMap<std::string_view, int, 6> adjacency_config{ { "to", 0 }, { "from", 1 }, { "startx", 2 }, { "starty", 3 }, { "endx", 4 }, { "endy", 5 } };
 
-	// Fill in crossing adjacencies
-	for (const Vector<Variant> &crossing : crossings) {
-		const Entity adjacency_entity = registry.create();
-		const ProvinceEntity to_entity = registry.get_entity<ProvinceTag>(crossing[adjacency_config["to"]]);
-		const ProvinceEntity from_entity = registry.get_entity<ProvinceTag>(crossing[adjacency_config["from"]]);
+		// Fill in crossing adjacencies
+		for (const Vector<Variant> &crossing : crossings) {
+			const Entity adjacency_entity = registry.create();
+			const ProvinceEntity to_entity = registry.get_entity<ProvinceTag>(crossing[adjacency_config["to"]]);
+			const ProvinceEntity from_entity = registry.get_entity<ProvinceTag>(crossing[adjacency_config["from"]]);
 
-		registry.emplace<AdjacencyTo>(adjacency_entity, to_entity);
-		registry.emplace<AdjacencyFrom>(adjacency_entity, from_entity);
-		registry.emplace<ProvinceAdjacencyType>(adjacency_entity, ProvinceAdjacencyType::Crossing);
-		// clang-format off
-		registry.emplace<CrossingLocator>(
-			adjacency_entity,
-			Vector4(
-				crossing[adjacency_config["startx"]], crossing[adjacency_config["starty"]], crossing[adjacency_config["endx"]], crossing[adjacency_config["endy"]]
-			)
-		);
-		// clang-format on
+			registry.emplace<AdjacencyTo>(adjacency_entity, to_entity);
+			registry.emplace<AdjacencyFrom>(adjacency_entity, from_entity);
+			registry.emplace<ProvinceAdjacencyType>(adjacency_entity, ProvinceAdjacencyType::Crossing);
+			// clang-format off
+			registry.emplace<CrossingLocator>(
+				adjacency_entity,
+				Vector4(
+					crossing[adjacency_config["startx"]], crossing[adjacency_config["starty"]], crossing[adjacency_config["endx"]], crossing[adjacency_config["endy"]]
+				)
+			);
+			// clang-format on
+		}
 	}
 
 	// Create border materials
@@ -481,7 +491,7 @@ ProvinceColorMap Map::get_color_to_id_map() { return color_to_id_map; }
 
 Ref<ImageTexture> Map::get_country_map_mode() {
 	const Registry &registry = *Registry::self;
-	const Ref<Image> country_map_map_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
+	const Ref<Image> country_map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
 
 	// Iteration starts at 1 because province ID 0 does not exist.
 	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
@@ -494,8 +504,8 @@ Ref<ImageTexture> Map::get_country_map_mode() {
 			country_color = registry.get<Color>(owner);
 		}
 
-		country_map_map_image->set_pixel(uv.x, uv.y, country_color);
+		country_map_mode_image->set_pixel(uv.x, uv.y, country_color);
 	}
 
-	return ImageTexture::create_from_image(country_map_map_image);
+	return ImageTexture::create_from_image(country_map_mode_image);
 }
