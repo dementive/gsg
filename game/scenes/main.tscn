@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://c0yva3li81uuy"]
+
+[ext_resource type="Environment" uid="uid://dsa62m6b4prpj" path="res://gfx/map/environment/env.tres" id="1_o5qli"]
+
+[node name="Main" type="WorldEnvironment"]
+environment = ExtResource("1_o5qli")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0)
+shadow_enabled = true
+shadow_opacity = 0.72
+directional_shadow_mode = 0
+directional_shadow_max_distance = 1024.0

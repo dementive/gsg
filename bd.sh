@@ -16,9 +16,9 @@ case "$1" in
     # These errors also only happen when actually running the newly unlinked code, so can show up at weird times which sucks.
     # To fix this have to delete the existing binaries and rebuild them, this takes about 5-15 extra seconds than only targeting the .so though.
     rm -f ./bin/*
-    scons game_shared=yes profile=$scripts_dir/linux_debug.py compiledb=yes $debug_options $llvm_so
+    scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
     if [ $? -eq 0 ]; then # only build the link the engine if there are no compiler errors so the errors don't show twice.
-      scons game_shared=yes profile=$scripts_dir/linux_debug.py compiledb=yes $debug_options
+      scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options
     fi;;
   linux_debug_engine_gcc)
     rm -f ./bin/*

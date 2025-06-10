@@ -15,6 +15,10 @@ run/main_scene="res://scenes/map.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://gfx/icon.svg"
 
+[autoload]
+
+MainScene="*res://scenes/main.tscn"
+
 [debug]
 
 gdscript/warnings/untyped_declaration=2
@@ -124,3 +128,4 @@ camera_pan={
 
 anti_aliasing/quality/msaa_3d=3
 environment/defaults/default_clear_color=Color(0.234052, 0.234052, 0.234052, 1)
+environment/defaults/default_environment="uid://dsa62m6b4prpj"
