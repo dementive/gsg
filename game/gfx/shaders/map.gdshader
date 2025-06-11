@@ -27,17 +27,17 @@ void fragment() {
 	vec4 flatmap_color = texture(flatmap_texture, UV);
 	vec3 color = texture(color_texture, vec2(lookup_uv.x, lookup_uv.y)).rgb;
 
+	// Apply flatmap color
+	color *= flatmap_color.rgb;
+	if (is_same_color(color, discard_color)) {
+		color = flatmap_color.rgb;
+	}
+
 	// For selected area
 	for (int i = 0; i < selected_areas_total; i++) {
 		if(is_same_color(lookup_uv.rgb, selected_areas[i].rgb)){
 			color *= 1.5;
 		}
-	}
-
-	// Apply flatmap color
-	color *= flatmap_color.rgb;
-	if (is_same_color(color, discard_color)) {
-		color = flatmap_color.rgb;
 	}
 
 	ALBEDO = color;
