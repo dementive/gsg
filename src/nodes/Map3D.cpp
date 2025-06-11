@@ -11,6 +11,8 @@
 
 #include "ecs/Registry.hpp"
 
+#include "MapUtils.hpp"
+
 using namespace CG;
 
 void Map3D::_bind_methods() {}
@@ -41,13 +43,7 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 	Viewport *vp = get_viewport();
 	const Camera3D *camera = vp->get_camera_3d();
 	const Vector2 mouse_position = vp->get_mouse_position();
-	const Vector3 origin = camera->project_ray_origin(mouse_position);
-	const Vector3 direction = camera->project_ray_normal(mouse_position);
-
-	const float distance = -origin.y / direction.y;
-	const Vector3 xz_pos = origin + direction * distance;
-	const Vector3 pos = Vector3(xz_pos.x, 0.0, xz_pos.z);
-	const Vector2i click_position = Vector2i(Math::round(pos.x), Math::round(pos.z));
+	const Vector2i click_position = get_map_click_position(camera, mouse_position);
 
 	// Ignore clicks outside the map
 	if (click_position.x > map_dimensions.x or click_position.x < 0 or click_position.y > map_dimensions.y or click_position.y < 0)
@@ -61,7 +57,11 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 	const ProvinceEntity province_entity = Registry::self->get_entity<ProvinceTag>(province_id);
 	if (Registry::self->all_of<LandProvinceTag>(province_entity)) {
 		const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
-		material->set_shader_parameter("selected_area", province_color.linear_to_srgb());
+		PackedColorArray selected_areas;
+		selected_areas.push_back(province_color.linear_to_srgb());
+
+		material->set_shader_parameter("selected_areas", selected_areas);
+		material->set_shader_parameter("selected_areas_total", 1);
 		vp->set_input_as_handled();
 	}
 }

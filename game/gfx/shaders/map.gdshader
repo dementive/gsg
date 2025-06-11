@@ -12,7 +12,8 @@ uniform sampler2D color_texture : source_color, filter_nearest;
 uniform sampler2D flatmap_texture : source_color, filter_linear_mipmap;
 uniform sampler2D texture_normal : hint_roughness_normal, filter_linear_mipmap, repeat_enable;
 uniform float normal_scale : hint_range(-4.0, 4.0) = 1.0;
-uniform vec4 selected_area: source_color;
+uniform vec4 selected_areas[10]: source_color;
+uniform int selected_areas_total = 0;
 
 const vec3 discard_color = vec3(0,0,0); // must be the same as discard_color in map.gd
 
@@ -26,9 +27,11 @@ void fragment() {
 	vec4 flatmap_color = texture(flatmap_texture, UV);
 	vec3 color = texture(color_texture, vec2(lookup_uv.x, lookup_uv.y)).rgb;
 
-	//For selected area
-	if(is_same_color(lookup_uv.rgb, selected_area.rgb)){
-		color *= 1.5;
+	// For selected area
+	for (int i = 0; i < selected_areas_total; i++) {
+		if(is_same_color(lookup_uv.rgb, selected_areas[i].rgb)){
+			color *= 1.5;
+		}
 	}
 
 	// Apply flatmap color

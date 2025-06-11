@@ -357,11 +357,9 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	// Create lookup texture as RGF Image
 	float *lookup_write_ptr{};
 	Vector<uint8_t> lookup_image_data;
-	if constexpr (!is_map_editor) {
-		lookup_image_data.resize(static_cast<size_t>(province_image_width) * province_image_height * 2 * sizeof(float));
-		uint8_t *lookup_ptr = lookup_image_data.ptrw();
-		lookup_write_ptr = reinterpret_cast<float *>(lookup_ptr);
-	}
+	lookup_image_data.resize(static_cast<size_t>(province_image_width) * province_image_height * 2 * sizeof(float));
+	uint8_t *lookup_ptr = lookup_image_data.ptrw();
+	lookup_write_ptr = reinterpret_cast<float *>(lookup_ptr);
 
 	for (int x = 0; x < province_image_width; ++x) {
 		for (int y = 0; y < province_image_height; ++y) {
@@ -369,12 +367,10 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 
 			// Set lookup texture pixels
 			const ProvinceIndex province_id = provinces_map[current_color];
-			if constexpr (!is_map_editor) {
-				const Color lookup_color = get_lookup_color(province_id);
-				size_t lookup_index = (static_cast<size_t>(y) * province_image_width + x) * 2;
-				lookup_write_ptr[lookup_index + 0] = lookup_color.r;
-				lookup_write_ptr[lookup_index + 1] = lookup_color.g;
-			}
+			const Color lookup_color = get_lookup_color(province_id);
+			size_t lookup_index = (static_cast<size_t>(y) * province_image_width + x) * 2;
+			lookup_write_ptr[lookup_index + 0] = lookup_color.r;
+			lookup_write_ptr[lookup_index + 1] = lookup_color.g;
 
 			// Make pixel dict for polygon calculations
 			const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(province_id);
@@ -420,10 +416,8 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 		}
 	}
 
-	if constexpr (!is_map_editor) {
-		// Create lookup image from bytes
-		lookup_image = Image::create_from_data(province_image_width, province_image_height, false, Image::FORMAT_RGF, lookup_image_data);
-	}
+	// Create lookup image from bytes
+	lookup_image = Image::create_from_data(province_image_width, province_image_height, false, Image::FORMAT_RGF, lookup_image_data);
 
 	// Fill in Provinces data from pixel data
 	for (const KeyValue<ProvinceEntity, Vec<Vector2>> &kv : pixel_dict) {

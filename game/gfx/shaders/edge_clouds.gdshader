@@ -1,7 +1,7 @@
 shader_type spatial;
 
-uniform usampler2D edge_clouds_mask_texture : source_color, filter_linear_mipmap;
-uniform usampler2D edge_clouds_tile_texture : source_color, filter_linear_mipmap;
+uniform sampler2D edge_clouds_mask_texture : source_color, filter_linear_mipmap;
+uniform sampler2D edge_clouds_tile_texture : source_color, filter_linear_mipmap;
 
 vec4 apply_edge_clouds(vec2 uv) {
     float edge_clouds_mask = texture(edge_clouds_mask_texture, uv).a;

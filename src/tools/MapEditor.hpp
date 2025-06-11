@@ -1,22 +1,24 @@
 #pragma once
 
 #include "core/object/callable_method_pointer.h"
-#include "core/string/print_string.h"
 
+#include "scene/3d/mesh_instance_3d.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/control.h"
 #include "scene/gui/flow_container.h"
-#include "scene/gui/label.h"
 #include "scene/gui/separator.h"
 #include "editor/editor_dock_manager.h"
+#include "editor/editor_interface.h"
 #include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/plugins/node_3d_editor_plugin.h"
 
+#include "cg/MapUtils.hpp"
+
 #include "Map.hpp"
-#include "singleton.hpp"
+#include "Registry.hpp"
 
 namespace CG {
 
@@ -30,14 +32,28 @@ protected:
 	void _notification(int p_what) {
 		switch (p_what) {
 			case NOTIFICATION_READY: {
+				if (has_loaded_map)
+					return;
+
 				Map::self = memnew(Map);
 				Map::self->load_map<true>(this);
+
+				map_mesh = Object::cast_to<MeshInstance3D>(get_node(NodePath("%MapMesh")));
+
+				const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
+				material->set_shader_parameter("color_texture", Map::self->get_country_map_mode());
+				material->set_shader_parameter("lookup_texture", Map::self->get_lookup_texture());
+				has_loaded_map = true;
 			} break;
 			case NOTIFICATION_WM_CLOSE_REQUEST: {
 				memdelete_notnull(Map::self);
 			} break;
 		}
 	}
+
+public:
+	MeshInstance3D *map_mesh{};
+	bool has_loaded_map = false;
 };
 
 class MapEditor : public Control {
@@ -54,10 +70,12 @@ private:
 
 	enum class ActiveToolbar : uint8_t { None, MapObject };
 
+	bool is_visible = true;
+	bool province_selection_enabled = false;
+
 	ActiveToolbar active_toolbar = ActiveToolbar::None;
 
 	void _locator_button_toggled(bool p_toggled) {
-		print_line("Pressed locator button.");
 		if (!p_toggled) {
 			active_toolbar = ActiveToolbar::None;
 			map_object_toolbar_container->hide();
@@ -70,7 +88,7 @@ private:
 		init_province_inspector_dock();
 	}
 
-	void _province_selection_button_toggled(bool p_toggled) { print_line("Pressed province selection button."); }
+	void _province_selection_button_toggled(bool p_toggled) { province_selection_enabled = p_toggled; }
 
 	static void add_tool_button(Button *p_button, const String &p_tooltip_text) {
 		p_button->set_flat(true);
@@ -100,6 +118,8 @@ protected:
 public:
 	void hide() {
 		sidebar_container->hide();
+		is_visible = false;
+
 		map_object_toolbar_container->hide();
 		if (active_toolbar == ActiveToolbar::MapObject)
 			remove_province_inspector_dock();
@@ -107,11 +127,15 @@ public:
 	void show() {
 		sidebar_container->show();
 
-		if (active_toolbar == ActiveToolbar::MapObject) {
+		if (!is_visible and active_toolbar == ActiveToolbar::MapObject) {
 			map_object_toolbar_container->show();
 			init_province_inspector_dock();
 		}
+
+		is_visible = true;
 	}
+
+	bool is_province_selection_enabled() const { return province_selection_enabled; }
 
 	MapEditor() : province_inspector_dock(memnew(VBoxContainer())), sidebar_container(memnew(VFlowContainer())), map_object_toolbar_container(memnew(HFlowContainer())) {
 		sidebar_container->set_custom_minimum_size(Vector2(20, 0));
@@ -134,33 +158,84 @@ public:
 		Node3DEditor::get_singleton()->add_control_to_menu_panel(map_object_toolbar_container);
 
 		// Setup province inspector dock
-		Label *bullshit = memnew(Label());
-		bullshit->set_text("Province Label");
-
-		province_inspector_dock->add_child(bullshit);
 		province_inspector_dock->add_child(memnew(HSeparator));
 	}
 
 	~MapEditor() override { memdelete_notnull(province_inspector_dock); }
 };
 
-class MapEditor3D : public Node3DEditor {
-	GDCLASS(MapEditor3D, Node3DEditor);
-	SINGLETON(MapEditor3D)
-};
-
 class MapEditorPlugin : public EditorPlugin {
 	GDCLASS(MapEditorPlugin, EditorPlugin);
 
-	MapEditor *map_editor = nullptr;
+	MapEditor *map_editor{};
+	static inline MapEditorNode *map_editor_node{};
+	PackedColorArray selected_areas;
 
 public:
 	String get_plugin_name() const final { return "MapEditor"; }
 	bool has_main_screen() const final { return false; }
 
+	EditorPlugin::AfterGUIInput forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event) override {
+		if (!map_editor->is_province_selection_enabled())
+			return EditorPlugin::AFTER_GUI_INPUT_CUSTOM;
+
+		Ref<InputEventMouseButton> mb = p_event;
+
+		if (!mb.is_valid())
+			return EditorPlugin::AFTER_GUI_INPUT_CUSTOM;
+
+		Point2 mouse_position(mb->get_position().x, mb->get_position().y);
+
+		Node3DEditorViewport *viewport = nullptr;
+		for (uint32_t i = 0; i < Node3DEditor::VIEWPORTS_COUNT; i++) {
+			Node3DEditorViewport *vp = Node3DEditor::get_singleton()->get_editor_viewport(i);
+			if (vp->get_camera_3d() == p_camera) {
+				viewport = vp;
+				break;
+			}
+		}
+
+		ERR_FAIL_NULL_V(viewport, EditorPlugin::AFTER_GUI_INPUT_CUSTOM);
+
+		if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
+			const Vector2i click_position = get_map_click_position(p_camera, mouse_position);
+
+			// Ignore clicks outside the map
+			if (click_position.x > map_dimensions.x or click_position.x < 0 or click_position.y > map_dimensions.y or click_position.y < 0)
+				return AFTER_GUI_INPUT_CUSTOM;
+
+			const Color province_color = Map::self->get_lookup_image()->get_pixelv(click_position);
+			const ProvinceIndex province_id = Map::self->get_color_to_id_map().get(province_color);
+			if (province_id == 0)
+				return AFTER_GUI_INPUT_CUSTOM;
+
+			const ProvinceEntity province_entity = Registry::self->get_entity<ProvinceTag>(province_id);
+			if (Registry::self->all_of<LandProvinceTag>(province_entity)) {
+				const Color srgb_province_color = province_color.linear_to_srgb();
+
+				// If already selected and pressed again remove from selected areas.
+				if (selected_areas.has(srgb_province_color))
+					selected_areas.erase(srgb_province_color);
+				else
+					selected_areas.push_back(srgb_province_color);
+
+				const Ref<ShaderMaterial> material = map_editor_node->map_mesh->get_mesh()->surface_get_material(0);
+				material->set_shader_parameter("selected_areas", selected_areas);
+				material->set_shader_parameter("selected_areas_total", MAX(10, selected_areas.size()));
+			}
+
+			return EditorPlugin::AFTER_GUI_INPUT_CUSTOM;
+		}
+
+		return EditorPlugin::AFTER_GUI_INPUT_CUSTOM;
+	}
+
 	bool handles(Object *p_object) const final {
-		if (Object::cast_to<MapEditorNode>(p_object) != nullptr)
+		MapEditorNode *scene_root = Object::cast_to<MapEditorNode>(EditorInterface::get_singleton()->get_edited_scene_root());
+		if (scene_root != nullptr) {
+			map_editor_node = scene_root;
 			return true;
+		}
 
 		return false;
 	};
