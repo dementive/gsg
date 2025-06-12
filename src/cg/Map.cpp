@@ -417,7 +417,9 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	}
 
 	// Create lookup image from bytes
+	// TODO - only generate lookup image in the editor.
 	lookup_image = Image::create_from_data(province_image_width, province_image_height, false, Image::FORMAT_RGF, lookup_image_data);
+	lookup_image->save_exr("res://gfx/gen/province_lookup.exr");
 
 	// Fill in Provinces data from pixel data
 	for (const KeyValue<ProvinceEntity, Vec<Vector2>> &kv : pixel_dict) {

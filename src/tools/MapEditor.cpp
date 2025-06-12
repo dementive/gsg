@@ -2,6 +2,7 @@
 #include "MapEditor.hpp"
 
 #include "core/object/callable_method_pointer.h"
+#include "core/string/print_string.h"
 
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/gui/box_container.h"
@@ -17,6 +18,7 @@
 #include "editor/editor_node.h"
 #include "editor/plugins/node_3d_editor_plugin.h"
 
+#include "cg/Locator.hpp"
 #include "cg/MapUtils.hpp"
 
 #include "Map.hpp"
@@ -31,7 +33,11 @@ void MapEditorNode::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_WM_CLOSE_REQUEST: {
 			memdelete_notnull(Map::self);
+			memdelete_notnull(EditorLocators::self);
 		} break;
+		case NOTIFICATION_EDITOR_POST_SAVE: {
+			EditorLocators::self->save();
+		}
 	}
 }
 
@@ -47,6 +53,9 @@ void MapEditorNode::load_map() {
 	const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
 	material->set_shader_parameter("color_texture", Map::self->get_country_map_mode());
 	material->set_shader_parameter("lookup_texture", Map::self->get_lookup_texture());
+
+	memnew(EditorLocators());
+
 	has_loaded_map = true;
 }
 
@@ -68,10 +77,22 @@ void MapEditor::_locator_button_toggled(bool p_toggled) {
 void MapEditor::_province_selection_button_toggled(bool p_toggled) { province_selection_enabled = p_toggled; }
 
 void MapEditor::province_inspector_item_list_multi_selected(int p_index, bool p_selected) {
-	if (p_selected)
+	if (p_selected) {
 		MapEditorPlugin::self->select_province(p_index + 1);
-	else
+		on_province_selected(p_index + 1);
+	} else {
 		MapEditorPlugin::self->deselect_province(p_index + 1);
+		on_province_deselected(p_index + 1);
+	}
+}
+
+void MapEditor::on_province_selected(int p_province_entity) {
+	// Load the locators for this province and place nodes on the map in their positions so they can be manipulated.
+	const Locator loactor = EditorLocators::self->get_locator(LocatorType::Unit, p_province_entity);
+}
+
+void MapEditor::on_province_deselected(int p_province_entity) {
+	// Load the locators for this province and place nodes on the map in their positions so they can be manipulated.
 }
 
 void MapEditor::add_tool_button(Button *p_button, const String &p_tooltip_text) {
@@ -118,11 +139,21 @@ void MapEditor::show() {
 
 bool MapEditor::is_province_selection_enabled() const { return province_selection_enabled; }
 
-void MapEditor::on_map_province_selected(const int p_province_entity) { province_inspector_item_list->select(p_province_entity - 1, false); }
+void MapEditor::on_map_province_selected(const int p_province_entity) {
+	province_inspector_item_list->select(p_province_entity - 1, false);
+	on_province_selected(p_province_entity);
+}
 
-void MapEditor::deselect_all_map_provinces() { province_inspector_item_list->deselect_all(); }
+void MapEditor::on_map_province_deselected(int p_province_entity) {
+	province_inspector_item_list->deselect(p_province_entity - 1);
+	on_province_deselected(p_province_entity);
+}
 
-void MapEditor::deselect_map_provinces(int p_province_entity) { province_inspector_item_list->deselect(p_province_entity - 1); }
+void MapEditor::deselect_all_map_provinces() {
+	for (int i = 0; i < province_inspector_item_list->get_selected_items().size(); ++i)
+		on_province_deselected(province_inspector_item_list->get_item_text(i).to_int());
+	province_inspector_item_list->deselect_all();
+}
 
 MapEditor::MapEditor() {
 	map_object_toolbar_container = memnew(HFlowContainer());
@@ -260,15 +291,21 @@ EditorPlugin::AfterGUIInput MapEditorPlugin::forward_3d_gui_input(Camera3D *p_ca
 
 		// If not holding shift only allow selection of 1 province
 		if (!mb->is_shift_pressed()) {
-			map_editor->deselect_all_map_provinces();
-			selected_areas.clear();
-			selected_areas.push_back(srgb_province_color);
-			map_editor->on_map_province_selected(province_id);
+			// If already selected and pressed again remove from selected areas.
+			if (selected_areas.has(srgb_province_color)) {
+				selected_areas.erase(srgb_province_color);
+				map_editor->on_map_province_deselected(province_id);
+			} else {
+				map_editor->deselect_all_map_provinces();
+				selected_areas.clear();
+				selected_areas.push_back(srgb_province_color);
+				map_editor->on_map_province_selected(province_id);
+			}
 		} else {
 			// If already selected and pressed again remove from selected areas.
 			if (selected_areas.has(srgb_province_color)) {
 				selected_areas.erase(srgb_province_color);
-				map_editor->deselect_map_provinces(province_id);
+				map_editor->on_map_province_deselected(province_id);
 			} else {
 				selected_areas.push_back(srgb_province_color);
 				map_editor->on_map_province_selected(province_id);

@@ -3,8 +3,6 @@
 #include "scene/3d/node_3d.h"
 #include "editor/plugins/editor_plugin.h"
 
-#include "Entity.hpp"
-
 class MeshInstance3D;
 class VBoxContainer;
 class ItemList;
@@ -67,8 +65,11 @@ public:
 	bool is_province_selection_enabled() const;
 
 	void on_map_province_selected(int p_province_entity);
+	void on_map_province_deselected(int p_province_entity);
 	void deselect_all_map_provinces();
-	void deselect_map_provinces(int p_province_entity);
+
+	void on_province_selected(int p_province_entity);
+	void on_province_deselected(int p_province_entity);
 
 	MapEditor();
 
