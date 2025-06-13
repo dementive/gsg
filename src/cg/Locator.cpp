@@ -8,6 +8,9 @@
 
 using namespace CG;
 
+bool Locator::operator==(const Locator &other) const { return position == other.position && orientation == other.orientation && scale == other.scale; }
+bool Locator::operator!=(const Locator &other) const { return position != other.position || orientation != other.orientation || scale != other.scale; }
+
 int EditorLocators::get_locator_size(LocatorType p_locator) {
 	if (p_locator == LocatorType::Unit) {
 		const auto land_provinces_view = Registry::self->view<LandProvinceTag>();
@@ -53,6 +56,8 @@ Locator EditorLocators::get_locator(LocatorType p_locator_type, int p_locator) {
 	return {};
 }
 
+#define DEFAULT_LOCATOR_SCALE 25.0
+
 void EditorLocators::load() {
 	ConfigFile *unit_config = memnew(ConfigFile());
 
@@ -91,7 +96,7 @@ void EditorLocators::load() {
 				locator.position = Registry::self->get<Centroid>(entity);
 				// locator.orientation = Registry::self->get<Orientation>(entity);
 				locator.orientation = 0.0;
-				locator.scale = 1.0;
+				locator.scale = DEFAULT_LOCATOR_SCALE;
 				unit_locators[i] = locator;
 			}
 		}

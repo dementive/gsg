@@ -9,7 +9,8 @@ namespace CG {
 
 #define MAKE_SAME(m_class, m_type, m_name)                                                                                                                                                   \
 	m_type m_name;                                                                                                                                                                           \
-	m_class(const m_type &p_##m_name) : m_name(p_##m_name) {}                                                                                                                                \
+	m_class(const m_type &p_##m_name) :                                                                                                                                                      \
+			m_name(p_##m_name) {}                                                                                                                                                            \
 	operator m_type &() { return m_name; }                                                                                                                                                   \
 	operator const m_type &() const { return m_name; }
 

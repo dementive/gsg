@@ -78,7 +78,7 @@ Cpp11BracedListStyle: false
 # EmptyLineAfterAccessModifier: Never
 # EmptyLineBeforeAccessModifier: LogicalBlock
 # ExperimentalAutoDetectBinPacking: false
-# PackConstructorInitializers: BinPack
+PackConstructorInitializers: Never
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 # AllowAllConstructorInitializersOnNextLine: true
 # FixNamespaceComments: true

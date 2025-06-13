@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef TOOLS_ENABLED
+
 #include "scene/3d/node_3d.h"
 #include "editor/plugins/editor_plugin.h"
 
@@ -8,10 +10,12 @@ class VBoxContainer;
 class ItemList;
 class VFlowContainer;
 class HFlowContainer;
+class Sprite3D;
+
+template <typename T> class Ref;
+class InputEvent;
 
 namespace CG {
-
-#ifdef TOOLS_ENABLED
 
 class MapEditorNode : public Node3D {
 	GDCLASS(MapEditorNode, Node3D)
@@ -22,7 +26,7 @@ protected:
 
 public:
 	MeshInstance3D *map_mesh{};
-	bool has_loaded_map = false;
+	static inline bool has_loaded_map = false;
 
 	void load_map();
 };
@@ -31,6 +35,8 @@ class MapEditor : public Control {
 	GDCLASS(MapEditor, Control)
 
 private:
+	HashMap<int, Sprite3D *> edited_unit_nodes;
+
 	VBoxContainer *province_inspector_dock{};
 	ItemList *province_inspector_item_list{};
 
@@ -54,6 +60,8 @@ private:
 	void init_province_inspector_dock();
 	void remove_province_inspector_dock();
 
+	void on_3d_viewport_gui_input(const Ref<InputEvent> &p_event);
+
 protected:
 	static void _bind_methods() {}
 	void _notification(int p_what);
@@ -75,8 +83,6 @@ public:
 
 	// Stuff that can't happen in the constructor because the map data hasn't been loaded yet.
 	void on_map_loaded();
-
-	~MapEditor() override;
 };
 
 class MapEditorPlugin : public EditorPlugin {
@@ -84,10 +90,10 @@ class MapEditorPlugin : public EditorPlugin {
 
 private:
 	MapEditor *map_editor{};
-	static inline MapEditorNode *map_editor_node{};
-	PackedColorArray selected_areas;
+	PackedColorArray selected_areas; // TODO - make this a FixedVector<Color, 10> when updating to 4.5. Right now it will proabbly causes bugs with more than 10 selections.
 
 public:
+	static inline MapEditorNode *map_editor_node{};
 	static inline MapEditorPlugin *self = nullptr;
 
 	String get_plugin_name() const final;
@@ -102,9 +108,8 @@ public:
 	void make_visible(bool p_visible) final;
 
 	MapEditorPlugin();
-	~MapEditorPlugin() override = default;
 };
 
-#endif // TOOLS_ENABLED
-
 } // namespace CG
+
+#endif // TOOLS_ENABLED

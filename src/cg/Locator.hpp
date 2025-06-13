@@ -14,6 +14,9 @@ struct Locator {
 	Vector2 position;
 	float orientation{};
 	float scale = 1.0;
+
+	bool operator!=(const Locator &other) const;
+	bool operator==(const Locator &other) const;
 };
 
 enum class LocatorType : uint8_t { Unit };

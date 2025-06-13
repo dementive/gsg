@@ -1,11 +1,13 @@
 #include "register_types.h"
 
+#include "cg/Locator.hpp"
 #include "cg/MapCamera.hpp"
 
 #include "ecs/Registry.hpp"
 
 #include "templates/SingletonAllocator.hpp"
 
+#include "Map.hpp"
 #include "nodes/Map3D.hpp"
 
 #ifdef TOOLS_ENABLED
@@ -44,4 +46,9 @@ void uninitialize_src_module(ModuleInitializationLevel p_level) {
 		return;
 
 	entt_singleton_allocator.free();
+
+#ifdef TOOLS_ENABLED
+	memdelete_notnull(Map::self);
+	memdelete_notnull(EditorLocators::self);
+#endif
 }

@@ -1,10 +1,10 @@
-
 #include "MapEditor.hpp"
 
-#include "core/object/callable_method_pointer.h"
-#include "core/string/print_string.h"
+#include "core/input/input_event.h"
+#include "core/io/resource_loader.h"
 
 #include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/sprite_3d.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/control.h"
@@ -13,9 +13,11 @@
 #include "scene/gui/scroll_container.h"
 #include "scene/gui/separator.h"
 #include "editor/editor_dock_manager.h"
+#include "editor/editor_inspector.h"
 #include "editor/editor_interface.h"
 #include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
+#include "editor/editor_settings.h"
 #include "editor/plugins/node_3d_editor_plugin.h"
 
 #include "cg/Locator.hpp"
@@ -31,16 +33,11 @@ using namespace CG;
 
 void MapEditorNode::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_WM_CLOSE_REQUEST: {
-			memdelete_notnull(Map::self);
-			memdelete_notnull(EditorLocators::self);
-		} break;
 		case NOTIFICATION_EDITOR_POST_SAVE: {
 			EditorLocators::self->save();
 		}
 	}
 }
-
 void MapEditorNode::load_map() {
 	if (has_loaded_map)
 		return;
@@ -86,13 +83,53 @@ void MapEditor::province_inspector_item_list_multi_selected(int p_index, bool p_
 	}
 }
 
+static constexpr int LOCATOR_UNIT_X_ROTATION = -75;
+static constexpr int LOCATOR_UNIT_Y_POSITION = 15;
+
 void MapEditor::on_province_selected(int p_province_entity) {
 	// Load the locators for this province and place nodes on the map in their positions so they can be manipulated.
-	const Locator loactor = EditorLocators::self->get_locator(LocatorType::Unit, p_province_entity);
+	const Locator locator = EditorLocators::self->get_locator(LocatorType::Unit, p_province_entity);
+	Sprite3D *sprite = memnew(Sprite3D());
+	sprite->set_texture(ResourceLoader::load("res://gfx/icon.svg"));
+	sprite->set_alpha_cut_mode(Sprite3D::AlphaCutMode::ALPHA_CUT_DISCARD);
+	sprite->set_draw_flag(Sprite3D::DrawFlags::FLAG_DOUBLE_SIDED, false);
+	sprite->set_draw_flag(Sprite3D::DrawFlags::FLAG_SHADED, true);
+
+	MapEditorPlugin::map_editor_node->add_child(sprite);
+	sprite->set_owner(MapEditorPlugin::map_editor_node);
+
+	sprite->set_rotation_degrees(Vector3(LOCATOR_UNIT_X_ROTATION, locator.orientation, 0));
+	sprite->set_scale(Vector3(locator.scale, locator.scale, locator.scale));
+	sprite->set_global_position(Vector3(locator.position.x, LOCATOR_UNIT_Y_POSITION, locator.position.y));
+
+	edited_unit_nodes[p_province_entity] = sprite;
 }
 
 void MapEditor::on_province_deselected(int p_province_entity) {
 	// Load the locators for this province and place nodes on the map in their positions so they can be manipulated.
+	Sprite3D *unit_node = edited_unit_nodes[p_province_entity];
+	if (unit_node != nullptr) {
+		Locator new_locator{
+			.position = Vector2(unit_node->get_global_position().x, unit_node->get_global_position().z),
+			.orientation = unit_node->get_rotation_degrees().y,
+			.scale = unit_node->get_scale().x,
+		};
+		const Locator &old_locator = EditorLocators::self->get_locator(LocatorType::Unit, p_province_entity);
+
+		if (new_locator != old_locator) {
+			EditorLocators::self->set_locator(LocatorType::Unit, p_province_entity, new_locator);
+			EditorLocators::self->save();
+		}
+
+		Node *owner = unit_node->get_owner();
+		if (owner != nullptr) {
+			EditorInterface::get_singleton()->edit_node(MapEditorPlugin::map_editor_node);
+			owner->remove_child(unit_node);
+		}
+		memdelete(unit_node);
+	}
+
+	edited_unit_nodes.erase(p_province_entity);
 }
 
 void MapEditor::add_tool_button(Button *p_button, const String &p_tooltip_text) {
@@ -126,6 +163,7 @@ void MapEditor::hide() {
 	if (active_toolbar == ActiveToolbar::MapObject)
 		remove_province_inspector_dock();
 }
+
 void MapEditor::show() {
 	sidebar_container->show();
 
@@ -150,30 +188,48 @@ void MapEditor::on_map_province_deselected(int p_province_entity) {
 }
 
 void MapEditor::deselect_all_map_provinces() {
-	for (int i = 0; i < province_inspector_item_list->get_selected_items().size(); ++i)
-		on_province_deselected(province_inspector_item_list->get_item_text(i).to_int());
+	for (int i : province_inspector_item_list->get_selected_items())
+		on_map_province_deselected(province_inspector_item_list->get_item_text(i).to_int());
 	province_inspector_item_list->deselect_all();
 }
 
-MapEditor::MapEditor() {
-	map_object_toolbar_container = memnew(HFlowContainer());
-	sidebar_container = memnew(VFlowContainer());
-	province_inspector_dock = memnew(VBoxContainer());
+void MapEditor::on_3d_viewport_gui_input(const Ref<InputEvent> &p_event) {
+	const auto tool_mode = Node3DEditor::get_singleton()->get_tool_mode();
+	if (is_province_selection_enabled() and
+			(tool_mode == Node3DEditor::TOOL_MODE_SELECT or tool_mode == Node3DEditor::TOOL_MODE_MOVE or tool_mode == Node3DEditor::TOOL_MODE_SCALE or
+					tool_mode == Node3DEditor::TOOL_MODE_ROTATE)) {
+		map_object_toolbar_province_selection_button->set_pressed(false);
+	}
+}
 
-	sidebar_container->set_custom_minimum_size(Vector2(20, 0));
-
+MapEditor::MapEditor() :
+		province_inspector_dock(memnew(VBoxContainer())),
+		province_inspector_item_list(memnew(ItemList())),
+		sidebar_container(memnew(VFlowContainer())),
+		map_object_toolbar_container(memnew(HFlowContainer())) {
 	// Setup left panel toolbar
 	map_object_button = memnew(Button());
 	map_object_button->connect("toggled", callable_mp(this, &MapEditor::_locator_button_toggled));
 	add_tool_button(map_object_button, "Map Objects");
+
+	sidebar_container->set_custom_minimum_size(Vector2(20, 0));
 	sidebar_container->add_child(map_object_button);
 
 	Node3DEditor::get_singleton()->add_control_to_left_panel(sidebar_container);
+
+	// Hack to detect when a toolbar button is pressed.
+	// Node3DEditor doens't expose any way to add new toolbar buttons in a way that keeps only 1 selected when editing.
+	// but can connect to it's gui_input signal, check the tool_mode, and then deselect all new toolbar buttons when the edit mode changes.
+	Node3DEditor::get_singleton()->connect("gui_input", callable_mp(this, &MapEditor::on_3d_viewport_gui_input));
 
 	// Setup object selection toolbar
 	map_object_toolbar_province_selection_button = memnew(Button());
 	add_tool_button(map_object_toolbar_province_selection_button, "Province Selection");
 	map_object_toolbar_province_selection_button->connect("toggled", callable_mp(this, &MapEditor::_province_selection_button_toggled));
+
+	// have to use ED_SHORTCUT, any other way of making shorcuts doens't work in the editor with toggle buttons I guess.
+	map_object_toolbar_province_selection_button->set_shortcut(ED_SHORTCUT("", TTRC("Province Selection"), Key::S));
+
 	map_object_toolbar_container->add_child(map_object_toolbar_province_selection_button);
 
 	map_object_toolbar_container->set_custom_minimum_size(Vector2(20, 0));
@@ -182,7 +238,6 @@ MapEditor::MapEditor() {
 	// Setup province inspector dock
 	VBoxContainer *province_inspector_vbox = memnew(VBoxContainer());
 	ScrollContainer *province_inspector_scroll_container = memnew(ScrollContainer());
-	province_inspector_item_list = memnew(ItemList());
 
 	province_inspector_item_list->connect("multi_selected", callable_mp(this, &MapEditor::province_inspector_item_list_multi_selected));
 	province_inspector_item_list->set_select_mode(ItemList::SELECT_TOGGLE);
@@ -209,8 +264,6 @@ void MapEditor::on_map_loaded() {
 	for (uint32_t i = 1; i < Map::self->get_color_to_id_map().size() + 1; ++i)
 		province_inspector_item_list->add_item(itos(i));
 }
-
-MapEditor::~MapEditor() { memdelete_notnull(province_inspector_dock); }
 
 /* MapEditorPlugin */
 
@@ -255,12 +308,12 @@ void MapEditorPlugin::deselect_province(int p_province_id) {
 
 EditorPlugin::AfterGUIInput MapEditorPlugin::forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event) {
 	if (!map_editor->is_province_selection_enabled())
-		return EditorPlugin::AFTER_GUI_INPUT_CUSTOM;
+		return EditorPlugin::AFTER_GUI_INPUT_PASS;
 
 	Ref<InputEventMouseButton> mb = p_event;
 
 	if (!mb.is_valid())
-		return EditorPlugin::AFTER_GUI_INPUT_CUSTOM;
+		return EditorPlugin::AFTER_GUI_INPUT_PASS;
 
 	Point2 mouse_position(mb->get_position().x, mb->get_position().y);
 
@@ -273,7 +326,7 @@ EditorPlugin::AfterGUIInput MapEditorPlugin::forward_3d_gui_input(Camera3D *p_ca
 		}
 	}
 
-	ERR_FAIL_NULL_V(viewport, EditorPlugin::AFTER_GUI_INPUT_CUSTOM);
+	ERR_FAIL_NULL_V(viewport, EditorPlugin::AFTER_GUI_INPUT_PASS);
 
 	if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
 		const Vector2i click_position = get_map_click_position(p_camera, mouse_position);
@@ -319,14 +372,14 @@ EditorPlugin::AfterGUIInput MapEditorPlugin::forward_3d_gui_input(Camera3D *p_ca
 		return EditorPlugin::AFTER_GUI_INPUT_CUSTOM;
 	}
 
-	return EditorPlugin::AFTER_GUI_INPUT_CUSTOM;
+	return EditorPlugin::AFTER_GUI_INPUT_PASS;
 }
 
 bool MapEditorPlugin::handles(Object *p_object) const {
 	MapEditorNode *scene_root = Object::cast_to<MapEditorNode>(EditorInterface::get_singleton()->get_edited_scene_root());
 	if (scene_root != nullptr) {
-		if (!scene_root->has_loaded_map) {
-			scene_root->load_map(); // Has to be here because the use Map::load_map the MapEditorNode is needed.
+		if (!MapEditorNode::has_loaded_map) {
+			scene_root->load_map(); // Has to be here because to use Map::load_map the MapEditorNode is needed.
 			map_editor->on_map_loaded();
 		}
 
@@ -344,7 +397,8 @@ void MapEditorPlugin::make_visible(bool p_visible) {
 		map_editor->hide();
 };
 
-MapEditorPlugin::MapEditorPlugin() : map_editor(memnew(MapEditor)) {
+MapEditorPlugin::MapEditorPlugin() :
+		map_editor(memnew(MapEditor)) {
 	if (self == nullptr)
 		self = this;
 	EditorNode::get_singleton()->get_gui_base()->add_child(map_editor);
