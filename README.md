@@ -19,10 +19,6 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 - More map modes
 
-- Map locators
-
-- Map editor for quick locator placement
-
 - Province adjacency and crossings
 
 - Military unit selection.
@@ -37,7 +33,7 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 - Fog of war system
 
-- Surround map clouds shader
+- Surround map clouds shader. This is sorta implemented but not working how I want, the clouds should extend to everywhere the camera can see.
 
 - 3D map objects like trees
 
