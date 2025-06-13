@@ -80,6 +80,7 @@ public:
 	void on_province_deselected(int p_province_entity);
 
 	MapEditor();
+	~MapEditor() override;
 
 	// Stuff that can't happen in the constructor because the map data hasn't been loaded yet.
 	void on_map_loaded();

@@ -2,6 +2,7 @@
 
 #include "core/input/input_event.h"
 #include "core/io/resource_loader.h"
+#include "core/os/memory.h"
 
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/sprite_3d.h"
@@ -264,6 +265,8 @@ void MapEditor::on_map_loaded() {
 	for (uint32_t i = 1; i < Map::self->get_color_to_id_map().size() + 1; ++i)
 		province_inspector_item_list->add_item(itos(i));
 }
+
+MapEditor::~MapEditor() { memdelete_notnull(province_inspector_dock); }
 
 /* MapEditorPlugin */
 
