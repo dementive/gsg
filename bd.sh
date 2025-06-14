@@ -18,7 +18,7 @@ case "$1" in
     rm -f ./bin/*
     scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
     if [ $? -eq 0 ]; then # only build the link the engine if there are no compiler errors so the errors don't show twice.
-      scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options
+      scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options compiledb=yes
     fi;;
   linux_debug_engine_gcc)
     rm -f ./bin/*

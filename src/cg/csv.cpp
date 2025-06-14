@@ -59,7 +59,7 @@ Vector<Vector<Variant>> parse_file(const String &p_file_name) {
 	data.append(convert_types(first_line_data, types));
 
 	while (!file->eof_reached()) {
-		Vector<String> line_strings = file->get_csv_line();
+		const Vector<String> line_strings = file->get_csv_line();
 		if (line_strings.size() != types.size()) // ignore lines that are empty, have comments, or are incorrectly formatted.
 			continue;
 		data.append(convert_types(line_strings, types));

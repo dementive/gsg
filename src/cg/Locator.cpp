@@ -67,8 +67,8 @@ void EditorLocators::load() {
 	List<String> unit_sections;
 	unit_config->get_sections(&unit_sections);
 
-	int unit_sections_size = unit_sections.size();
-	int unit_locator_excepted_size = get_locator_size(LocatorType::Unit);
+	const int unit_sections_size = unit_sections.size();
+	const int unit_locator_excepted_size = get_locator_size(LocatorType::Unit);
 
 	AHashMap<int, Locator> existing_locators;
 

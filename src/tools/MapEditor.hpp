@@ -22,7 +22,6 @@ class MapEditorNode : public Node3D {
 
 protected:
 	static void _bind_methods() {}
-	void _notification(int p_what);
 
 public:
 	MeshInstance3D *map_mesh{};

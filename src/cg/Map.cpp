@@ -368,7 +368,7 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 			// Set lookup texture pixels
 			const ProvinceIndex province_id = provinces_map[current_color];
 			const Color lookup_color = get_lookup_color(province_id);
-			size_t lookup_index = (static_cast<size_t>(y) * province_image_width + x) * 2;
+			const size_t lookup_index = (static_cast<size_t>(y) * province_image_width + x) * 2;
 			lookup_write_ptr[lookup_index + 0] = lookup_color.r;
 			lookup_write_ptr[lookup_index + 1] = lookup_color.g;
 
@@ -496,7 +496,7 @@ Ref<ImageTexture> Map::get_country_map_mode() {
 
 		Color country_color = discard_color;
 		if (registry.all_of<Owner>(province_entity)) {
-			CountryEntity owner = registry.get<Owner>(province_entity);
+			const CountryEntity owner = registry.get<Owner>(province_entity);
 			country_color = registry.get<Color>(owner);
 		}
 

@@ -1,6 +1,6 @@
-# Enable all the relevant checks and then disable all the ones I don't care about or that don't work well with godot-cpp.
-# Run with: find ./src/ \( -iname "*.hpp" -o -iname "*.cpp" \) -exec clang-tidy -extra-arg=-std=c++23 {} +
-# Add "--fix" to apply fixes automatically.
+# Enable all the relevant checks and then disable all the ones I don't care about or that don't work well with godot.
+# Run with: run-clang-tidy -use-color -config-file ./.clang-tidy -source-filter '.*/gsg/src/.*\.cpp' -p ../godot -extra-arg=-std=c++23
+# Add "-fix" to apply fixes automatically.
 Checks: '
 -*,
 clang-analyzer-*,-clang-analyzer-osx*,bugprone-*,concurrency-*,cppcoreguidelines-*,misc-*,modernize-*,performance-*,portability-*,readability-*,
@@ -14,7 +14,8 @@ clang-analyzer-*,-clang-analyzer-osx*,bugprone-*,concurrency-*,cppcoreguidelines
 -cppcoreguidelines-macro-to-enum,-cppcoreguidelines-avoid-c-arrays,-cppcoreguidelines-pro-bounds-constant-array-index, -readability-function-cognitive-complexity, -cppcoreguidelines-no-malloc, -cppcoreguidelines-pro-bounds-pointer-arithmetic, -cppcoreguidelines-avoid-do-while, -readability-identifier-length
 '
 FormatStyle: file
-HeaderFilterRegex: (src)/
+HeaderFilterRegex: '.*/gsg/src/.*\.(hpp|.h)'
+ExcludeHeaderFilterRegex: '.*/gsg/src/.*/Vec.hpp'
 CheckOptions:
     - key: cppcoreguidelines-avoid-non-const-global-variables.AllowInternalLinkage
       value: 1

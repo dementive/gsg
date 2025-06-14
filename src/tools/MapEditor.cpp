@@ -32,13 +32,6 @@ using namespace CG;
 
 /* MapEditorNode */
 
-void MapEditorNode::_notification(int p_what) {
-	switch (p_what) {
-		case NOTIFICATION_EDITOR_POST_SAVE: {
-			EditorLocators::self->save();
-		}
-	}
-}
 void MapEditorNode::load_map() {
 	if (has_loaded_map)
 		return;
@@ -110,7 +103,7 @@ void MapEditor::on_province_deselected(int p_province_entity) {
 	// Load the locators for this province and place nodes on the map in their positions so they can be manipulated.
 	Sprite3D *unit_node = edited_unit_nodes[p_province_entity];
 	if (unit_node != nullptr) {
-		Locator new_locator{
+		const Locator new_locator{
 			.position = Vector2(unit_node->get_global_position().x, unit_node->get_global_position().z),
 			.orientation = unit_node->get_rotation_degrees().y,
 			.scale = unit_node->get_scale().x,
@@ -150,9 +143,12 @@ void MapEditor::remove_province_inspector_dock() { EditorDockManager::get_single
 void MapEditor::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_THEME_CHANGED: {
-			map_object_button->set_button_icon(get_editor_theme_icon(SNAME("EditorPosition")));
-			map_object_toolbar_province_selection_button->set_button_icon(get_editor_theme_icon(SNAME("EditPivot")));
+			map_object_button->set_button_icon(get_editor_theme_icon("EditorPosition"));
+			map_object_toolbar_province_selection_button->set_button_icon(get_editor_theme_icon("EditPivot"));
 		} break;
+		case NOTIFICATION_EDITOR_POST_SAVE: {
+			EditorLocators::self->save();
+		}
 	}
 }
 
@@ -189,7 +185,7 @@ void MapEditor::on_map_province_deselected(int p_province_entity) {
 }
 
 void MapEditor::deselect_all_map_provinces() {
-	for (int i : province_inspector_item_list->get_selected_items())
+	for (const int i : province_inspector_item_list->get_selected_items())
 		on_map_province_deselected(province_inspector_item_list->get_item_text(i).to_int());
 	province_inspector_item_list->deselect_all();
 }
@@ -313,12 +309,12 @@ EditorPlugin::AfterGUIInput MapEditorPlugin::forward_3d_gui_input(Camera3D *p_ca
 	if (!map_editor->is_province_selection_enabled())
 		return EditorPlugin::AFTER_GUI_INPUT_PASS;
 
-	Ref<InputEventMouseButton> mb = p_event;
+	const Ref<InputEventMouseButton> mb = p_event;
 
 	if (!mb.is_valid())
 		return EditorPlugin::AFTER_GUI_INPUT_PASS;
 
-	Point2 mouse_position(mb->get_position().x, mb->get_position().y);
+	const Point2 mouse_position(mb->get_position().x, mb->get_position().y);
 
 	Node3DEditorViewport *viewport = nullptr;
 	for (uint32_t i = 0; i < Node3DEditor::VIEWPORTS_COUNT; i++) {
