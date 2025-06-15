@@ -1,8 +1,8 @@
 #pragma once
 
 #ifdef TOOLS_ENABLED
-
-#include "scene/3d/node_3d.h"
+#include "scene/3d/label_3d.h"
+#include "scene/3d/sprite_3d.h"
 #include "editor/plugins/editor_plugin.h"
 
 class MeshInstance3D;
@@ -17,6 +17,8 @@ class InputEvent;
 
 namespace CG {
 
+enum class LocatorType : uint8_t;
+
 class MapEditorNode : public Node3D {
 	GDCLASS(MapEditorNode, Node3D)
 
@@ -30,11 +32,36 @@ public:
 	void load_map();
 };
 
+class MapEditorSprite : public Sprite3D {
+	GDCLASS(MapEditorSprite, Sprite3D)
+
+protected:
+	static void _bind_methods() {}
+	void _notification(int p_what);
+
+public:
+	LocatorType locator_type;
+	void init(LocatorType p_locator_type);
+};
+
+class MapEditorLabel : public Label3D {
+	GDCLASS(MapEditorLabel, Label3D)
+
+protected:
+	static void _bind_methods() {}
+	void _notification(int p_what);
+
+public:
+	LocatorType locator_type;
+	void init(LocatorType p_locator_type);
+};
+
 class MapEditor : public Control {
 	GDCLASS(MapEditor, Control)
 
 private:
-	HashMap<int, Sprite3D *> edited_unit_nodes;
+	HashMap<int, MapEditorSprite *> edited_unit_nodes;
+	HashMap<int, MapEditorLabel *> edited_label_nodes;
 
 	VBoxContainer *province_inspector_dock{};
 	ItemList *province_inspector_item_list{};
@@ -64,6 +91,8 @@ private:
 
 	void on_3d_viewport_gui_input(const Ref<InputEvent> &p_event);
 
+	void _on_province_deselected(int p_province_entity, LocatorType p_locator_type);
+
 protected:
 	static void _bind_methods() {}
 	void _notification(int p_what);
@@ -77,6 +106,9 @@ public:
 	void on_map_province_selected(int p_province_entity);
 	void on_map_province_deselected(int p_province_entity);
 	void deselect_all_map_provinces();
+
+	void create_unit_locator(int p_province_entity);
+	void create_text_locator(int p_province_entity);
 
 	void on_province_selected(int p_province_entity);
 	void on_province_deselected(int p_province_entity);

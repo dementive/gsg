@@ -19,9 +19,7 @@
 
 using namespace CG;
 
-constexpr int COLOR_TEXTURE_DIMENSIONS = 255;
-constexpr float border_map_layer = 0.01;
-constexpr float label_map_layer = 0.015;
+static constexpr int COLOR_TEXTURE_DIMENSIONS = 255;
 const Color discard_color = Color(0, 0, 0);
 
 Vector2 Map::calculate_centroid(const Polygon &p_polygon) {

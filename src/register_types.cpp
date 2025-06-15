@@ -1,5 +1,7 @@
 #include "register_types.h"
 
+#include "core/object/class_db.h"
+
 #include "cg/Locator.hpp"
 #include "cg/MapCamera.hpp"
 
@@ -37,6 +39,8 @@ void initialize_src_module(ModuleInitializationLevel p_level) {
 
 #ifdef TOOLS_ENABLED
 	GDREGISTER_CLASS(MapEditorNode)
+	GDREGISTER_INTERNAL_CLASS(MapEditorSprite)
+	GDREGISTER_INTERNAL_CLASS(MapEditorLabel)
 	EditorPlugins::add_by_type<MapEditorPlugin>();
 #endif
 }

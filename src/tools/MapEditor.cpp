@@ -1,3 +1,5 @@
+#ifdef TOOLS_ENABLED
+
 #include "MapEditor.hpp"
 
 #include "core/input/input_event.h"
@@ -5,7 +7,6 @@
 #include "core/os/memory.h"
 
 #include "scene/3d/mesh_instance_3d.h"
-#include "scene/3d/sprite_3d.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/control.h"
@@ -22,13 +23,12 @@
 #include "editor/plugins/node_3d_editor_plugin.h"
 
 #include "cg/Locator.hpp"
+#include "cg/Map.hpp"
 #include "cg/MapUtils.hpp"
 
-#include "Map.hpp"
+#include "ecs/Registry.hpp"
 
 using namespace CG;
-
-#ifdef TOOLS_ENABLED
 
 /* MapEditorNode */
 
@@ -48,6 +48,32 @@ void MapEditorNode::load_map() {
 	memnew(EditorLocators());
 
 	has_loaded_map = true;
+}
+
+/* MapEditorSprite */
+
+void MapEditorSprite::init(LocatorType p_locator_type) { locator_type = p_locator_type; }
+
+void MapEditorSprite::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_TRANSFORM_CHANGED: {
+			if (EditorLocators::self != nullptr)
+				EditorLocators::self->set_dirty(locator_type);
+		} break;
+	}
+}
+
+/* MapEditorLabel */
+
+void MapEditorLabel::init(LocatorType p_locator_type) { locator_type = p_locator_type; }
+
+void MapEditorLabel::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_TRANSFORM_CHANGED: {
+			if (EditorLocators::self != nullptr)
+				EditorLocators::self->set_dirty(locator_type);
+		} break;
+	}
 }
 
 /* MapEditorPlugin */
@@ -93,10 +119,12 @@ void MapEditor::province_inspector_item_list_node_selected(int p_index) {
 static constexpr int LOCATOR_UNIT_X_ROTATION = -75;
 static constexpr int LOCATOR_UNIT_Y_POSITION = 15;
 
-void MapEditor::on_province_selected(int p_province_entity) {
-	// Load the locators for this province and place nodes on the map in their positions so they can be manipulated.
+void MapEditor::create_unit_locator(int p_province_entity) {
+	if (!EditorLocators::self->has_locator(LocatorType::Unit, p_province_entity))
+		return;
+
 	const Locator locator = EditorLocators::self->get_locator(LocatorType::Unit, p_province_entity);
-	Sprite3D *sprite = memnew(Sprite3D());
+	MapEditorSprite *sprite = memnew(MapEditorSprite());
 	sprite->set_texture(ResourceLoader::load("res://gfx/icon.svg"));
 	sprite->set_alpha_cut_mode(Sprite3D::AlphaCutMode::ALPHA_CUT_DISCARD);
 	sprite->set_draw_flag(Sprite3D::DrawFlags::FLAG_DOUBLE_SIDED, false);
@@ -114,38 +142,88 @@ void MapEditor::on_province_selected(int p_province_entity) {
 	node_item_list->set_item_metadata(item_index, sprite);
 }
 
-void MapEditor::on_province_deselected(int p_province_entity) {
+void MapEditor::create_text_locator(int p_province_entity) {
+	if (!EditorLocators::self->has_locator(LocatorType::Text, p_province_entity))
+		return;
+
+	const Locator locator = EditorLocators::self->get_locator(LocatorType::Text, p_province_entity);
+	MapEditorLabel *label = memnew(MapEditorLabel());
+
+	MapEditorPlugin::map_editor_node->add_child(label);
+	label->set_owner(MapEditorPlugin::map_editor_node);
+
+	const Entity entity = Registry::self->get_entity<ProvinceTag>(p_province_entity);
+	label->set_text(Registry::self->get<Name>(entity));
+	label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
+	label->set_modulate(Color(0, 0, 0));
+	label->set_outline_modulate(Color(1, 1, 1, 0));
+
+	label->set_rotation_degrees(Vector3(-90.0, locator.orientation, 0));
+	label->set_scale(Vector3(locator.scale, locator.scale, locator.scale));
+	label->set_global_position(Vector3(locator.position.x, label_map_layer, locator.position.y));
+
+	edited_label_nodes[p_province_entity] = label;
+	int item_index = node_item_list->add_item(vformat("%d:    Text", p_province_entity));
+	node_item_list->set_item_metadata(item_index, label);
+}
+
+void MapEditor::on_province_selected(int p_province_entity) {
 	// Load the locators for this province and place nodes on the map in their positions so they can be manipulated.
-	Sprite3D *unit_node = edited_unit_nodes[p_province_entity];
-	if (unit_node != nullptr) {
+	create_unit_locator(p_province_entity);
+	create_text_locator(p_province_entity);
+}
+
+void MapEditor::_on_province_deselected(int p_province_entity, LocatorType p_locator_type) {
+	Node3D *node{};
+	switch (p_locator_type) {
+		case LocatorType::Unit: {
+			node = edited_unit_nodes[p_province_entity];
+		} break;
+		case LocatorType::Text: {
+			node = edited_label_nodes[p_province_entity];
+		} break;
+	}
+
+	if (node != nullptr) {
 		const Locator new_locator{
-			.position = Vector2(unit_node->get_global_position().x, unit_node->get_global_position().z),
-			.orientation = unit_node->get_rotation_degrees().y,
-			.scale = unit_node->get_scale().x,
+			.position = Vector2(node->get_global_position().x, node->get_global_position().z),
+			.orientation = node->get_rotation_degrees().y,
+			.scale = node->get_scale().x,
 		};
-		const Locator &old_locator = EditorLocators::self->get_locator(LocatorType::Unit, p_province_entity);
+		const Locator &old_locator = EditorLocators::self->get_locator(p_locator_type, p_province_entity);
 
 		if (new_locator != old_locator) {
-			EditorLocators::self->set_locator(LocatorType::Unit, p_province_entity, new_locator);
-			EditorLocators::self->save();
+			EditorLocators::self->set_locator(p_locator_type, p_province_entity, new_locator);
+			EditorLocators::self->save(p_locator_type);
 		}
 
 		for (int i = 0; i < node_item_list->get_item_count(); ++i) {
 			Object *obj = node_item_list->get_item_metadata(i);
-			;
-			if (obj == unit_node)
+			if (obj == node)
 				node_item_list->remove_item(i);
 		}
 
-		Node *owner = unit_node->get_owner();
+		Node *owner = node->get_owner();
 		if (owner != nullptr) {
 			EditorInterface::get_singleton()->edit_node(MapEditorPlugin::map_editor_node);
-			owner->remove_child(unit_node);
+			owner->remove_child(node);
 		}
-		memdelete(unit_node);
+		memdelete(node);
 	}
 
-	edited_unit_nodes.erase(p_province_entity);
+	switch (p_locator_type) {
+		case LocatorType::Unit: {
+			edited_unit_nodes.erase(p_province_entity);
+		} break;
+		case LocatorType::Text: {
+			edited_label_nodes.erase(p_province_entity);
+		} break;
+	}
+}
+
+void MapEditor::on_province_deselected(int p_province_entity) {
+	_on_province_deselected(p_province_entity, LocatorType::Unit);
+	_on_province_deselected(p_province_entity, LocatorType::Text);
 }
 
 void MapEditor::add_tool_button(Button *p_button, const String &p_tooltip_text) {
@@ -169,8 +247,8 @@ void MapEditor::_notification(int p_what) {
 			map_object_toolbar_province_selection_button->set_button_icon(get_editor_theme_icon("EditPivot"));
 		} break;
 		case NOTIFICATION_EDITOR_POST_SAVE: {
-			EditorLocators::self->save();
-		}
+			EditorLocators::self->save_all();
+		} break;
 	}
 }
 

@@ -56,6 +56,7 @@ namespace CG {
 	MAKE_VARIANT_CONSTRUCTOR_SAME(PackedVector4Array, Vector4)
 
 // This is the exact same as the godot LocalVector except it has a few more constructors that make it easier to move to and from variant Array types.
+// It also has a different Iterator that makes it work with std::algorithms and std::ranges stuff
 // Makes loading configs and serialization easier.
 template <typename T, typename U = uint32_t, bool force_trivial = false, bool tight = false> class Vec {
 private:
@@ -65,6 +66,7 @@ private:
 
 public:
 	NEW_VEC_CONSTRUCTORS
+	using value_type = T;
 
 	T *ptr() { return data; }
 
@@ -181,57 +183,80 @@ public:
 		return data[p_index];
 	}
 
-	struct Iterator {
-		_FORCE_INLINE_ T &operator*() const { return *elem_ptr; }
-		_FORCE_INLINE_ T *operator->() const { return elem_ptr; }
-		_FORCE_INLINE_ Iterator &operator++() {
-			elem_ptr++;
-			return *this;
-		}
-		_FORCE_INLINE_ Iterator &operator--() {
-			elem_ptr--;
+	// Iterator API (satisfies std::ranges::contiguous_range constraints https://stackoverflow.com/a/75061822)
+	template <bool IsConst> class Iterator {
+	public:
+		using difference_type = std::ptrdiff_t;
+		using element_type = T;
+		using pointer = std::conditional_t<IsConst, const T *, T *>;
+		using reference = std::conditional_t<IsConst, const T &, T &>;
+		using iterator_concept = std::contiguous_iterator_tag;
+
+		Iterator(pointer p_ptr) :
+				elem_ptr(p_ptr) {}
+		Iterator() = default;
+
+		reference operator*() const { return *elem_ptr; }
+		pointer operator->() const { return elem_ptr; }
+
+		Iterator &operator++() {
+			++elem_ptr;
 			return *this;
 		}
 
-		_FORCE_INLINE_ bool operator==(const Iterator &b) const { return elem_ptr == b.elem_ptr; }
-		_FORCE_INLINE_ bool operator!=(const Iterator &b) const { return elem_ptr != b.elem_ptr; }
+		Iterator operator++(int) {
+			Iterator temp = *this;
+			++(*this);
+			return temp;
+		}
 
-		Iterator(T *p_ptr) { elem_ptr = p_ptr; }
-		Iterator() {}
-		Iterator(const Iterator &p_it) { elem_ptr = p_it.elem_ptr; }
+		Iterator &operator--() {
+			--elem_ptr;
+			return *this;
+		}
+
+		Iterator operator--(int) {
+			Iterator temp = *this;
+			--(*this);
+			return temp;
+		}
+
+		// Random access operations
+		Iterator operator+(const difference_type n) const { return Iterator(elem_ptr + n); }
+		friend Iterator operator+(const difference_type value, const Iterator &other) { return other + value; }
+		Iterator operator-(const difference_type n) const { return Iterator(elem_ptr - n); }
+		difference_type operator-(const Iterator &other) const { return elem_ptr - other.elem_ptr; }
+
+		// Compound assignment
+		Iterator &operator+=(const difference_type n) {
+			elem_ptr += n;
+			return *this;
+		}
+		Iterator &operator-=(const difference_type n) {
+			elem_ptr -= n;
+			return *this;
+		}
+
+		// Subscript operator
+		reference operator[](const difference_type n) const { return *(elem_ptr + n); }
+
+		// Comparison operators
+		bool operator==(const Iterator &other) const { return elem_ptr == other.elem_ptr; }
+		bool operator!=(const Iterator &other) const { return !(*this == other); }
+		bool operator<(const Iterator &other) const { return elem_ptr < other.elem_ptr; }
+		bool operator>(const Iterator &other) const { return elem_ptr > other.elem_ptr; }
+		bool operator<=(const Iterator &other) const { return !(*this > other); }
+		bool operator>=(const Iterator &other) const { return !(*this < other); }
+		constexpr auto operator<=>(const Iterator &rhs) const = default;
 
 	private:
-		T *elem_ptr = nullptr;
+		pointer elem_ptr = nullptr;
 	};
 
-	struct ConstIterator {
-		_FORCE_INLINE_ const T &operator*() const { return *elem_ptr; }
-		_FORCE_INLINE_ const T *operator->() const { return elem_ptr; }
-		_FORCE_INLINE_ ConstIterator &operator++() {
-			elem_ptr++;
-			return *this;
-		}
-		_FORCE_INLINE_ ConstIterator &operator--() {
-			elem_ptr--;
-			return *this;
-		}
-
-		_FORCE_INLINE_ bool operator==(const ConstIterator &b) const { return elem_ptr == b.elem_ptr; }
-		_FORCE_INLINE_ bool operator!=(const ConstIterator &b) const { return elem_ptr != b.elem_ptr; }
-
-		ConstIterator(const T *p_ptr) { elem_ptr = p_ptr; }
-		ConstIterator() {}
-		ConstIterator(const ConstIterator &p_it) { elem_ptr = p_it.elem_ptr; }
-
-	private:
-		const T *elem_ptr = nullptr;
-	};
-
-	_FORCE_INLINE_ Iterator begin() { return Iterator(data); }
-	_FORCE_INLINE_ Iterator end() { return Iterator(data + size()); }
-
-	_FORCE_INLINE_ ConstIterator begin() const { return ConstIterator(ptr()); }
-	_FORCE_INLINE_ ConstIterator end() const { return ConstIterator(ptr() + size()); }
+	Iterator<false> begin() { return Iterator<false>(data); }
+	Iterator<false> end() { return Iterator<false>(data + size()); }
+	[[nodiscard]] Iterator<true> begin() const { return Iterator<true>(ptr()); }
+	[[nodiscard]] Iterator<true> end() const { return Iterator<true>(ptr() + size()); }
 
 	void insert(U p_pos, T p_val) {
 		ERR_FAIL_UNSIGNED_INDEX(p_pos, count + 1);

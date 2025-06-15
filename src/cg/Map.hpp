@@ -24,6 +24,9 @@ enum class ProvinceBorderType : uint8_t;
 using ProvinceIndex = int; // Index into the province lookup texture.
 using ProvinceColorMap = AHashMap<Color, ProvinceIndex>;
 
+static constexpr float border_map_layer = 0.01;
+static constexpr float label_map_layer = 0.015;
+
 class Map {
 	SINGLETON(Map)
 private:
