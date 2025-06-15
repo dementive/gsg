@@ -38,6 +38,7 @@ private:
 
 	VBoxContainer *province_inspector_dock{};
 	ItemList *province_inspector_item_list{};
+	ItemList *node_item_list{};
 
 	VFlowContainer *sidebar_container{};
 	HFlowContainer *map_object_toolbar_container{};
@@ -55,6 +56,8 @@ private:
 	void _locator_button_toggled(bool p_toggled);
 	void _province_selection_button_toggled(bool p_toggled);
 	void province_inspector_item_list_multi_selected(int p_index, bool p_selected);
+	void province_inspector_item_list_node_selected(int p_index);
+
 	static void add_tool_button(Button *p_button, const String &p_tooltip_text);
 	void init_province_inspector_dock();
 	void remove_province_inspector_dock();

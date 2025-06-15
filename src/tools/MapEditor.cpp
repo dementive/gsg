@@ -77,6 +77,19 @@ void MapEditor::province_inspector_item_list_multi_selected(int p_index, bool p_
 	}
 }
 
+void MapEditor::province_inspector_item_list_node_selected(int p_index) {
+	Object *obj = node_item_list->get_item_metadata(p_index);
+	if (obj == nullptr)
+		return;
+
+	Node3D *node = Object::cast_to<Node3D>(obj);
+	if (node == nullptr)
+		return;
+
+	EditorInterface::get_singleton()->edit_node(node);
+	map_object_toolbar_province_selection_button->set_pressed(false);
+}
+
 static constexpr int LOCATOR_UNIT_X_ROTATION = -75;
 static constexpr int LOCATOR_UNIT_Y_POSITION = 15;
 
@@ -97,6 +110,8 @@ void MapEditor::on_province_selected(int p_province_entity) {
 	sprite->set_global_position(Vector3(locator.position.x, LOCATOR_UNIT_Y_POSITION, locator.position.y));
 
 	edited_unit_nodes[p_province_entity] = sprite;
+	int item_index = node_item_list->add_item(vformat("%d:    Unit", p_province_entity));
+	node_item_list->set_item_metadata(item_index, sprite);
 }
 
 void MapEditor::on_province_deselected(int p_province_entity) {
@@ -113,6 +128,13 @@ void MapEditor::on_province_deselected(int p_province_entity) {
 		if (new_locator != old_locator) {
 			EditorLocators::self->set_locator(LocatorType::Unit, p_province_entity, new_locator);
 			EditorLocators::self->save();
+		}
+
+		for (int i = 0; i < node_item_list->get_item_count(); ++i) {
+			Object *obj = node_item_list->get_item_metadata(i);
+			;
+			if (obj == unit_node)
+				node_item_list->remove_item(i);
 		}
 
 		Node *owner = unit_node->get_owner();
@@ -200,10 +222,11 @@ void MapEditor::on_3d_viewport_gui_input(const Ref<InputEvent> &p_event) {
 }
 
 MapEditor::MapEditor() :
-		province_inspector_dock(memnew(VBoxContainer())),
-		province_inspector_item_list(memnew(ItemList())),
-		sidebar_container(memnew(VFlowContainer())),
-		map_object_toolbar_container(memnew(HFlowContainer())) {
+		province_inspector_dock(memnew(VBoxContainer)),
+		province_inspector_item_list(memnew(ItemList)),
+		node_item_list(memnew(ItemList)),
+		sidebar_container(memnew(VFlowContainer)),
+		map_object_toolbar_container(memnew(HFlowContainer)) {
 	// Setup left panel toolbar
 	map_object_button = memnew(Button());
 	map_object_button->connect("toggled", callable_mp(this, &MapEditor::_locator_button_toggled));
@@ -235,7 +258,10 @@ MapEditor::MapEditor() :
 	// Setup province inspector dock
 	VBoxContainer *province_inspector_vbox = memnew(VBoxContainer());
 	ScrollContainer *province_inspector_scroll_container = memnew(ScrollContainer());
+	ScrollContainer *node_scroll_container = memnew(ScrollContainer());
+	HSeparator *ps_hsep = memnew(HSeparator());
 
+	// Selection item list
 	province_inspector_item_list->connect("multi_selected", callable_mp(this, &MapEditor::province_inspector_item_list_multi_selected));
 	province_inspector_item_list->set_select_mode(ItemList::SELECT_TOGGLE);
 	province_inspector_item_list->set_max_columns(5);
@@ -249,6 +275,22 @@ MapEditor::MapEditor() :
 	province_inspector_scroll_container->set_horizontal_scroll_mode(ScrollContainer::SCROLL_MODE_DISABLED);
 	province_inspector_scroll_container->set_custom_minimum_size(Vector2(0, 250.0));
 	province_inspector_vbox->add_child(province_inspector_scroll_container);
+
+	province_inspector_vbox->add_child(ps_hsep);
+
+	// Node item list
+	node_item_list->connect("item_selected", callable_mp(this, &MapEditor::province_inspector_item_list_node_selected));
+	node_item_list->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	node_item_list->set_v_size_flags(Control::SIZE_EXPAND_FILL);
+	node_item_list->set_select_mode(ItemList::SELECT_SINGLE);
+	node_item_list->set_max_columns(1);
+
+	node_scroll_container->set_follow_focus(true);
+	node_scroll_container->set_horizontal_scroll_mode(ScrollContainer::SCROLL_MODE_DISABLED);
+	node_scroll_container->set_custom_minimum_size(Vector2(0, 250.0));
+
+	node_scroll_container->add_child(node_item_list);
+	province_inspector_vbox->add_child(node_scroll_container);
 
 	province_inspector_vbox->set_anchors_and_offsets_preset(PRESET_FULL_RECT);
 	province_inspector_dock->add_child(province_inspector_vbox);
