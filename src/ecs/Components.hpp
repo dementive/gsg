@@ -3,6 +3,7 @@
 #include "core/string/ustring.h"
 
 #include "Entity.hpp"
+#include "Locator.hpp"
 #include "Vec.hpp"
 
 namespace CG {
@@ -14,11 +15,15 @@ namespace CG {
 	operator m_type &() { return m_name; }                                                                                                                                                   \
 	operator const m_type &() const { return m_name; }
 
-struct Name : String {};
+// Editor only components
+#ifdef TOOLS_ENABLED
 struct Centroid : Vector2 {};
 struct Orientation {
 	MAKE_SAME(Orientation, float, value)
 };
+#endif
+
+struct Name : String {};
 
 // Provinces in an area
 struct AreaProvinces : TightVec<ProvinceEntity> {};
@@ -63,6 +68,11 @@ struct ProvinceBorderMeshRID : RID {};
 // Each province's adjacencies and borders
 struct ProvinceAdjacencies : TightVec<ProvinceAdjacencyEntity> {};
 struct ProvinceBorders : TightVec<ProvinceBorderEntity> {};
+
+// Province locator components
+
+struct UnitLocator : Locator {};
+struct TextLocator : Locator {};
 
 #undef MAKE_SAME
 

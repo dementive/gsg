@@ -47,9 +47,16 @@ private:
 	static Vector<Ref<ShaderMaterial>> create_border_materials();
 	static Ref<ArrayMesh> create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
 	static void create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map_width, int p_map_height);
+	static void create_border_meshes(Registry &p_registry, Node3D *p_map, Dictionary p_border_dict, int p_map_width, int p_map_height, bool is_map_editor);
+
+	void load_locators(Registry &p_registry);
 
 public:
 	template <bool is_map_editor> void load_map(Node3D *p_map);
+
+#ifdef TOOLS_ENABLED
+	void load_map_editor(Node3D *p_map);
+#endif
 
 	Ref<Image> get_lookup_image();
 	Ref<ImageTexture> get_lookup_texture();

@@ -1,15 +1,15 @@
-#ifdef TOOLS_ENABLED
-
 #include "Locator.hpp"
-
-#include "core/io/config_file.h"
-
-#include "Registry.hpp"
 
 using namespace CG;
 
 bool Locator::operator==(const Locator &other) const { return position == other.position && orientation == other.orientation && scale == other.scale; }
 bool Locator::operator!=(const Locator &other) const { return position != other.position || orientation != other.orientation || scale != other.scale; }
+
+#ifdef TOOLS_ENABLED
+
+#include "core/io/config_file.h"
+
+#include "Registry.hpp"
 
 Vec<Entity> EditorLocators::get_locator_vec(LocatorType p_locator) {
 	const auto land_provinces_view = Registry::self->view<LandProvinceTag>();
@@ -100,7 +100,7 @@ static constexpr float DEFAULT_LOCATOR_SCALE = 25.0;
 static constexpr float DEFAULT_TEXT_LOCATOR_SCALE = 100.0;
 
 void EditorLocators::_load_locators(LocatorMap &p_locator_map, const String &p_cfg_path, LocatorType p_locator) {
-	ConfigFile *config = memnew(ConfigFile());
+	Ref<ConfigFile> config = memnew(ConfigFile());
 
 	if (config->load(p_cfg_path) != OK)
 		return;

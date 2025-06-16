@@ -1,10 +1,14 @@
 #include "Map.hpp"
 
+#include "core/crypto/hashing_context.h"
 #include "core/io/config_file.h"
+#include "core/io/file_access.h"
 #include "core/math/geometry_2d.h"
+#include "core/variant/typed_dictionary.h"
 
 #include "scene/3d/label_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
+#include "scene/resources/compressed_texture.h"
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/shader.h"
@@ -317,13 +321,13 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vec<Vector4> &p_segments, float p_b
 }
 
 void Map::create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map_width, int p_map_height) {
-	const auto province_view = p_registry.view<LandProvinceTag, Centroid, Orientation, Name>();
+	const auto province_view = p_registry.view<LandProvinceTag, TextLocator, Name>();
 
-	for (auto [entity, centroid, orientation, name] : province_view.each()) {
+	for (auto [entity, locator, name] : province_view.each()) {
 		Label3D *label = memnew(Label3D);
-		label->set_position(Vector3(centroid.x - (p_map_width / 2.0), label_map_layer, centroid.y - (p_map_height / 2.0)));
-		label->set_rotation(Vector3(Math::deg_to_rad(-90.0), orientation, 0.0));
-		label->set_scale(Vector3(100.0, 100.0, 100.0));
+		label->set_position(Vector3(locator.position.x - (p_map_width / 2.0), label_map_layer, locator.position.y - (p_map_height / 2.0)));
+		label->set_rotation_degrees(Vector3(-90, locator.orientation, 0.0));
+		label->set_scale(Vector3(locator.scale, locator.scale, locator.scale));
 
 		label->set_text(label->tr(name)); // TODO - make spaces new lines?
 		label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
@@ -334,20 +338,80 @@ void Map::create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map
 	}
 }
 
+void Map::create_border_meshes(Registry &p_registry, Node3D *p_map, Dictionary p_border_dict, int p_map_width, int p_map_height, bool is_map_editor) {
+	// Create border materials
+	const Vector<Ref<ShaderMaterial>> border_materials = create_border_materials();
+
+	// Create border meshes
+	const Array border_keys = p_border_dict.keys();
+	for (const Variant &border_key : border_keys) {
+		const PackedInt32Array key = border_key;
+		const PackedVector4Array value = p_border_dict[key];
+		Border border = Border(p_registry.get_entity<ProvinceTag>(key[0]), p_registry.get_entity<ProvinceTag>(key[1]));
+
+		const Ref<Mesh> border_mesh = create_border_mesh(value, 0.75, 0.75);
+		MeshInstance3D *border_mesh_instance = memnew(MeshInstance3D);
+
+		const ProvinceBorderType border_type = fill_province_border_data(p_registry, border, border_mesh->get_rid());
+		if (!is_map_editor)
+			fill_province_adjacency_data(p_registry, border);
+
+		border_mesh_instance->set_rotation_degrees(Vector3(90, 0, 0));
+		border_mesh_instance->set_position(Vector3(-p_map_width / 2.0, border_map_layer, -p_map_height / 2.0));
+		border_mesh_instance->set_mesh(border_mesh);
+		border_mesh->surface_set_material(0, border_materials[static_cast<int>(border_type)]);
+		p_map->call_deferred("add_child", border_mesh_instance);
+	}
+}
+
 template void Map::load_map<false>(Node3D *p_map);
 template void Map::load_map<true>(Node3D *p_map);
 
-template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
+#ifdef TOOLS_ENABLED
+
+void Map::load_map_editor(Node3D *p_map) {
+	const Ref<Texture2D> province_texture = ResourceLoader::load("res://gfx/map/provinces.png", "Texture2D", ResourceFormatLoader::CACHE_MODE_IGNORE_DEEP);
+	String province_data_file = FileAccess::open("res://data/provinces.cfg", FileAccess::READ)->get_as_text();
+
+	// Generating the lookup image and map data can be very slow and 90% of the time the map editor is loaded the province config and png haven't actually been changed.
+	// To make it faster to open in the common case of no data changing, hash provinces.png and provinces.cfg together and compare them to a cached hash to check if the map data needs to be
+	// regenerated. If the hashes are the same, nothing has changed and can just load the saved data. If the hashes are different then have to regenerate all the map data.
+	Ref<HashingContext> hash_context = memnew(HashingContext());
+	hash_context->start(HashingContext::HashType::HASH_MD5);
+	hash_context->update(province_texture->get_image()->get_data());
+	hash_context->update(province_data_file.md5_buffer());
+	const PackedByteArray hash_bytes = hash_context->finish();
+	const String hash_string = String::hex_encode_buffer(hash_bytes.ptr(), hash_bytes.size());
+
+	if (!FileAccess::exists("user://map_data_hash.cache")) [[unlikely]]
+		FileAccess::open("user://map_data_hash.cache", FileAccess::WRITE);
+
+	Ref<FileAccess> map_data_cache = FileAccess::open("user://map_data_hash.cache", FileAccess::READ);
+	const String cached_hash = map_data_cache->get_line();
+
+	if (hash_string == cached_hash) {
+		load_map<true>(p_map);
+		return;
+	}
+
+	map_data_cache->close();
+	map_data_cache = FileAccess::open("user://map_data_hash.cache", FileAccess::WRITE);
+	map_data_cache->store_string(hash_string);
+	print_line("Map data has changed, regenerating data");
+
 	Registry &registry = *Registry::self;
 	ProvinceColorMap provinces_map = load_map_config(registry);
-	AHashMap<Border, Vec<Vector4>, EntityPairHash<ProvinceEntity, ProvinceEntity>> borders;
+
+	TypedDictionary<PackedInt32Array, PackedVector4Array> borders_dict;
 	AHashMap<ProvinceEntity, Vec<Vector2>, EntityHasher> pixel_dict;
 
-	// Load provinces.png
-	const Ref<Texture2D> province_texture = ResourceLoader::load("res://gfx/map/provinces.png", "Texture2D", ResourceFormatLoader::CACHE_MODE_IGNORE_DEEP);
 	const Ref<Image> province_image = province_texture->get_image();
 	const int province_image_width = province_image->get_width();
 	const int province_image_height = province_image->get_width();
+
+	Ref<ConfigFile> map_data_config = memnew(ConfigFile());
+	map_data_config->set_value("map_data", "width", province_image_width);
+	map_data_config->set_value("map_data", "height", province_image_height);
 
 	// Set Map node position, makes the world coords the same as the map coords
 	p_map->set_position(Vector3(province_image_width / 2.0, 0, province_image_height / 2.0));
@@ -378,19 +442,24 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 			if (x + 1 < province_image_width) {
 				const Color right_color = province_image->get_pixel(x + 1, y);
 				if (current_color != right_color) {
-					const ProvinceEntity from = registry.get_entity<ProvinceTag>(provinces_map[right_color]);
-					Border key;
-					if (province_entity > from) // sort by largest to prevent duplicates
-						key = Border(province_entity, from);
-					else
-						key = Border(from, province_entity);
+					const int from = provinces_map[right_color];
+					PackedInt32Array arr;
+					if (province_id > from) { // Sort to prevent duplicates
+						arr.push_back(province_id);
+						arr.push_back(from);
+					} else {
+						arr.push_back(from);
+						arr.push_back(province_id);
+					}
 
 					// Filter out borders and adjacencies with lakes
 					// movement to/from lakes is impossible and borders should never be draw on lake provinces.
-					if (is_lake_border(registry, key))
+					if (is_lake_border(registry, Border(province_entity, registry.get_entity<ProvinceTag>(from))))
 						continue;
 
-					borders[key].push_back(Vector4(x + 1, y, x + 1, y + 1));
+					PackedVector4Array borders_arr = borders_dict[arr];
+					borders_arr.push_back(Vector4(x + 1, y, x + 1, y + 1));
+					borders_dict[arr] = borders_arr;
 				}
 			}
 
@@ -398,24 +467,28 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 			if (y + 1 < province_image_height) {
 				const Color bottom_color = province_image->get_pixel(x, y + 1);
 				if (current_color != bottom_color) {
-					const ProvinceEntity from = registry.get_entity<ProvinceTag>(provinces_map[bottom_color]);
-					Border key;
-					if (province_entity > from) // sort by largest to prevent duplicates
-						key = Border(province_entity, from);
-					else
-						key = Border(from, province_entity);
+					const int from = provinces_map[bottom_color];
+					PackedInt32Array arr;
+					if (province_id > from) {
+						arr.push_back(province_id);
+						arr.push_back(from);
+					} else {
+						arr.push_back(from);
+						arr.push_back(province_id);
+					}
 
-					if (is_lake_border(registry, key))
+					if (is_lake_border(registry, Border(province_entity, registry.get_entity<ProvinceTag>(from))))
 						continue;
 
-					borders[key].push_back(Vector4(x, y + 1, x + 1, y + 1));
+					PackedVector4Array borders_arr = borders_dict[arr];
+					borders_arr.push_back(Vector4(x, y + 1, x + 1, y + 1));
+					borders_dict[arr] = borders_arr;
 				}
 			}
 		}
 	}
 
 	// Create lookup image from bytes
-	// TODO - only generate lookup image in the editor.
 	lookup_image = Image::create_from_data(province_image_width, province_image_height, false, Image::FORMAT_RGF, lookup_image_data);
 	lookup_image->save_exr("res://gfx/gen/province_lookup.exr");
 
@@ -430,7 +503,70 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 			registry.emplace<Orientation>(kv.key, calculate_orientation(Geometry2D::convex_hull(kv.value), centroid));
 	}
 
+	map_data_config->set_value("map_data", "borders", borders_dict);
+	map_data_config->save("res://data/gen/map_data.cfg");
+
+	create_border_meshes(registry, p_map, borders_dict, province_image_width, province_image_height, true);
+}
+
+#endif
+
+void Map::load_locators(Registry &p_registry) {
+	Ref<ConfigFile> text_config = memnew(ConfigFile());
+	Ref<ConfigFile> unit_config = memnew(ConfigFile());
+
+	text_config->load("res://data/locators/text.cfg");
+	unit_config->load("res://data/locators/unit.cfg");
+
+	List<String> text_sections;
+	text_config->get_sections(&text_sections);
+	List<String> unit_sections;
+	unit_config->get_sections(&unit_sections);
+
+	for (const String &section : text_sections) {
+		const int province_id = section.to_int();
+		const Entity entity = p_registry.get_entity<ProvinceTag>(province_id);
+
+		TextLocator locator;
+		locator.position = text_config->get_value(section, "position");
+		locator.orientation = text_config->get_value(section, "orientation");
+		locator.scale = text_config->get_value(section, "scale");
+
+		p_registry.emplace<TextLocator>(entity, locator);
+	}
+
+	for (const String &section : unit_sections) {
+		const int province_id = section.to_int();
+		const Entity entity = p_registry.get_entity<ProvinceTag>(province_id);
+
+		UnitLocator locator;
+		locator.position = unit_config->get_value(section, "position");
+		locator.orientation = unit_config->get_value(section, "orientation");
+		locator.scale = unit_config->get_value(section, "scale");
+
+		p_registry.emplace<UnitLocator>(entity, locator);
+	}
+}
+
+template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
+	Registry &registry = *Registry::self;
+	ProvinceColorMap provinces_map = load_map_config(registry);
+
+	Ref<ConfigFile> map_data_config = memnew(ConfigFile());
+	map_data_config->load("res://data/gen/map_data.cfg");
+	const int province_image_width = map_data_config->get_value("map_data", "width");
+	const int province_image_height = map_data_config->get_value("map_data", "height");
+
+	// Set Map node position, makes the world coords the same as the map coords
+	p_map->set_position(Vector3(province_image_width / 2.0, 0, province_image_height / 2.0));
+
+	// Load lookup image
+	Ref<CompressedTexture2D> compressed_lookup_texture = ResourceLoader::load("res://gfx/gen/province_lookup.exr");
+	lookup_image = compressed_lookup_texture->get_image();
+
 	if constexpr (!is_map_editor) {
+		load_locators(registry);
+
 		// Setup map labels
 		create_map_labels(registry, p_map, province_image_width, province_image_height);
 
@@ -440,7 +576,7 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 
 		// Fill in crossing adjacencies
 		for (const Vector<Variant> &crossing : crossings) {
-			const Entity adjacency_entity = registry.create();
+			const ProvinceAdjacencyEntity adjacency_entity = registry.create();
 			const ProvinceEntity to_entity = registry.get_entity<ProvinceTag>(crossing[adjacency_config["to"]]);
 			const ProvinceEntity from_entity = registry.get_entity<ProvinceTag>(crossing[adjacency_config["from"]]);
 
@@ -456,25 +592,12 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 			);
 			// clang-format on
 		}
+
+		create_border_meshes(registry, p_map, map_data_config->get_value("map_data", "borders"), province_image_width, province_image_height, false);
 	}
 
-	// Create border materials
-	const Vector<Ref<ShaderMaterial>> border_materials = create_border_materials();
-
-	// Create border meshes
-	for (const KeyValue<Border, Vec<Vector4>> &kv : borders) {
-		const Ref<Mesh> border_mesh = create_border_mesh(kv.value, 0.75, 0.75);
-		MeshInstance3D *border_mesh_instance = memnew(MeshInstance3D);
-
-		const ProvinceBorderType border_type = fill_province_border_data(registry, kv.key, border_mesh->get_rid());
-		fill_province_adjacency_data(registry, kv.key);
-
-		border_mesh_instance->set_rotation_degrees(Vector3(90, 0, 0));
-		border_mesh_instance->set_position(Vector3(-province_image_width / 2.0, border_map_layer, -province_image_height / 2.0));
-		border_mesh_instance->set_mesh(border_mesh);
-		border_mesh->surface_set_material(0, border_materials[static_cast<int>(border_type)]);
-		p_map->call_deferred("add_child", border_mesh_instance);
-	}
+	if constexpr (is_map_editor)
+		create_border_meshes(registry, p_map, map_data_config->get_value("map_data", "borders"), province_image_width, province_image_height, true);
 }
 
 Ref<ImageTexture> Map::get_lookup_texture() { return ImageTexture::create_from_image(lookup_image); }

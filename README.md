@@ -13,6 +13,8 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 - Flatmap texture that allows drawing of oceans, rivers, lakes, trees, or other map objects.
 
+- Map editor to edit map objects
+
 ## TODO
 
 - Map labels for regions, areas, and countries

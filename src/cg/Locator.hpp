@@ -1,13 +1,12 @@
 #pragma once
 
 #ifdef TOOLS_ENABLED
-
 #include "core/templates/a_hash_map.h"
 
 #include "Entity.hpp"
 #include "Vec.hpp"
 
-class ConfigFile;
+#endif
 
 namespace CG {
 
@@ -19,6 +18,8 @@ struct Locator {
 	bool operator!=(const Locator &other) const;
 	bool operator==(const Locator &other) const;
 };
+
+#ifdef TOOLS_ENABLED
 
 enum class LocatorType : uint8_t { Unit, Text };
 
@@ -54,6 +55,6 @@ public:
 	void save_all();
 };
 
-} // namespace CG
-
 #endif
+
+} // namespace CG

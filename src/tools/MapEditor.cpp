@@ -37,14 +37,9 @@ void MapEditorNode::load_map() {
 		return;
 
 	Map::self = memnew(Map);
-	Map::self->load_map<true>(this);
+	Map::self->load_map_editor(this);
 
 	map_mesh = Object::cast_to<MeshInstance3D>(get_node(NodePath("%MapMesh")));
-
-	const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
-	material->set_shader_parameter("color_texture", Map::self->get_country_map_mode());
-	material->set_shader_parameter("lookup_texture", Map::self->get_lookup_texture());
-
 	memnew(EditorLocators());
 
 	has_loaded_map = true;
@@ -153,7 +148,7 @@ void MapEditor::create_text_locator(int p_province_entity) {
 	label->set_owner(MapEditorPlugin::map_editor_node);
 
 	const Entity entity = Registry::self->get_entity<ProvinceTag>(p_province_entity);
-	label->set_text(Registry::self->get<Name>(entity));
+	label->set_text(tr(Registry::self->get<Name>(entity)));
 	label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
 	label->set_modulate(Color(0, 0, 0));
 	label->set_outline_modulate(Color(1, 1, 1, 0));
