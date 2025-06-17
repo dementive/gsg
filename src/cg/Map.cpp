@@ -45,7 +45,7 @@ float Map::calculate_orientation(const Polygon &p_polygon, const Vector2 &p_cent
 		mu11 += x * y;
 	}
 
-	return 0.5 * atan2(2 * mu11, mu20 - mu02);
+	return Math::rad_to_deg(0.5 * atan2(2 * mu11, mu20 - mu02));
 }
 
 Color Map::get_random_area_color() { return { CLAMP(Math::randf(), float(0.3), float(0.7)), CLAMP(Math::randf(), float(0.3), float(0.7)), CLAMP(Math::randf(), float(0.3), float(0.7)) }; }
@@ -177,42 +177,42 @@ bool Map::is_lake_border(const Registry &p_registry, const Border &p_border) {
 		return false;
 }
 
-Vector<Ref<ShaderMaterial>> Map::create_border_materials() {
-	const Ref<Shader> border_shader = ResourceLoader::load("res://gfx/shaders/border.gdshader", "Shader", ResourceFormatLoader::CACHE_MODE_IGNORE_DEEP);
-	Vector<Ref<ShaderMaterial>> border_materials;
-	const int material_count = static_cast<int>(ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX);
-	border_materials.resize(material_count);
-
 #define inc_enum(i) ((decltype(i))(static_cast<int>(i) + 1))
+
+void Map::create_border_materials() {
+	const int material_count = static_cast<int>(ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX);
+	border_materials.reserve(material_count);
+
+	RenderingServer &rs = *RS::get_singleton();
+	const Ref<Shader> border_shader = ResourceLoader::load("res://gfx/shaders/border.gdshader", "Shader", ResourceFormatLoader::CACHE_MODE_IGNORE_DEEP);
+
 	for (ProvinceBorderType i = ProvinceBorderType::Country; i < ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX; i = inc_enum(i)) {
-		const Ref<ShaderMaterial> border_material = memnew(ShaderMaterial);
-		border_material->set_shader(border_shader);
+		const RID material_rid = rs.material_create();
+		rs.material_set_shader(material_rid, border_shader->get_rid());
 		switch (i) {
 			case ProvinceBorderType::Country: {
-				border_material->set_shader_parameter("border_color", Color(0, 0, 0, 1));
+				rs.material_set_param(material_rid, "border_color", Color(0, 0, 0, 1));
 			} break;
 			case ProvinceBorderType::Area: {
-				border_material->set_shader_parameter("border_color", Color(0.26, 0.26, 0.26, 1));
+				rs.material_set_param(material_rid, "border_color", Color(0.26, 0.26, 0.26, 1));
 			} break;
 			case ProvinceBorderType::Province: {
-				border_material->set_shader_parameter("border_color", Color(0.31, 0.31, 0.31, 0.9));
+				rs.material_set_param(material_rid, "border_color", Color(0.31, 0.31, 0.31, 0.9));
 			} break;
 			case ProvinceBorderType::Impassable: {
-				border_material->set_shader_parameter("border_color", Color(0.423, 0, 0, 0.878));
+				rs.material_set_param(material_rid, "border_color", Color(0.423, 0, 0, 0.878));
 			} break;
 			case ProvinceBorderType::Water: {
-				border_material->set_shader_parameter("border_color", Color(0, 0, 0, 1));
+				rs.material_set_param(material_rid, "border_color", Color(0, 0, 0, 1));
 			} break;
 			case ProvinceBorderType::Coastal: {
-				border_material->set_shader_parameter("border_color", Color(0.23, 0.23, 0.23, 0.95));
+				rs.material_set_param(material_rid, "border_color", Color(0.23, 0.23, 0.23, 0.95));
 			} break;
 			case ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX: break;
 		}
 
-		border_materials.push_back(border_material);
+		border_materials.push_back(material_rid);
 	}
-
-	return border_materials;
 }
 
 void Map::fill_province_adjacency_data(Registry &p_registry, const Border &p_border) {
@@ -326,7 +326,7 @@ void Map::create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map
 	for (auto [entity, locator, name] : province_view.each()) {
 		Label3D *label = memnew(Label3D);
 		label->set_position(Vector3(locator.position.x - (p_map_width / 2.0), label_map_layer, locator.position.y - (p_map_height / 2.0)));
-		label->set_rotation_degrees(Vector3(-90, locator.orientation, 0.0));
+		label->set_rotation(Vector3(-1.570796, locator.orientation, 0.0));
 		label->set_scale(Vector3(locator.scale, locator.scale, locator.scale));
 
 		label->set_text(label->tr(name)); // TODO - make spaces new lines?
@@ -338,29 +338,34 @@ void Map::create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map
 	}
 }
 
-void Map::create_border_meshes(Registry &p_registry, Node3D *p_map, Dictionary p_border_dict, int p_map_width, int p_map_height, bool is_map_editor) {
+void Map::create_border_meshes(Registry &p_registry, Node3D *p_map, Dictionary p_border_dict, bool is_map_editor) {
 	// Create border materials
-	const Vector<Ref<ShaderMaterial>> border_materials = create_border_materials();
+	create_border_materials();
+	RenderingServer &rs = *RS::get_singleton();
 
 	// Create border meshes
 	const Array border_keys = p_border_dict.keys();
+	border_meshes.reserve(border_keys.size());
+
 	for (const Variant &border_key : border_keys) {
 		const PackedInt32Array key = border_key;
 		const PackedVector4Array value = p_border_dict[key];
-		Border border = Border(p_registry.get_entity<ProvinceTag>(key[0]), p_registry.get_entity<ProvinceTag>(key[1]));
+		const Border border = Border(p_registry.get_entity<ProvinceTag>(key[0]), p_registry.get_entity<ProvinceTag>(key[1]));
 
-		const Ref<Mesh> border_mesh = create_border_mesh(value, 0.75, 0.75);
-		MeshInstance3D *border_mesh_instance = memnew(MeshInstance3D);
+		const Ref<ArrayMesh> border_mesh_resource = create_border_mesh(value, 0.75, 0.75);
+		const RID border_mesh = border_mesh_resource->get_rid();
+		const RID mesh_instance = rs.instance_create2(border_mesh, p_map->get_world_3d()->get_scenario());
 
-		const ProvinceBorderType border_type = fill_province_border_data(p_registry, border, border_mesh->get_rid());
+		const BorderMesh border_mesh_storage{ .mesh = border_mesh_resource, .instance = mesh_instance };
+		border_meshes.push_back(border_mesh_storage);
+
+		const ProvinceBorderType border_type = fill_province_border_data(p_registry, border, border_mesh);
 		if (!is_map_editor)
 			fill_province_adjacency_data(p_registry, border);
 
-		border_mesh_instance->set_rotation_degrees(Vector3(90, 0, 0));
-		border_mesh_instance->set_position(Vector3(-p_map_width / 2.0, border_map_layer, -p_map_height / 2.0));
-		border_mesh_instance->set_mesh(border_mesh);
-		border_mesh->surface_set_material(0, border_materials[static_cast<int>(border_type)]);
-		p_map->call_deferred("add_child", border_mesh_instance);
+		const Transform3D mesh_transform = Transform3D(Basis().rotated(Vector3(1, 0, 0), 1.570796), Vector3(0, border_map_layer, 0));
+		rs.instance_set_transform(mesh_instance, mesh_transform);
+		rs.mesh_surface_set_material(border_mesh, 0, border_materials[static_cast<int>(border_type)]);
 	}
 }
 
@@ -493,20 +498,36 @@ void Map::load_map_editor(Node3D *p_map) {
 	lookup_image->save_exr("res://gfx/gen/province_lookup.exr");
 
 	// Fill in Provinces data from pixel data
+	Ref<ConfigFile> province_data_config = memnew(ConfigFile());
 	for (const KeyValue<ProvinceEntity, Vec<Vector2>> &kv : pixel_dict) {
 		const Vector2 centroid = calculate_centroid(kv.value);
-		registry.emplace<Centroid>(kv.key, centroid);
+		float orientation = 0.0;
+		int province_id = 0;
 
-		if (!registry.all_of<LandProvinceTag>(kv.key))
-			registry.emplace<Orientation>(kv.key, 0.0);
-		else
-			registry.emplace<Orientation>(kv.key, calculate_orientation(Geometry2D::convex_hull(kv.value), centroid));
+		// TODO - use find_if
+		for (const KeyValue<int, Entity> &provinces_kv : registry.provinces)
+			if (provinces_kv.value == kv.key)
+				province_id = provinces_kv.key;
+
+		if (province_id == 0)
+			return;
+
+		if (!registry.all_of<LandProvinceTag>(kv.key)) {
+			province_data_config->set_value(itos(province_id), "orientation", orientation);
+		} else {
+			orientation = calculate_orientation(Geometry2D::convex_hull(kv.value), centroid);
+			province_data_config->set_value(itos(province_id), "orientation", orientation);
+		}
+
+		province_data_config->set_value(itos(province_id), "centroid", centroid);
 	}
+
+	province_data_config->save("res://data/gen/province_data.cfg");
 
 	map_data_config->set_value("map_data", "borders", borders_dict);
 	map_data_config->save("res://data/gen/map_data.cfg");
 
-	create_border_meshes(registry, p_map, borders_dict, province_image_width, province_image_height, true);
+	create_border_meshes(registry, p_map, borders_dict, true);
 }
 
 #endif
@@ -554,6 +575,7 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 
 	Ref<ConfigFile> map_data_config = memnew(ConfigFile());
 	map_data_config->load("res://data/gen/map_data.cfg");
+
 	const int province_image_width = map_data_config->get_value("map_data", "width");
 	const int province_image_height = map_data_config->get_value("map_data", "height");
 
@@ -593,11 +615,11 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 			// clang-format on
 		}
 
-		create_border_meshes(registry, p_map, map_data_config->get_value("map_data", "borders"), province_image_width, province_image_height, false);
+		create_border_meshes(registry, p_map, map_data_config->get_value("map_data", "borders"), false);
 	}
 
 	if constexpr (is_map_editor)
-		create_border_meshes(registry, p_map, map_data_config->get_value("map_data", "borders"), province_image_width, province_image_height, true);
+		create_border_meshes(registry, p_map, map_data_config->get_value("map_data", "borders"), true);
 }
 
 Ref<ImageTexture> Map::get_lookup_texture() { return ImageTexture::create_from_image(lookup_image); }
@@ -625,4 +647,12 @@ Ref<ImageTexture> Map::get_country_map_mode() {
 	}
 
 	return ImageTexture::create_from_image(country_map_mode_image);
+}
+
+Map::~Map() {
+	for (const BorderMesh &border_mesh : border_meshes)
+		RS::get_singleton()->free(border_mesh.instance);
+
+	for (const RID &material_rid : border_materials)
+		RS::get_singleton()->free(material_rid);
 }

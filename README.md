@@ -43,8 +43,6 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 - Subdivide map mesh into a bunch of quads so culling will work. Will need to figure out correct number of subdivisions, generate the meshes, and then do some UV adjustments in the Map vertex shader.
 
-- Use RenderingServer to create border meshes instead of using MeshInstance3D. On a real map there will be way too many of these to have each mesh be a Node.
-
 - Make a simpler version of Label3D that doesn't have to be a Node or Object for drawing map labels. On a real map there will be way too many of these to have each label be a Node.
 
 - Figure out how to draw curved text. I sorta got this working with a vertex shader on a TextMesh but it didn't work very well when scaling the text or when it had to change size.

@@ -112,6 +112,8 @@ void EditorLocators::_load_locators(LocatorMap &p_locator_map, const String &p_c
 	const Vec<Entity> province_ids = get_locator_vec(p_locator);
 
 	AHashMap<int, Locator> existing_locators;
+	Ref<ConfigFile> province_data_config = memnew(ConfigFile());
+	province_data_config->load("res://data/gen/province_data.cfg");
 
 	// Have to regenerated missing locators.
 	if (sections_size != province_ids.size()) {
@@ -132,11 +134,11 @@ void EditorLocators::_load_locators(LocatorMap &p_locator_map, const String &p_c
 			} else {
 				// Generate new locator
 				Locator locator;
-				locator.position = Registry::self->get<Centroid>(entity);
+				locator.position = province_data_config->get_value(itos(i), "centroid");
 
 				// For unit locators only need to generate the position but for text need to also generate the orientation.
 				if (p_locator == LocatorType::Text)
-					locator.orientation = Registry::self->get<Orientation>(entity);
+					locator.orientation = province_data_config->get_value(itos(i), "orientation");
 				else
 					locator.orientation = 0.0;
 

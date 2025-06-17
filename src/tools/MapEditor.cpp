@@ -111,7 +111,7 @@ void MapEditor::province_inspector_item_list_node_selected(int p_index) {
 	map_object_toolbar_province_selection_button->set_pressed(false);
 }
 
-static constexpr int LOCATOR_UNIT_X_ROTATION = -75;
+static constexpr float LOCATOR_UNIT_X_ROTATION = -1.308997;
 static constexpr int LOCATOR_UNIT_Y_POSITION = 15;
 
 void MapEditor::create_unit_locator(int p_province_entity) {
@@ -128,7 +128,7 @@ void MapEditor::create_unit_locator(int p_province_entity) {
 	MapEditorPlugin::map_editor_node->add_child(sprite);
 	sprite->set_owner(MapEditorPlugin::map_editor_node);
 
-	sprite->set_rotation_degrees(Vector3(LOCATOR_UNIT_X_ROTATION, locator.orientation, 0));
+	sprite->set_rotation(Vector3(LOCATOR_UNIT_X_ROTATION, locator.orientation, 0));
 	sprite->set_scale(Vector3(locator.scale, locator.scale, locator.scale));
 	sprite->set_global_position(Vector3(locator.position.x, LOCATOR_UNIT_Y_POSITION, locator.position.y));
 
@@ -153,7 +153,7 @@ void MapEditor::create_text_locator(int p_province_entity) {
 	label->set_modulate(Color(0, 0, 0));
 	label->set_outline_modulate(Color(1, 1, 1, 0));
 
-	label->set_rotation_degrees(Vector3(-90.0, locator.orientation, 0));
+	label->set_rotation(Vector3(-1.570796, locator.orientation, 0));
 	label->set_scale(Vector3(locator.scale, locator.scale, locator.scale));
 	label->set_global_position(Vector3(locator.position.x, label_map_layer, locator.position.y));
 
@@ -182,7 +182,7 @@ void MapEditor::_on_province_deselected(int p_province_entity, LocatorType p_loc
 	if (node != nullptr) {
 		const Locator new_locator{
 			.position = Vector2(node->get_global_position().x, node->get_global_position().z),
-			.orientation = node->get_rotation_degrees().y,
+			.orientation = node->get_rotation().y,
 			.scale = node->get_scale().x,
 		};
 		const Locator &old_locator = EditorLocators::self->get_locator(p_locator_type, p_province_entity);
@@ -388,6 +388,7 @@ void MapEditorPlugin::select_province(const int p_province_id) {
 	const ProvinceColorMap &map = Map::self->get_color_to_id_map();
 
 	// Find key from value and apply it to the shader
+	// TODO - use find_if
 	for (const KeyValue<Color, int> &kv : map) {
 		if (kv.value == p_province_id) {
 			const Color &srgb_province_color = kv.key.linear_to_srgb();
@@ -406,6 +407,7 @@ void MapEditorPlugin::deselect_province(int p_province_id) {
 	const ProvinceColorMap &map = Map::self->get_color_to_id_map();
 
 	// Find key from value and apply it to the shader
+	// TODO - use find_if
 	for (const KeyValue<Color, int> &kv : map) {
 		if (kv.value == p_province_id) {
 			const Color &srgb_province_color = kv.key.linear_to_srgb();

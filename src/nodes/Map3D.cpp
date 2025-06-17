@@ -29,9 +29,6 @@ void Map3D::_notification(int p_what) {
 			material->set_shader_parameter("color_texture", Map::self->get_country_map_mode());
 			material->set_shader_parameter("lookup_texture", Map::self->get_lookup_texture());
 		} break;
-		case NOTIFICATION_EXIT_TREE: {
-			memdelete_notnull(Map::self);
-		} break;
 	}
 }
 
