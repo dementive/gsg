@@ -8,9 +8,12 @@
 #include "scene/resources/3d/world_3d.h"
 
 #include "cg/Map.hpp"
+#include "cg/MapMode.hpp"
+#include "cg/NodeManager.hpp"
 
 #include "ecs/Registry.hpp"
 
+#include "gui/Hud.hpp"
 #include "MapUtils.hpp"
 
 using namespace CG;
@@ -20,6 +23,13 @@ void Map3D::_bind_methods() {}
 void Map3D::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_READY: {
+			NM::map = this;
+			NM::init_gui();
+
+			// Add hud
+			add_child(NM::hud->get_parent());
+
+			// Load map
 			set_process_unhandled_input(true);
 			Map::self = memnew(Map);
 			Map::self->load_map<false>(this);
@@ -28,6 +38,10 @@ void Map3D::_notification(int p_what) {
 			const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
 			material->set_shader_parameter("color_texture", Map::self->get_country_map_mode());
 			material->set_shader_parameter("lookup_texture", Map::self->get_lookup_texture());
+		} break;
+		case NOTIFICATION_EXIT_TREE: {
+			NM::clear_temporary_nodes();
+			memdelete_notnull(Map::self);
 		} break;
 	}
 }
@@ -60,5 +74,22 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 		material->set_shader_parameter("selected_areas", selected_areas);
 		material->set_shader_parameter("selected_areas_total", 1);
 		vp->set_input_as_handled();
+	}
+}
+
+void Map3D::set_map_mode(MapMode p_map_mode) {
+	switch (p_map_mode) {
+		case MapMode::Country: {
+			const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
+			material->set_shader_parameter("color_texture", Map::self->get_country_map_mode());
+		} break;
+		case MapMode::Area: {
+			const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
+			material->set_shader_parameter("color_texture", Map::self->get_area_map_mode());
+		} break;
+		case MapMode::Region: {
+			const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
+			material->set_shader_parameter("color_texture", Map::self->get_region_map_mode());
+		} break;
 	}
 }

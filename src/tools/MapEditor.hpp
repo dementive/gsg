@@ -24,6 +24,7 @@ class MapEditorNode : public Node3D {
 
 protected:
 	static void _bind_methods() {}
+	void _notification(int p_what);
 
 public:
 	MeshInstance3D *map_mesh{};
@@ -113,6 +114,8 @@ public:
 	void on_province_selected(int p_province_entity);
 	void on_province_deselected(int p_province_entity);
 
+	void clear_item_lists();
+
 	MapEditor();
 	~MapEditor() override;
 
@@ -124,10 +127,10 @@ class MapEditorPlugin : public EditorPlugin {
 	GDCLASS(MapEditorPlugin, EditorPlugin);
 
 private:
-	MapEditor *map_editor{};
 	PackedColorArray selected_areas; // TODO - make this a FixedVector<Color, 10> when updating to 4.5. Right now it will proabbly causes bugs with more than 10 selections.
 
 public:
+	MapEditor *map_editor{};
 	static inline MapEditorNode *map_editor_node{};
 	static inline MapEditorPlugin *self = nullptr;
 

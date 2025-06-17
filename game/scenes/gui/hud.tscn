@@ -1,0 +1,63 @@
+[gd_scene load_steps=2 format=3 uid="uid://dbqysw7eb0w58"]
+
+[ext_resource type="Texture2D" uid="uid://becg3pgt1etd8" path="res://gfx/icon.svg" id="1_86rft"]
+
+[node name="Hud" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Hud" type="Hud" parent="."]
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -329.0
+offset_top = -99.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="CountryMapMode" type="Button" parent="MarginContainer/PanelContainer/HBoxContainer"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+icon = ExtResource("1_86rft")
+flat = true
+icon_alignment = 1
+expand_icon = true
+metadata/pressed = "SetMapMode(0)"
+
+[node name="AreaMapMode" type="Button" parent="MarginContainer/PanelContainer/HBoxContainer"]
+modulate = Color(1, 1, 0, 1)
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+icon = ExtResource("1_86rft")
+flat = true
+icon_alignment = 1
+expand_icon = true
+metadata/pressed = "SetMapMode(1)"
+
+[node name="RegionMapMode" type="Button" parent="MarginContainer/PanelContainer/HBoxContainer"]
+modulate = Color(1, 0.298039, 1, 1)
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+icon = ExtResource("1_86rft")
+flat = true
+icon_alignment = 1
+expand_icon = true
+metadata/pressed = "SetMapMode(2)"

@@ -579,6 +579,9 @@ void Map::load_locators(Registry &p_registry) {
 
 template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	Registry &registry = *Registry::self;
+	// TODO - need to clear some data on reload but most data probably doesn't change
+	// probably just add a "bool reloading" parameter to load_map but it's tough because some parts of load_map write to the registry.
+	registry.clear();
 	ProvinceColorMap provinces_map = load_map_config(registry);
 
 	Ref<ConfigFile> map_data_config = memnew(ConfigFile());

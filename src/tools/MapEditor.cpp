@@ -45,6 +45,16 @@ void MapEditorNode::load_map() {
 	has_loaded_map = true;
 }
 
+void MapEditorNode::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_EXIT_TREE: {
+			memdelete_notnull(Map::self);
+			MapEditorPlugin::map_editor_node->has_loaded_map = false;
+			MapEditorPlugin::self->map_editor->clear_item_lists();
+		} break;
+	}
+}
+
 /* MapEditorSprite */
 
 void MapEditorSprite::init(LocatorType p_locator_type) { locator_type = p_locator_type; }
@@ -72,6 +82,11 @@ void MapEditorLabel::_notification(int p_what) {
 }
 
 /* MapEditorPlugin */
+
+void MapEditor::clear_item_lists() {
+	node_item_list->clear();
+	province_inspector_item_list->clear();
+}
 
 void MapEditor::_locator_button_toggled(bool p_toggled) {
 	if (!p_toggled) {

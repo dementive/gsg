@@ -7,6 +7,7 @@
 
 #include "ecs/Registry.hpp"
 
+#include "gui/Hud.hpp"
 #include "Map.hpp"
 #include "nodes/Map3D.hpp"
 
@@ -27,6 +28,9 @@ void initialize_src_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_RUNTIME_CLASS(Map3D)
 	GDREGISTER_RUNTIME_CLASS(MapCamera)
 
+	GDREGISTER_RUNTIME_CLASS(DataBind)
+	GDREGISTER_RUNTIME_CLASS(Hud)
+
 #ifdef TOOLS_ENABLED
 	GDREGISTER_CLASS(MapEditorNode)
 	GDREGISTER_INTERNAL_CLASS(MapEditorSprite)
@@ -40,8 +44,6 @@ void uninitialize_src_module(ModuleInitializationLevel p_level) {
 		return;
 
 	delete Registry::self;
-	memdelete_notnull(Map::self);
-
 #ifdef TOOLS_ENABLED
 	memdelete_notnull(EditorLocators::self);
 #endif
