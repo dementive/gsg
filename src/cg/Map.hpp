@@ -62,6 +62,8 @@ public:
 	Ref<ImageTexture> get_lookup_texture();
 	ProvinceColorMap get_color_to_id_map();
 	Ref<ImageTexture> get_country_map_mode();
+	Ref<ImageTexture> get_region_map_mode();
+	Ref<ImageTexture> get_area_map_mode();
 
 	~Map();
 

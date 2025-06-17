@@ -388,7 +388,6 @@ void MapEditorPlugin::select_province(const int p_province_id) {
 	const ProvinceColorMap &map = Map::self->get_color_to_id_map();
 
 	// Find key from value and apply it to the shader
-	// TODO - use find_if
 	for (const KeyValue<Color, int> &kv : map) {
 		if (kv.value == p_province_id) {
 			const Color &srgb_province_color = kv.key.linear_to_srgb();
@@ -407,7 +406,6 @@ void MapEditorPlugin::deselect_province(int p_province_id) {
 	const ProvinceColorMap &map = Map::self->get_color_to_id_map();
 
 	// Find key from value and apply it to the shader
-	// TODO - use find_if
 	for (const KeyValue<Color, int> &kv : map) {
 		if (kv.value == p_province_id) {
 			const Color &srgb_province_color = kv.key.linear_to_srgb();

@@ -7,9 +7,7 @@
 #include "core/variant/typed_dictionary.h"
 
 #include "scene/3d/label_3d.h"
-#include "scene/3d/mesh_instance_3d.h"
 #include "scene/resources/compressed_texture.h"
-#include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/shader.h"
 #include "scene/resources/surface_tool.h"
@@ -48,7 +46,7 @@ float Map::calculate_orientation(const Polygon &p_polygon, const Vector2 &p_cent
 	return Math::rad_to_deg(0.5 * atan2(2 * mu11, mu20 - mu02));
 }
 
-Color Map::get_random_area_color() { return { CLAMP(Math::randf(), float(0.3), float(0.7)), CLAMP(Math::randf(), float(0.3), float(0.7)), CLAMP(Math::randf(), float(0.3), float(0.7)) }; }
+Color Map::get_random_area_color() { return { CLAMP(Math::randf(), float(76), float(178)), CLAMP(Math::randf(), float(76), float(178)), CLAMP(Math::randf(), float(76), float(178)) }; }
 
 Color Map::get_lookup_color(ProvinceIndex p_province_id) {
 	return { float(int(p_province_id) % COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1), floor(float(p_province_id) / COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1),
@@ -111,7 +109,9 @@ ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 	}
 
 	for (const String &section : area_sections) {
-		const Color color = area_config->get_value(section, "color", get_random_area_color());
+		Color color = area_config->get_value(section, "color", get_random_area_color());
+		color = Color::from_rgba8(color.r, color.g, color.b);
+
 		const PackedInt32Array area_provinces_config = area_config->get_value(section, "provinces");
 		const TightVec<Entity> area_provinces = p_registry.convert_packed_array<ProvinceTag, TightVec<Entity>>(area_provinces_config);
 
@@ -129,7 +129,9 @@ ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 	}
 
 	for (const String &section : region_sections) {
-		const Color color = region_config->get_value(section, "color", get_random_area_color());
+		Color color = region_config->get_value(section, "color", get_random_area_color());
+		color = Color::from_rgba8(color.r, color.g, color.b);
+
 		const PackedStringArray region_areas_config = region_config->get_value(section, "areas");
 		const TightVec<Entity> region_areas = p_registry.convert_packed_array<AreaTag, TightVec<Entity>>(region_areas_config);
 
@@ -142,12 +144,19 @@ ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 		p_registry.emplace<Capital>(region_entity, capital_entity);
 		p_registry.emplace<RegionAreas>(region_entity, region_areas);
 
-		for (const AreaEntity &area_entity : region_areas)
+		for (const AreaEntity &area_entity : region_areas) {
 			p_registry.emplace<RegionComponent>(area_entity, region_entity);
+
+			const TightVec<Entity> &area_provinces = p_registry.get<AreaProvinces>(area_entity);
+			for (const ProvinceEntity &province_entity : area_provinces)
+				p_registry.emplace<RegionComponent>(province_entity, region_entity);
+		}
 	}
 
 	for (const String &section : country_sections) {
-		const Color color = country_config->get_value(section, "color", get_random_area_color());
+		Color color = country_config->get_value(section, "color", get_random_area_color());
+		color = Color::from_rgba8(color.r, color.g, color.b);
+
 		const PackedInt32Array owned_provinces_config = country_config->get_value(section, "provinces");
 		const Vec<Entity> owned_provinces = p_registry.convert_packed_array<ProvinceTag>(owned_provinces_config);
 
@@ -155,7 +164,7 @@ ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 		const ProvinceEntity capital_entity = p_registry.get_entity<ProvinceTag>(capital);
 
 		const CountryEntity country_entity = p_registry.create_entity<CountryTag>(section);
-		p_registry.emplace<Color>(country_entity, Color::from_rgba8(color.r, color.g, color.b, color.a));
+		p_registry.emplace<Color>(country_entity, color);
 		p_registry.emplace<Name>(country_entity, section);
 		p_registry.emplace<Capital>(country_entity, capital_entity);
 		p_registry.emplace<OwnedProvinces>(country_entity, owned_provinces);
@@ -504,7 +513,6 @@ void Map::load_map_editor(Node3D *p_map) {
 		float orientation = 0.0;
 		int province_id = 0;
 
-		// TODO - use find_if
 		for (const KeyValue<int, Entity> &provinces_kv : registry.provinces)
 			if (provinces_kv.value == kv.key)
 				province_id = provinces_kv.key;
@@ -647,6 +655,46 @@ Ref<ImageTexture> Map::get_country_map_mode() {
 	}
 
 	return ImageTexture::create_from_image(country_map_mode_image);
+}
+
+Ref<ImageTexture> Map::get_region_map_mode() {
+	const Registry &registry = *Registry::self;
+	const Ref<Image> region_map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
+
+	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
+		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
+		const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(i);
+
+		Color region_color = discard_color;
+		if (registry.all_of<RegionComponent>(province_entity)) {
+			const RegionEntity region = registry.get<RegionComponent>(province_entity);
+			region_color = registry.get<Color>(region);
+		}
+
+		region_map_mode_image->set_pixel(uv.x, uv.y, region_color);
+	}
+
+	return ImageTexture::create_from_image(region_map_mode_image);
+}
+
+Ref<ImageTexture> Map::get_area_map_mode() {
+	const Registry &registry = *Registry::self;
+	const Ref<Image> area_map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
+
+	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
+		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
+		const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(i);
+
+		Color area_color = discard_color;
+		if (registry.all_of<AreaComponent>(province_entity)) {
+			const AreaEntity area = registry.get<AreaComponent>(province_entity);
+			area_color = registry.get<Color>(area);
+		}
+
+		area_map_mode_image->set_pixel(uv.x, uv.y, area_color);
+	}
+
+	return ImageTexture::create_from_image(area_map_mode_image);
 }
 
 Map::~Map() {
