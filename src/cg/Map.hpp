@@ -18,6 +18,7 @@ class Node3D;
 
 namespace CG {
 
+class MapLabel;
 struct Registry;
 enum class ProvinceBorderType : uint8_t;
 enum class MapMode : uint8_t;
@@ -47,7 +48,7 @@ private:
 	static void add_rounded_border_corners(Ref<SurfaceTool> &p_st, const Vector2 &p_v1, const Vector2 &p_v2, float p_radius);
 	void create_border_materials();
 	static Ref<ArrayMesh> create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
-	static void create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map_width, int p_map_height);
+	void create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map_width, int p_map_height);
 	void create_border_meshes(Registry &p_registry, Node3D *p_map, Dictionary p_border_dict, bool is_map_editor);
 
 	void load_locators(Registry &p_registry);
@@ -82,6 +83,7 @@ private:
 	};
 	Vec<BorderMesh> border_meshes;
 	Vec<RID> border_materials;
+	Vec<MapLabel *> map_labels;
 };
 
 } // namespace CG

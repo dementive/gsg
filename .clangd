@@ -15,6 +15,7 @@ CompileFlags:
     - -Wno-unused-const-variable
     - -Wno-unused-function
     - -Wno-unused-variable
+    - -Wno-unused-private-field
 ---
 # Suppress all third-party warnings.
 

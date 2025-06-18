@@ -4,9 +4,10 @@
 #include "core/io/config_file.h"
 #include "core/io/file_access.h"
 #include "core/math/geometry_2d.h"
+#include "core/os/memory.h"
 #include "core/variant/typed_dictionary.h"
 
-#include "scene/3d/label_3d.h"
+#include "scene/3d/node_3d.h"
 #include "scene/resources/compressed_texture.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/shader.h"
@@ -19,6 +20,8 @@
 #include "ecs/Registry.hpp"
 
 #include "templates/ConstMap.hpp"
+
+#include "MapLabel.hpp"
 
 using namespace CG;
 
@@ -332,19 +335,20 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vec<Vector4> &p_segments, float p_b
 
 void Map::create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map_width, int p_map_height) {
 	const auto province_view = p_registry.view<LandProvinceTag, TextLocator, Name>();
+	map_labels.reserve(province_view.size_hint());
 
 	for (auto [entity, locator, name] : province_view.each()) {
-		Label3D *label = memnew(Label3D);
-		label->set_position(Vector3(locator.position.x - (p_map_width / 2.0), label_map_layer, locator.position.y - (p_map_height / 2.0)));
-		label->set_rotation(Vector3(-1.570796, locator.orientation, 0.0));
-		label->set_scale(Vector3(locator.scale, locator.scale, locator.scale));
+		MapLabel *label = memnew(MapLabel());
 
-		label->set_text(label->tr(name)); // TODO - make spaces new lines?
-		label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
-		label->set_modulate(Color(0, 0, 0));
-		label->set_outline_modulate(Color(1, 1, 1, 0));
+		Transform3D text_transform;
+		text_transform.origin = Vector3(locator.position.x, label_map_layer, locator.position.y);
+		text_transform.basis = Basis();
+		text_transform.basis.scale(Vector3(locator.scale, locator.scale, locator.scale));
+		text_transform.basis.rotate(Vector3(-1.570796, locator.orientation, 0.0));
 
-		p_map->call_deferred("add_child", label);
+		label->set_text(p_map->tr(name)); // TODO - make spaces new lines?
+		label->set_transform(text_transform);
+		map_labels.push_back(label);
 	}
 }
 
@@ -687,4 +691,9 @@ Map::~Map() {
 
 	for (const RID &material_rid : border_materials)
 		RS::get_singleton()->free(material_rid);
+
+	for (MapLabel *label : map_labels)
+		if (label != nullptr)
+			memdelete(label);
+	map_labels.clear();
 }
