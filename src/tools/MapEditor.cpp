@@ -165,8 +165,9 @@ void MapEditor::create_text_locator(int p_province_entity) {
 	const Entity entity = Registry::self->get_entity<ProvinceTag>(p_province_entity);
 	label->set_text(tr(Registry::self->get<Name>(entity)));
 	label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
-	label->set_modulate(Color(0, 0, 0));
-	label->set_outline_modulate(Color(1, 1, 1, 0));
+	label->set_modulate(Color(0, 0, 0, 0.93));
+	label->set_outline_modulate(Color(0, 0, 0, 0));
+	label->set_vertical_alignment(VerticalAlignment::VERTICAL_ALIGNMENT_TOP); // must be same as MapLabel
 
 	label->set_rotation(Vector3(-1.570796, locator.orientation, 0));
 	label->set_scale(Vector3(locator.scale, locator.scale, locator.scale));

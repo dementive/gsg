@@ -50,8 +50,11 @@ private:
 	static Ref<ArrayMesh> create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
 	void create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map_width, int p_map_height);
 	void create_border_meshes(Registry &p_registry, Node3D *p_map, Dictionary p_border_dict, bool is_map_editor);
-
 	void load_locators(Registry &p_registry);
+
+	Color get_country_map_mode(const Registry &p_registry, ProvinceEntity p_province_entity);
+	Color get_area_map_mode(const Registry &p_registry, ProvinceEntity p_province_entity);
+	Color get_region_map_mode(const Registry &p_registry, ProvinceEntity p_province_entity);
 
 public:
 	template <bool is_map_editor> void load_map(Node3D *p_map);
@@ -63,11 +66,6 @@ public:
 	Ref<Image> get_lookup_image();
 	Ref<ImageTexture> get_lookup_texture();
 	ProvinceColorMap get_color_to_id_map();
-
-	Ref<ImageTexture> get_country_map_mode();
-	Ref<ImageTexture> get_region_map_mode();
-	Ref<ImageTexture> get_area_map_mode();
-
 	template <MapMode T> Ref<ImageTexture> get_map_mode();
 
 	~Map();
@@ -83,7 +81,7 @@ private:
 	};
 	Vec<BorderMesh> border_meshes;
 	Vec<RID> border_materials;
-	Vec<MapLabel *> map_labels;
+	AHashMap<ProvinceEntity, MapLabel *, EntityHasher> map_labels;
 };
 
 } // namespace CG

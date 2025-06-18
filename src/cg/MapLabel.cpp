@@ -229,7 +229,7 @@ void MapLabel::_shape() {
 			// Outline surfaces.
 			Vector2 ol_offset = offset;
 			for (int j = 0; j < gl_size; j++)
-				_generate_glyph_surfaces(glyphs[j], ol_offset, outline_modulate, -1, outline_size);
+				_generate_glyph_surfaces(glyphs[j], ol_offset, outline_modulate, outline_render_priority, outline_size);
 		}
 
 		// Main text surfaces.

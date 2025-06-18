@@ -58,11 +58,12 @@ private:
 	bool dirty_text = true;
 
 	inline static int font_size = 32;
-	static constexpr int outline_size = 12;
-	inline static Color outline_modulate = Color(1, 1, 1, 0);
-	inline static Color modulate = Color(0, 0, 0, 1);
+	static constexpr int outline_size = 1;
+	inline static Color outline_modulate = Color(0, 0, 0, 0);
+	inline static Color modulate = Color(0, 0, 0, 0.93);
 
-	static constexpr int render_priority = 1;
+	static constexpr int render_priority = 2;
+	static constexpr int outline_render_priority = 1;
 	static constexpr float line_spacing = 0.F;
 	static constexpr float pixel_size = 0.005;
 	static constexpr float alpha_scissor_threshold = 0.5;

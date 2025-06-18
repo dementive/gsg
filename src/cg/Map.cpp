@@ -335,7 +335,6 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vec<Vector4> &p_segments, float p_b
 
 void Map::create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map_width, int p_map_height) {
 	const auto province_view = p_registry.view<LandProvinceTag, TextLocator, Name>();
-	map_labels.reserve(province_view.size_hint());
 
 	for (auto [entity, locator, name] : province_view.each()) {
 		MapLabel *label = memnew(MapLabel());
@@ -346,9 +345,9 @@ void Map::create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map
 		text_transform.basis.scale(Vector3(locator.scale, locator.scale, locator.scale));
 		text_transform.basis.rotate(Vector3(-1.570796, locator.orientation, 0.0));
 
-		label->set_text(p_map->tr(name)); // TODO - make spaces new lines?
+		label->set_text(p_map->tr(name));
 		label->set_transform(text_transform);
-		map_labels.push_back(label);
+		map_labels[entity] = label;
 	}
 }
 
@@ -645,6 +644,84 @@ Ref<Image> Map::get_lookup_image() { return lookup_image; }
 
 ProvinceColorMap Map::get_color_to_id_map() { return color_to_id_map; }
 
+Color Map::get_area_map_mode(const Registry &p_registry, ProvinceEntity p_province_entity) {
+	bool has_label = map_labels.has(p_province_entity) ? true : false;
+	MapLabel *label{};
+	if (has_label) {
+		label = map_labels[p_province_entity];
+		label->set_visible(false);
+	}
+
+	if (p_registry.all_of<AreaComponent>(p_province_entity)) {
+		const AreaEntity area_entity = p_registry.get<AreaComponent>(p_province_entity);
+
+		if (has_label) {
+			const ProvinceEntity area_capital_entity = p_registry.get<Capital>(area_entity);
+			// Only draw label on area capital
+			if (area_capital_entity == p_province_entity) {
+				label->set_text(p_registry.get<Name>(area_entity));
+				label->set_visible(true);
+			}
+		}
+
+		return p_registry.get<Color>(area_entity);
+	}
+
+	return discard_color;
+}
+
+Color Map::get_region_map_mode(const Registry &p_registry, ProvinceEntity p_province_entity) {
+	bool has_label = map_labels.has(p_province_entity) ? true : false;
+	MapLabel *label{};
+	if (has_label) {
+		label = map_labels[p_province_entity];
+		label->set_visible(false);
+	}
+
+	if (p_registry.all_of<RegionComponent>(p_province_entity)) {
+		const RegionEntity region_entity = p_registry.get<RegionComponent>(p_province_entity);
+
+		if (has_label) {
+			const ProvinceEntity region_capital_entity = p_registry.get<Capital>(region_entity);
+			// Only draw label on region capital
+			if (region_capital_entity == p_province_entity) {
+				label->set_text(p_registry.get<Name>(region_entity));
+				label->set_visible(true);
+			}
+		}
+
+		return p_registry.get<Color>(region_entity);
+	}
+
+	return discard_color;
+}
+
+Color Map::get_country_map_mode(const Registry &p_registry, ProvinceEntity p_province_entity) {
+	bool has_label = map_labels.has(p_province_entity) ? true : false;
+	MapLabel *label{};
+	if (has_label) {
+		label = map_labels[p_province_entity];
+		label->set_visible(false);
+	}
+
+	if (p_registry.all_of<Owner>(p_province_entity)) {
+		const CountryEntity owner = p_registry.get<Owner>(p_province_entity);
+
+		if (has_label) {
+			const ProvinceEntity country_capital_entity = p_registry.get<Capital>(owner);
+			// Only draw label on country capital
+			if (country_capital_entity == p_province_entity) {
+				label->set_text(p_registry.get<Name>(owner));
+				label->set_visible(true);
+			}
+		}
+
+		return p_registry.get<Color>(owner);
+	}
+
+	return discard_color;
+}
+
 template Ref<ImageTexture> Map::get_map_mode<MapMode::Area>();
 template Ref<ImageTexture> Map::get_map_mode<MapMode::Region>();
 template Ref<ImageTexture> Map::get_map_mode<MapMode::Country>();
@@ -656,25 +733,14 @@ template <MapMode T> Ref<ImageTexture> Map::get_map_mode() {
 	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
 		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
 		const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(i);
+		Color color;
 
-		Color color = discard_color;
-
-		if constexpr (T == MapMode::Area) {
-			if (registry.all_of<AreaComponent>(province_entity)) {
-				const AreaEntity area = registry.get<AreaComponent>(province_entity);
-				color = registry.get<Color>(area);
-			}
-		} else if constexpr (T == MapMode::Region) {
-			if (registry.all_of<RegionComponent>(province_entity)) {
-				const RegionEntity region = registry.get<RegionComponent>(province_entity);
-				color = registry.get<Color>(region);
-			}
-		} else if constexpr (T == MapMode::Country) {
-			if (registry.all_of<Owner>(province_entity)) {
-				const CountryEntity owner = registry.get<Owner>(province_entity);
-				color = registry.get<Color>(owner);
-			}
-		}
+		if constexpr (T == MapMode::Area)
+			color = get_area_map_mode(registry, province_entity);
+		else if constexpr (T == MapMode::Region)
+			color = get_region_map_mode(registry, province_entity);
+		else if constexpr (T == MapMode::Country)
+			color = get_country_map_mode(registry, province_entity);
 
 		const uint32_t ofs = (uv.y * COLOR_TEXTURE_DIMENSIONS) + uv.x;
 		write_ptr[(ofs * 3) + 0] = color.r;
@@ -692,8 +758,8 @@ Map::~Map() {
 	for (const RID &material_rid : border_materials)
 		RS::get_singleton()->free(material_rid);
 
-	for (MapLabel *label : map_labels)
-		if (label != nullptr)
-			memdelete(label);
+	for (const auto &kv : map_labels)
+		if (kv.value != nullptr)
+			memdelete(kv.value);
 	map_labels.clear();
 }

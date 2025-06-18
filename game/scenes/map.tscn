@@ -71,20 +71,6 @@ double_sided = false
 alpha_cut = 1
 texture = ExtResource("5_be0no")
 
-[node name="UnitSprite2" type="Sprite3D" parent="."]
-transform = Transform3D(25, 0, 0, 0, 6.47047, 24.1481, 0, -24.1481, 6.47047, -179.899, 15.0028, 186.999)
-shaded = true
-double_sided = false
-alpha_cut = 1
-texture = ExtResource("5_be0no")
-
-[node name="UnitSprite3" type="Sprite3D" parent="."]
-transform = Transform3D(25, 0, 0, 0, 6.47048, 24.1481, 0, -24.1481, 6.47048, 96.3219, 15, 68.1503)
-shaded = true
-double_sided = false
-alpha_cut = 1
-texture = ExtResource("5_be0no")
-
 [node name="EdgeClouds" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0)
 mesh = SubResource("QuadMesh_2klcf")
