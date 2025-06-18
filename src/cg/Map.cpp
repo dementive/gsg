@@ -13,6 +13,7 @@
 #include "scene/resources/surface_tool.h"
 
 #include "cg/csv.hpp"
+#include "cg/MapMode.hpp"
 
 #include "ecs/Provinces.hpp"
 #include "ecs/Registry.hpp"
@@ -596,6 +597,7 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	// Load lookup image
 	Ref<CompressedTexture2D> compressed_lookup_texture = ResourceLoader::load("res://gfx/gen/province_lookup.exr");
 	lookup_image = compressed_lookup_texture->get_image();
+	map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBF);
 
 	if constexpr (!is_map_editor) {
 		load_locators(registry);
@@ -639,65 +641,44 @@ Ref<Image> Map::get_lookup_image() { return lookup_image; }
 
 ProvinceColorMap Map::get_color_to_id_map() { return color_to_id_map; }
 
-Ref<ImageTexture> Map::get_country_map_mode() {
+template Ref<ImageTexture> Map::get_map_mode<MapMode::Area>();
+template Ref<ImageTexture> Map::get_map_mode<MapMode::Region>();
+template Ref<ImageTexture> Map::get_map_mode<MapMode::Country>();
+
+template <MapMode T> Ref<ImageTexture> Map::get_map_mode() {
 	const Registry &registry = *Registry::self;
-	const Ref<Image> country_map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
-
-	// Iteration starts at 1 because province ID 0 does not exist.
-	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
-		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
-		const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(i);
-
-		Color country_color = discard_color;
-		if (registry.all_of<Owner>(province_entity)) {
-			const CountryEntity owner = registry.get<Owner>(province_entity);
-			country_color = registry.get<Color>(owner);
-		}
-
-		country_map_mode_image->set_pixel(uv.x, uv.y, country_color);
-	}
-
-	return ImageTexture::create_from_image(country_map_mode_image);
-}
-
-Ref<ImageTexture> Map::get_region_map_mode() {
-	const Registry &registry = *Registry::self;
-	const Ref<Image> region_map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
+	float *write_ptr = reinterpret_cast<float *>(map_mode_image->ptrw());
 
 	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
 		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
 		const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(i);
 
-		Color region_color = discard_color;
-		if (registry.all_of<RegionComponent>(province_entity)) {
-			const RegionEntity region = registry.get<RegionComponent>(province_entity);
-			region_color = registry.get<Color>(region);
+		Color color = discard_color;
+
+		if constexpr (T == MapMode::Area) {
+			if (registry.all_of<AreaComponent>(province_entity)) {
+				const AreaEntity area = registry.get<AreaComponent>(province_entity);
+				color = registry.get<Color>(area);
+			}
+		} else if constexpr (T == MapMode::Region) {
+			if (registry.all_of<RegionComponent>(province_entity)) {
+				const RegionEntity region = registry.get<RegionComponent>(province_entity);
+				color = registry.get<Color>(region);
+			}
+		} else if constexpr (T == MapMode::Country) {
+			if (registry.all_of<Owner>(province_entity)) {
+				const CountryEntity owner = registry.get<Owner>(province_entity);
+				color = registry.get<Color>(owner);
+			}
 		}
 
-		region_map_mode_image->set_pixel(uv.x, uv.y, region_color);
+		const uint32_t ofs = (uv.y * COLOR_TEXTURE_DIMENSIONS) + uv.x;
+		write_ptr[(ofs * 3) + 0] = color.r;
+		write_ptr[(ofs * 3) + 1] = color.g;
+		write_ptr[(ofs * 3) + 2] = color.b;
 	}
 
-	return ImageTexture::create_from_image(region_map_mode_image);
-}
-
-Ref<ImageTexture> Map::get_area_map_mode() {
-	const Registry &registry = *Registry::self;
-	const Ref<Image> area_map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
-
-	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
-		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
-		const ProvinceEntity province_entity = registry.get_entity<ProvinceTag>(i);
-
-		Color area_color = discard_color;
-		if (registry.all_of<AreaComponent>(province_entity)) {
-			const AreaEntity area = registry.get<AreaComponent>(province_entity);
-			area_color = registry.get<Color>(area);
-		}
-
-		area_map_mode_image->set_pixel(uv.x, uv.y, area_color);
-	}
-
-	return ImageTexture::create_from_image(area_map_mode_image);
+	return ImageTexture::create_from_image(map_mode_image);
 }
 
 Map::~Map() {

@@ -20,6 +20,7 @@ namespace CG {
 
 struct Registry;
 enum class ProvinceBorderType : uint8_t;
+enum class MapMode : uint8_t;
 
 using ProvinceIndex = int; // Index into the province lookup texture.
 using ProvinceColorMap = AHashMap<Color, ProvinceIndex>;
@@ -61,15 +62,19 @@ public:
 	Ref<Image> get_lookup_image();
 	Ref<ImageTexture> get_lookup_texture();
 	ProvinceColorMap get_color_to_id_map();
+
 	Ref<ImageTexture> get_country_map_mode();
 	Ref<ImageTexture> get_region_map_mode();
 	Ref<ImageTexture> get_area_map_mode();
+
+	template <MapMode T> Ref<ImageTexture> get_map_mode();
 
 	~Map();
 
 private:
 	ProvinceColorMap color_to_id_map; // lookup image color -> province id
 	Ref<Image> lookup_image;
+	Ref<Image> map_mode_image;
 
 	struct BorderMesh {
 		Ref<ArrayMesh> mesh;
