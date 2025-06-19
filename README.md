@@ -17,8 +17,6 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 ## TODO
 
-- Map labels for regions, areas, and countries
-
 - Province adjacency and crossings
 
 - Military unit selection.

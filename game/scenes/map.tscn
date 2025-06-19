@@ -6,14 +6,14 @@
 [ext_resource type="Texture2D" uid="uid://becg3pgt1etd8" path="res://gfx/icon.svg" id="5_be0no"]
 [ext_resource type="Shader" uid="uid://dyygnnaju4jng" path="res://gfx/shaders/edge_clouds.gdshader" id="5_nakos"]
 [ext_resource type="Texture2D" uid="uid://c77amscc0tr0m" path="res://gfx/map/edge_clouds/edge_clouds.png" id="6_nakos"]
-[ext_resource type="Texture2D" uid="uid://cn8antbk2a4ve" path="res://gfx/map/edge_clouds/surround_tile.dds" id="7_jh32y"]
+[ext_resource type="Texture2D" path="res://gfx/map/edge_clouds/edge_texture.dds" id="7_nakos"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_2ithb"]
 render_priority = 0
 shader = ExtResource("2_2lpho")
 shader_parameter/flatmap_texture = ExtResource("3_nakos")
 shader_parameter/texture_normal = ExtResource("4_jh32y")
-shader_parameter/normal_scale = 1.0
+shader_parameter/normal_scale = 0.75
 shader_parameter/selected_areas = PackedColorArray(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 shader_parameter/selected_areas_total = 0
 
@@ -26,7 +26,7 @@ orientation = 1
 render_priority = 0
 shader = ExtResource("5_nakos")
 shader_parameter/edge_clouds_mask_texture = ExtResource("6_nakos")
-shader_parameter/edge_clouds_tile_texture = ExtResource("7_jh32y")
+shader_parameter/edge_clouds_tile_texture = ExtResource("7_nakos")
 
 [sub_resource type="QuadMesh" id="QuadMesh_2klcf"]
 material = SubResource("ShaderMaterial_be0no")

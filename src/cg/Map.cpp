@@ -369,7 +369,7 @@ void Map::create_border_meshes(Registry &p_registry, Node3D *p_map, Dictionary p
 		const RID border_mesh = border_mesh_resource->get_rid();
 		const RID mesh_instance = rs.instance_create2(border_mesh, p_map->get_world_3d()->get_scenario());
 
-		const BorderMesh border_mesh_storage{ .mesh = border_mesh_resource, .instance = mesh_instance };
+		const BorderMeshStorage border_mesh_storage{ .mesh = border_mesh_resource, .instance = mesh_instance };
 		border_meshes.push_back(border_mesh_storage);
 
 		const ProvinceBorderType border_type = fill_province_border_data(p_registry, border, border_mesh);
@@ -752,7 +752,7 @@ template <MapMode T> Ref<ImageTexture> Map::get_map_mode() {
 }
 
 Map::~Map() {
-	for (const BorderMesh &border_mesh : border_meshes)
+	for (const BorderMeshStorage &border_mesh : border_meshes)
 		RS::get_singleton()->free(border_mesh.instance);
 
 	for (const RID &material_rid : border_materials)

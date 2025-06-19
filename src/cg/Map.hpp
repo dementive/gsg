@@ -75,11 +75,11 @@ private:
 	Ref<Image> lookup_image;
 	Ref<Image> map_mode_image;
 
-	struct BorderMesh {
+	struct BorderMeshStorage {
 		Ref<ArrayMesh> mesh;
 		RID instance;
 	};
-	Vec<BorderMesh> border_meshes;
+	Vec<BorderMeshStorage> border_meshes;
 	Vec<RID> border_materials;
 	AHashMap<ProvinceEntity, MapLabel *, EntityHasher> map_labels;
 };
