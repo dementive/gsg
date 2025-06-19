@@ -4,7 +4,7 @@
 # clang-tidy checks to remove from clangd that we still want to see when running clang-tidy manually but don't care about 
 Diagnostics:
   ClangTidy:
-    Remove: [readability-convert-member-functions-to-static, readability-static-accessed-through-instance]
+    Remove: [readability-convert-member-functions-to-static, readability-static-accessed-through-instance,readability-make-member-function-const]
     FastCheckFilter: Loose
 
 # Exclude certain, noisy warnings that lack full context. Replace with lowered severity if/when

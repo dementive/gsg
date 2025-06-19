@@ -2,6 +2,7 @@
 custom_modules = "../gsg/src"
 optimize = "debug"
 use_llvm = "yes"
+redirect_build_objects="no"
 
 # stuff to make compiling faster
 fast_unsafe = "yes"
@@ -9,6 +10,10 @@ use_static_cpp = "no"
 linker = "mold"
 progress = "no"
 engine_update_check = "no"
+c_compiler_launcher="ccache"
+cpp_compiler_launcher="ccache"
+accesskit="no"
+deprecated="no"
 
 # only for my computer
 speechd = "no"
@@ -31,6 +36,7 @@ builtin_embree = "no"
 builtin_brotli = "no"
 
 # disabled modules
+disable_xr="yes"
 module_enet_enabled = "no"
 module_gridmap_enabled = "no"
 module_mbedtls_enabled = "no"

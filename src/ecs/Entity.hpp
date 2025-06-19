@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/templates/hashfuncs.h"
 #include "core/templates/pair.h"
 
 #include "entt/entity/fwd.hpp"

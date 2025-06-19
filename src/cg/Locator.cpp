@@ -105,8 +105,7 @@ void EditorLocators::_load_locators(LocatorMap &p_locator_map, const String &p_c
 	if (config->load(p_cfg_path) != OK)
 		return;
 
-	List<String> sections;
-	config->get_sections(&sections);
+	Vector<String> sections = config->get_sections();
 
 	const uint32_t sections_size = sections.size();
 	const Vec<Entity> province_ids = get_locator_vec(p_locator);

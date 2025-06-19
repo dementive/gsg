@@ -1,4 +1,5 @@
 #include "Map.hpp"
+#include <cmath>
 
 #include "core/crypto/hashing_context.h"
 #include "core/io/config_file.h"
@@ -53,8 +54,8 @@ float Map::calculate_orientation(const Polygon &p_polygon, const Vector2 &p_cent
 Color Map::get_random_area_color() { return { CLAMP(Math::randf(), float(76), float(178)), CLAMP(Math::randf(), float(76), float(178)), CLAMP(Math::randf(), float(76), float(178)) }; }
 
 Color Map::get_lookup_color(ProvinceIndex p_province_id) {
-	return { float(int(p_province_id) % COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1), floor(float(p_province_id) / COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1),
-		0.0 };
+	return { float(int(p_province_id) % COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1),
+		static_cast<float>(std::floor(float(p_province_id) / COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1)), 0.0 };
 }
 
 ProvinceColorMap Map::load_map_config(Registry &p_registry) {
@@ -74,15 +75,10 @@ ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 	if (area_config->load("res://data/areas.cfg") != OK)
 		return provinces_map;
 
-	List<String> province_sections;
-	List<String> country_sections;
-	List<String> region_sections;
-	List<String> area_sections;
-
-	province_config->get_sections(&province_sections);
-	country_config->get_sections(&country_sections);
-	region_config->get_sections(&region_sections);
-	area_config->get_sections(&area_sections);
+	Vector<String> province_sections = province_config->get_sections();
+	Vector<String> country_sections = country_config->get_sections();
+	Vector<String> region_sections = region_config->get_sections();
+	Vector<String> area_sections = area_config->get_sections();
 
 	for (const String &section : province_sections) {
 		const ProvinceIndex province_id = section.to_int();
@@ -551,10 +547,8 @@ void Map::load_locators(Registry &p_registry) {
 	text_config->load("res://data/locators/text.cfg");
 	unit_config->load("res://data/locators/unit.cfg");
 
-	List<String> text_sections;
-	text_config->get_sections(&text_sections);
-	List<String> unit_sections;
-	unit_config->get_sections(&unit_sections);
+	Vector<String> text_sections = text_config->get_sections();
+	Vector<String> unit_sections = unit_config->get_sections();
 
 	for (const String &section : text_sections) {
 		const int province_id = section.to_int();

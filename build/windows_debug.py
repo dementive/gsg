@@ -10,6 +10,7 @@ progress = "no"
 engine_update_check = "no"
 
 # disabled modules
+disable_xr="yes"
 module_enet_enabled = "no"
 module_gridmap_enabled = "no"
 module_mbedtls_enabled = "no"

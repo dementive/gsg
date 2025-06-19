@@ -199,7 +199,7 @@ void MapLabel::_shape() {
 			TS->free_rid(i);
 		lines_rid.clear();
 
-		BitField<TextServer::LineBreakFlag> autowrap_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_TRIM_EDGE_SPACES;
+		BitField<TextServer::LineBreakFlag> autowrap_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
 
 		PackedInt32Array line_breaks = TS->shaped_text_get_line_breaks(text_rid, width, 0, autowrap_flags);
 		float max_line_w = 0.0;
