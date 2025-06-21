@@ -1,5 +1,4 @@
 #include "Map.hpp"
-#include <cmath>
 
 #include "core/crypto/hashing_context.h"
 #include "core/io/config_file.h"
@@ -19,8 +18,6 @@
 
 #include "ecs/Provinces.hpp"
 #include "ecs/Registry.hpp"
-
-#include "templates/ConstMap.hpp"
 
 #include "MapLabel.hpp"
 
@@ -171,7 +168,7 @@ ProvinceColorMap Map::load_map_config(Registry &p_registry) {
 
 		for (const ProvinceEntity province_entity : owned_provinces) {
 			ERR_CONTINUE_MSG(p_registry.all_of<Owner>(province_entity),
-					vformat("Province %d assigned multiple owners. Provinces can only have one owner, fix countries.cfg.", static_cast<int>(province_entity)));
+					String("Province " + uitos(static_cast<int>(province_entity)) + " assigned multiple owners. Provinces can only have one owner, fix countries.cfg."));
 			p_registry.emplace<Owner>(province_entity, country_entity);
 		}
 	}
@@ -604,13 +601,12 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 
 		// Parse border crossings
 		const Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
-		static constexpr ConstMap<std::string_view, int, 6> adjacency_config{ { "to", 0 }, { "from", 1 }, { "startx", 2 }, { "starty", 3 }, { "endx", 4 }, { "endy", 5 } };
 
 		// Fill in crossing adjacencies
 		for (const Vector<Variant> &crossing : crossings) {
 			const ProvinceAdjacencyEntity adjacency_entity = registry.create();
-			const ProvinceEntity to_entity = registry.get_entity<ProvinceTag>(crossing[adjacency_config["to"]]);
-			const ProvinceEntity from_entity = registry.get_entity<ProvinceTag>(crossing[adjacency_config["from"]]);
+			const ProvinceEntity to_entity = registry.get_entity<ProvinceTag>(crossing[0]);
+			const ProvinceEntity from_entity = registry.get_entity<ProvinceTag>(crossing[1]);
 
 			registry.emplace<AdjacencyTo>(adjacency_entity, to_entity);
 			registry.emplace<AdjacencyFrom>(adjacency_entity, from_entity);
@@ -619,7 +615,7 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 			registry.emplace<CrossingLocator>(
 				adjacency_entity,
 				Vector4(
-					crossing[adjacency_config["startx"]], crossing[adjacency_config["starty"]], crossing[adjacency_config["endx"]], crossing[adjacency_config["endy"]]
+					crossing[2], crossing[3], crossing[4], crossing[5]
 				)
 			);
 			// clang-format on

@@ -102,6 +102,6 @@ public:                                                                         
 // Call CHECK_NODE in _get_configuration_warnings to report misconfigured nodes in editor.
 #define CHECK_NODE(m_name)                                                                                                                                                                   \
 	if (m_name == nullptr)                                                                                                                                                                   \
-		warnings.append(vformat("%s node pointer is not set!", #m_name));
+		warnings.append(String(#m_name + " node pointer is not set!"));
 
 } // namespace CG

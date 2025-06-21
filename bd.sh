@@ -35,8 +35,23 @@ case "$1" in
     scons profile=$scripts_dir/windows_debug.py ;;
   windows_release)
     scons profile=$scripts_dir/windows_release.py ;;
+  compile_timing) # for use with ClangBuildAnalyzer
+    /home/dm/Templates/ClangBuildAnalyzer/build/ClangBuildAnalyzer --start /home/dm/dev/gsg/src
+    scons cxxflags=-ftime-trace use_pch=yes game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
+    /home/dm/Templates/ClangBuildAnalyzer/build/ClangBuildAnalyzer --stop /home/dm/dev/gsg/src /home/dm/dev/gsg/build/test_timing
+    /home/dm/Templates/ClangBuildAnalyzer/build/ClangBuildAnalyzer --analyze /home/dm/dev/gsg/build/test_timing ;;
+  build_pch)
+    scons build_pch=yes profile=$scripts_dir/linux_debug.py $debug_options compiledb=yes;;
+  use_pch)
+    scons use_pch=yes game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so;;
+  use_pch_fix)
+    rm -f ./bin/*
+    scons use_pch=yes game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
+    if [ $? -eq 0 ]; then
+      scons use_pch=yes game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options
+    fi;;
   *)
-    scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so ;;
+    scons use_pch=yes game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so ;;
 esac
 
 # if [[ "$1" == "linux_release" && "$2" == "export" ]]; then

@@ -5,30 +5,34 @@ Import("env")
 Import("env_modules")
 
 def find_header_dirs():
-    hpp_dirs = set()
-    for root, _, files in os.walk("."):
-        if any(file.endswith(".hpp") or file.endswith(".h") for file in files):
-            hpp_dirs.add(root)
-    return list(hpp_dirs)
+	hpp_dirs = set()
+	for root, _, files in os.walk("."):
+		if any(file.endswith(".hpp") or file.endswith(".h") for file in files):
+			hpp_dirs.add(root)
+	return list(hpp_dirs)
 
 def find_cpp_files(env):
-    sources = []
-    for dirpath, _, _ in os.walk("."):
-        cpp_files = env.Glob(os.path.join(dirpath, "*.cpp"))
-        sources.extend(cpp_files)
-    return env.Flatten(sources)
+	sources = []
+	for dirpath, _, _ in os.walk("."):
+		cpp_files = env.Glob(os.path.join(dirpath, "*.cpp"))
+		sources.extend(cpp_files)
+	return env.Flatten(sources)
 
 def using_clang(env):
-    return "clang" in os.path.basename(env["CC"])
+	return "clang" in os.path.basename(env["CC"])
 
 def using_gcc(env):
-    return "gcc" in os.path.basename(env["CC"])
+	return "gcc" in os.path.basename(env["CC"])
 
 # Clone module env
 env_game = env_modules.Clone()
 
 # Add dependencies
 SConscript("../deps/SCsub", "env_game")
+
+# Entt config
+env_game.Append(CPPDEFINES=["ENTT_DISABLE_ASSERT"])
+env_game.Append(CPPDEFINES=["ENTT_NO_MIXIN"])
 
 # Get sources
 sources = find_cpp_files(env_game)
@@ -43,35 +47,51 @@ else:
 	env_game["CXXFLAGS"].insert(0, "/std:c++23")
 	env_game["CXXFLAGS"].insert(0, "/Zc:preprocessor")
 
+if using_clang(env_game):
+	env_game.Append(CPPDEFINES=["_LIBCPP_REMOVE_TRANSITIVE_INCLUDES"])
+
 # Enable warnings in debug mode
 if env_game.debug_features:
 	env_game.Append(
-	    CXXFLAGS=[
-	    	"-Wall",
-	    	"-Wextra",
-	    	# "-Wshadow", # ENTT v3.15.0 throws a ton of shadowed var warnings, should renable this when upgrading to a new version.
-	    	# Disable warnings from GDCLASS stuff
-	    	"-Wno-unused-parameter",
-	    ]
+		CXXFLAGS=[
+			"-Wall",
+			"-Wextra",
+			# "-Wshadow", # ENTT v3.15.0 throws a ton of shadowed var warnings, should renable this when upgrading to a new version.
+			# Disable warnings from GDCLASS stuff
+			"-Wno-unused-parameter",
+		]
 	)
 
+
 	if using_clang(env_game):
+		env_game.Append(CXXFLAGS=["-glldb"])
 		env_game.Append(CXXFLAGS=["-Wimplicit-fallthrough", "-Wno-deprecated-volatile", "-Wno-missing-designated-field-initializers",])
 		env_game.Append(CXXFLAGS=["-pedantic", "-Wno-nested-anon-types", "-Wno-gnu-anonymous-struct", "-Wno-extra-semi"])
 
 	if using_gcc(env_game):
 		env_game.Append(
-		    CXXFLAGS=["-Wno-volatile"]
+			CXXFLAGS=["-Wno-volatile"]
 		)
 
-# Shared lib compilation
-if ARGUMENTS.get('game_shared', 'no') == 'yes':
-	env_game.Append(CCFLAGS=['-fPIC'])
-	env_game['LIBS'] = []
-	shared_lib = env_game.SharedLibrary(target='#bin/game', source=sources)
-	shared_lib_shim = shared_lib[0].name.rsplit('.', 1)[0]
-	env.Append(LIBS=[shared_lib_shim])
-	env.Append(LIBPATH=['#bin'])
-else:
-    # Static compilation
-    env_game.add_source_files(env.modules_sources, sources)
+def build():
+	build_pch = ARGUMENTS.get('build_pch', 'no') == 'yes'
+	use_pch = ARGUMENTS.get('use_pch', 'no') == 'yes'
+	if using_clang(env_game) and (build_pch or use_pch):
+		env_game.Append(CXXFLAGS=["-fpch-codegen", "-fpch-preprocess", "-fpch-instantiate-templates"])
+
+		if use_pch:
+			env_game.Append(CXXFLAGS=["-include-pch", f"{os.path.abspath("./pch.hpp.pch")}"])
+
+	# Shared lib compilation
+	if ARGUMENTS.get('game_shared', 'no') == 'yes':
+		env_game.Append(CCFLAGS=['-fPIC'])
+		env_game['LIBS'] = []
+		shared_lib = env_game.SharedLibrary(target='#bin/game', source=sources)
+		shared_lib_shim = shared_lib[0].name.rsplit('.', 1)[0]
+		env.Append(LIBS=[shared_lib_shim])
+		env.Append(LIBPATH=['#bin'])
+	else:
+		# Static compilation
+		env_game.add_source_files(env.modules_sources, sources)
+
+build()

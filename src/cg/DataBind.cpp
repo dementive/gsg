@@ -38,7 +38,7 @@ template <typename T> void DataBind::execute(T callable, Control *node, const St
 	// If the method to call doesn't exist there is no reason to even execute the expression
 #ifdef DEBUG_ENABLED
 	if (!node->has_method(method)) [[unlikely]] {
-		print_error(vformat("Executing %s expression for %s failed: %s does not exist.", method, node->get_path(), method));
+		print_error(String("Executing " + method + " expression for " + String(node->get_path()) + " failed: " + method + " does not exist."));
 		return;
 	}
 #endif
@@ -51,7 +51,7 @@ template <typename T> void DataBind::execute(T callable, Control *node, const St
 
 		// Bail if execution fails
 		if (callable->has_execute_failed()) [[unlikely]] {
-			print_error(vformat("Executing %s expression for %s failed: %s.", method, node->get_path(), callable->get_error_text()));
+			print_error(String("Executing " + method + " expression for " + String(node->get_path()) + " failed: " + callable->get_error_text()));
 			return;
 		}
 	} else if constexpr (std::is_same_v<std::decay_t<T>, MethodBind *>) {
@@ -66,8 +66,8 @@ template <typename T> void DataBind::execute(T callable, Control *node, const St
 		if ((expected_type == Variant::STRING && result.get_type() == Variant::INT)) { // allow int if expected type is String.
 			result = result.stringify();
 		} else {
-			print_error(vformat("Executing %s expression for %s failed: Result type is %s expected: %s.", method, node->get_path(), Variant::get_type_name(result.get_type()),
-					Variant::get_type_name(expected_type)));
+			print_error(String("Executing " + method + " expression for " + String(node->get_path()) + " failed: Result type is " + Variant::get_type_name(result.get_type()) +
+					" expected: " + Variant::get_type_name(expected_type)));
 			return;
 		}
 	}
@@ -78,8 +78,8 @@ template <typename T> void DataBind::execute(T callable, Control *node, const St
 		if (obj == nullptr) [[unlikely]] // This is fucking impossible but happens anyway sometimes
 			return;
 		if (!obj->is_class(expected_class)) [[unlikely]] {
-			print_error(
-					vformat("Executing %s expression for %s failed: Result class is %s expected: %s.", method, node->get_path(), Variant::get_type_name(result.get_type()), expected_class));
+			print_error(String("Executing " + method + " expression for " + String(node->get_path()) + " failed: Result class is " + Variant::get_type_name(result.get_type()) +
+					" expected: " + expected_class));
 			return;
 		}
 	}

@@ -55,6 +55,8 @@ String EditorLocators::get_type_string(LocatorType p_type) {
 			return "text";
 		} break;
 	}
+
+	return "";
 }
 
 void EditorLocators::set_locator(LocatorType p_locator_type, int64_t p_locator_index, const Locator &p_locator) {
@@ -73,11 +75,11 @@ void EditorLocators::set_locator(LocatorType p_locator_type, int64_t p_locator_i
 Locator EditorLocators::get_locator(LocatorType p_locator_type, int p_locator) {
 	switch (p_locator_type) {
 		case LocatorType::Unit: {
-			ERR_FAIL_COND_V_MSG(!unit_locators.has(p_locator), Locator(), vformat("Failed to get %s locator %d", get_type_string(p_locator_type), p_locator));
+			ERR_FAIL_COND_V_MSG(!unit_locators.has(p_locator), Locator(), String("Failed to get " + get_type_string(p_locator_type) + " locator " + p_locator));
 			return unit_locators[p_locator];
 		} break;
 		case LocatorType::Text: {
-			ERR_FAIL_COND_V_MSG(!text_locators.has(p_locator), Locator(), vformat("Failed to get %s locator %d", get_type_string(p_locator_type), p_locator));
+			ERR_FAIL_COND_V_MSG(!text_locators.has(p_locator), Locator(), String("Failed to get " + get_type_string(p_locator_type) + " locator " + p_locator));
 			return text_locators[p_locator];
 		} break;
 	}
@@ -94,9 +96,11 @@ bool EditorLocators::has_locator(LocatorType p_locator_type, int p_province_id) 
 			return text_locators.has(p_province_id);
 		} break;
 	}
+
+	return false;
 }
 
-static constexpr float DEFAULT_LOCATOR_SCALE = 25.0;
+static constexpr float DEFAULT_LOCATOR_SCALE = 000.0;
 static constexpr float DEFAULT_TEXT_LOCATOR_SCALE = 100.0;
 
 void EditorLocators::_load_locators(LocatorMap &p_locator_map, const String &p_cfg_path, LocatorType p_locator) {

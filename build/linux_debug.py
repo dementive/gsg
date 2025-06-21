@@ -3,6 +3,8 @@ custom_modules = "../gsg/src"
 optimize = "debug"
 use_llvm = "yes"
 redirect_build_objects="no"
+separate_debug_symbols="yes"
+scu_build="yes"
 
 # stuff to make compiling faster
 fast_unsafe = "yes"

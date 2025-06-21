@@ -148,7 +148,7 @@ void MapEditor::create_unit_locator(int p_province_entity) {
 	sprite->set_global_position(Vector3(locator.position.x, LOCATOR_UNIT_Y_POSITION, locator.position.y));
 
 	edited_unit_nodes[p_province_entity] = sprite;
-	int item_index = node_item_list->add_item(vformat("%d:    Unit", p_province_entity));
+	int item_index = node_item_list->add_item(String(uitos(p_province_entity) + ":    Unit"));
 	node_item_list->set_item_metadata(item_index, sprite);
 }
 
@@ -174,7 +174,7 @@ void MapEditor::create_text_locator(int p_province_entity) {
 	label->set_global_position(Vector3(locator.position.x, label_map_layer, locator.position.y));
 
 	edited_label_nodes[p_province_entity] = label;
-	int item_index = node_item_list->add_item(vformat("%d:    Text", p_province_entity));
+	int item_index = node_item_list->add_item(String(uitos(p_province_entity) + ":    Text"));
 	node_item_list->set_item_metadata(item_index, label);
 }
 

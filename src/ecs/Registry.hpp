@@ -60,14 +60,14 @@ struct Registry : entt::registry {
 	// Converts a PackedIntArray or PackedStringArray to an Entity vector.
 	// Make sure that the entity tag T already has entities in the registry to lookup.
 	template <IsEntityTag T, typename VecType = Vec<Entity>> [[nodiscard]] VecType convert_packed_array(const auto &p_array) {
-		VecType entities;
-		entities.resize(p_array.size());
+		VecType new_entities;
+		new_entities.resize(p_array.size());
 		const auto *from_ptr = p_array.ptr();
 		for (int i = 0; i < p_array.size(); ++i) {
-			ERR_CONTINUE_MSG(!entity_has_identifier<T>(from_ptr[i]), vformat("%s is not a valid %s identifier.", from_ptr[i], String(typeid(T).name())));
-			entities[i] = get_entity<T>(from_ptr[i]);
+			ERR_CONTINUE_MSG(!entity_has_identifier<T>(from_ptr[i]), String(Variant(from_ptr[i]).stringify() + " is not a valid " + String(typeid(T).name()) + " identifier."));
+			new_entities[i] = get_entity<T>(from_ptr[i]);
 		}
-		return entities;
+		return new_entities;
 	}
 
 	// In a gsg game almost every entity has some unique behavior that has to be configured or scripted.
