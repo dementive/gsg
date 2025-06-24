@@ -19,7 +19,7 @@
 
 using namespace CG;
 
-void initialize_src_module(ModuleInitializationLevel p_level) {
+void initialize_gsg_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE)
 		return;
 
@@ -39,7 +39,7 @@ void initialize_src_module(ModuleInitializationLevel p_level) {
 #endif
 }
 
-void uninitialize_src_module(ModuleInitializationLevel p_level) {
+void uninitialize_gsg_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE)
 		return;
 

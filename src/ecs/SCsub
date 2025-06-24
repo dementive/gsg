@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+import os
+from pathlib import Path
+
+from misc.gsg.scons_funcs import * # Imports are relative to the godot SConstruct file
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from ....godot.misc.utility.scons_hints import *
+	from ....godot.misc.gsg.scons_funcs import *
+
+Import("env")
+Import("env_modules")
+
+def find_ecs_header_dirs():
+	header_dirs = set()
+	for root, _, files in os.walk("."):
+		if (root.startswith(f".{os.sep}flecs")): # Exclude all flecs dirs
+			continue
+
+		if any(file.endswith(".h") or file.endswith(".hpp") for file in files):
+			header_dirs.add(root)
+
+	return list(header_dirs)
+
+def find_flecs_header_dirs(path):
+	hpp_dirs = set()
+	for root, _, files in os.walk(path):
+		if any(file.endswith(".h") for file in files):
+			hpp_dirs.add(root)
+	return list(hpp_dirs)
+
+def build_flecs():
+	env_flecs = env_modules.Clone()
+
+	flecs_dir: Path = Path.cwd() / "flecs"
+	flecs_dir = flecs_dir / "distr"
+
+	flecs_header_dirs = [
+		flecs_dir
+	]
+
+	flecs_sources = [
+		flecs_dir / "flecs.c"
+	]
+
+	flecs_sources  = [file.resolve().__str__() for file in flecs_sources]
+	flecs_header_dirs = [directory.resolve().__str__() for directory in flecs_header_dirs]
+
+	env_flecs.Append(CPPPATH=flecs_header_dirs)
+
+	set_flecs_defines(env_flecs)
+
+	# Set C standard to C99: https://www.flecs.dev/flecs/md_docs_2Quickstart.html#building-flecs
+	if not env_flecs.msvc:
+		env_flecs["CFLAGS"].remove("-std=gnu17")
+		env_flecs["CFLAGS"].insert(0, "-std=gnu99")
+	else:
+		env_flecs["CFLAGS"].remove("/std:c17")
+		env_flecs["CFLAGS"].insert(0, "/std:c99")
+
+	env_flecs.force_optimization_on_debug()
+	env_flecs.disable_warnings()
+	env_flecs.add_source_files(env.modules_sources, flecs_sources)
+
+def build_module():
+	# Build modules files
+	env_module = env_modules.Clone()
+
+	module_sources : list[str] = [
+		"register_types.cpp"
+	]
+
+	set_cpp_standard(env_module)
+	enable_all_warnings(env_module)
+	set_flecs_defines(env_module)
+
+	env_module.Append(CPPPATH=find_ecs_header_dirs())
+	env_module.add_source_files(env.modules_sources, module_sources)
+
+build_flecs()
+build_module()

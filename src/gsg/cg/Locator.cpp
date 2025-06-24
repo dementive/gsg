@@ -100,7 +100,7 @@ bool EditorLocators::has_locator(LocatorType p_locator_type, int p_province_id) 
 	return false;
 }
 
-static constexpr float DEFAULT_LOCATOR_SCALE = 000.0;
+static constexpr float DEFAULT_LOCATOR_SCALE = 25.0;
 static constexpr float DEFAULT_TEXT_LOCATOR_SCALE = 100.0;
 
 void EditorLocators::_load_locators(LocatorMap &p_locator_map, const String &p_cfg_path, LocatorType p_locator) {

@@ -1,3 +1,6 @@
 [submodule "deps/entt"]
 	path = deps/entt
 	url = https://github.com/skypjack/entt
+[submodule "src/ecs/flecs"]
+	path = src/ecs/flecs
+	url = https://github.com/SanderMertens/flecs.git

@@ -1,6 +1,6 @@
 # debug stuff
 platform="windows"
-custom_modules = "../gsg/src"
+custom_modules = "../gsg/src/gsg"
 optimize = "debug"
 
 # stuff to make compiling faster

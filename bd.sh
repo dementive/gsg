@@ -2,29 +2,29 @@ cd ../godot
 
 scripts_dir=../gsg/build
 debug_options="debug_symbols=yes debug_paths_relative=yes" # setting these in the profile doens't work for some reason
-llvm_so="bin/libgame.linuxbsd.editor.x86_64.llvm.so"
-gcc_so="bin/libgame.linuxbsd.editor.x86_64.so"
+llvm_so="bin/libgsg.linuxbsd.editor.x86_64.llvm.so"
+gcc_so="bin/libgsg.linuxbsd.editor.x86_64.so"
 
 case "$1" in
   linux_debug)
-    scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so;;
+    scons shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so;;
   linux_debug_gcc)
-    scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options use_llvm=no $gcc_so;;
+    scons shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options use_llvm=no $gcc_so;;
   clean|fix|linux_debug_engine)
     # The big up side of building as a shared library is incremental builds are crazy fast
     # The big down side of building the module as a shared library is you get linker errors when adding any new includes from the engine that haven't been used in the module before.
     # These errors also only happen when actually running the newly unlinked code, so can show up at weird times which sucks.
     # To fix this have to delete the existing binaries and rebuild them, this takes about 5-15 extra seconds than only targeting the .so though.
     rm -f ./bin/*
-    scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
+    scons shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
     if [ $? -eq 0 ]; then # only build the link the engine if there are no compiler errors so the errors don't show twice.
-      scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options compiledb=yes
+      scons shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options compiledb=yes
     fi;;
   linux_debug_engine_gcc)
     rm -f ./bin/*
-    scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options use_llvm=no $gcc_so
+    scons shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options use_llvm=no $gcc_so
     if [ $? -eq 0 ]; then
-      scons game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options use_llvm=no
+      scons shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options use_llvm=no
     fi;;
   static|linux_debug_static)
     # Statically links the module into the godot binary
@@ -36,22 +36,22 @@ case "$1" in
   windows_release)
     scons profile=$scripts_dir/windows_release.py ;;
   compile_timing) # for use with ClangBuildAnalyzer
-    /home/dm/Templates/ClangBuildAnalyzer/build/ClangBuildAnalyzer --start /home/dm/dev/gsg/src
-    scons cxxflags=-ftime-trace use_pch=yes game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
-    /home/dm/Templates/ClangBuildAnalyzer/build/ClangBuildAnalyzer --stop /home/dm/dev/gsg/src /home/dm/dev/gsg/build/test_timing
+    /home/dm/Templates/ClangBuildAnalyzer/build/ClangBuildAnalyzer --start /home/dm/dev/gsg/src/game
+    scons cxxflags=-ftime-trace use_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
+    /home/dm/Templates/ClangBuildAnalyzer/build/ClangBuildAnalyzer --stop /home/dm/dev/gsg/src/game /home/dm/dev/gsg/build/test_timing
     /home/dm/Templates/ClangBuildAnalyzer/build/ClangBuildAnalyzer --analyze /home/dm/dev/gsg/build/test_timing ;;
   build_pch)
     scons build_pch=yes profile=$scripts_dir/linux_debug.py $debug_options compiledb=yes;;
   use_pch)
-    scons use_pch=yes game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so;;
+    scons use_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so;;
   use_pch_fix)
     rm -f ./bin/*
-    scons use_pch=yes game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
+    scons use_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
     if [ $? -eq 0 ]; then
-      scons use_pch=yes game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options
+      scons use_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options
     fi;;
   *)
-    scons use_pch=yes game_shared=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so ;;
+    scons use_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so ;;
 esac
 
 # if [[ "$1" == "linux_release" && "$2" == "export" ]]; then
