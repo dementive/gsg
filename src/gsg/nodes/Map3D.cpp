@@ -11,8 +11,7 @@
 #include "cg/MapMode.hpp"
 #include "cg/NodeManager.hpp"
 
-#include "ecs/Registry.hpp"
-
+#include "ecs_tags.hpp"
 #include "gui/Hud.hpp"
 #include "MapUtils.hpp"
 
@@ -66,8 +65,8 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 	if (province_id == 0)
 		return;
 
-	const ProvinceEntity province_entity = Registry::self->get_entity<ProvinceTag>(province_id);
-	if (Registry::self->all_of<LandProvinceTag>(province_entity)) {
+	const ProvinceEntity province_entity = ECS::self->scope_lookup("p", province_id);
+	if (province_entity.has<LandProvinceTag>()) {
 		const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
 		PackedColorArray selected_areas;
 		selected_areas.push_back(province_color.linear_to_srgb());

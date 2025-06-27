@@ -53,7 +53,7 @@ def build_flecs():
 
 	set_flecs_defines(env_flecs)
 
-	# Set C standard to C99: https://www.flecs.dev/flecs/md_docs_2Quickstart.html#building-flecs
+	# Compile flecs.c with C99
 	if not env_flecs.msvc:
 		env_flecs["CFLAGS"].remove("-std=gnu17")
 		env_flecs["CFLAGS"].insert(0, "-std=gnu99")

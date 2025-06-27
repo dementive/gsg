@@ -1,5 +1,7 @@
 #include "Locator.hpp"
 
+#include "ecs_tags.hpp"
+
 using namespace CG;
 
 bool Locator::operator==(const Locator &other) const { return position == other.position && orientation == other.orientation && scale == other.scale; }
@@ -9,25 +11,23 @@ bool Locator::operator!=(const Locator &other) const { return position != other.
 
 #include "core/io/config_file.h"
 
-#include "Registry.hpp"
-
 Vec<Entity> EditorLocators::get_locator_vec(LocatorType p_locator) {
-	const auto land_provinces_view = Registry::self->view<LandProvinceTag>();
-	const auto ocean_provinces_view = Registry::self->view<OceanProvinceTag>();
-	const auto river_provinces_view = Registry::self->view<RiverProvinceTag>();
+	const auto land_provinces_view = ECS::self->query<LandProvinceTag>();
+	const auto ocean_provinces_view = ECS::self->query<OceanProvinceTag>();
+	const auto river_provinces_view = ECS::self->query<RiverProvinceTag>();
 	Vec<Entity> province_ids;
 
 	switch (p_locator) {
 		case LocatorType::Unit: {
-			province_ids.reserve(land_provinces_view.size() + ocean_provinces_view.size() + river_provinces_view.size());
-			std::ranges::copy(land_provinces_view, std::back_inserter(province_ids));
-			std::ranges::copy(ocean_provinces_view, std::back_inserter(province_ids));
-			std::ranges::copy(river_provinces_view, std::back_inserter(province_ids));
+			province_ids.reserve(land_provinces_view.count() + ocean_provinces_view.count() + river_provinces_view.count());
+			land_provinces_view.each([&province_ids](Entity p_entity, LandProvinceTag) { province_ids.push_back(p_entity); });
+			ocean_provinces_view.each([&province_ids](Entity p_entity, OceanProvinceTag) { province_ids.push_back(p_entity); });
+			river_provinces_view.each([&province_ids](Entity p_entity, RiverProvinceTag) { province_ids.push_back(p_entity); });
 			return province_ids;
 		} break;
 		case LocatorType::Text: {
-			province_ids.reserve(land_provinces_view.size());
-			std::ranges::copy(land_provinces_view, std::back_inserter(province_ids));
+			province_ids.reserve(land_provinces_view.count());
+			land_provinces_view.each([&province_ids](Entity p_entity, LandProvinceTag) { province_ids.push_back(p_entity); });
 			return province_ids;
 		} break;
 	}

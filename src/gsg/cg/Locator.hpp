@@ -3,7 +3,7 @@
 #ifdef TOOLS_ENABLED
 #include "core/templates/a_hash_map.h"
 
-#include "Entity.hpp"
+#include "ecs_entity.hpp"
 #include "Vec.hpp"
 
 #endif

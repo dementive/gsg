@@ -1,6 +1,9 @@
 #pragma once
 
-#include "ecs/Registry.hpp"
+#include <cstdint>
+
+#include "ecs_entity.hpp"
+#include "ecs_tags.hpp"
 
 namespace CG {
 
@@ -22,8 +25,8 @@ enum class ProvinceBorderType : uint8_t {
 	PROVINCE_BORDER_TYPE_MAX = 6
 };
 
-inline bool is_navigable_water_province(const Registry &p_registry, const Entity p_entity) { return p_registry.any_of<OceanProvinceTag, RiverProvinceTag>(p_entity); }
+inline bool is_navigable_water_province(const Entity p_entity) { return p_entity.has<OceanProvinceTag>() or p_entity.has<RiverProvinceTag>(); }
 
-inline bool is_impassable_province(const Registry &p_registry, const Entity p_entity) { return p_registry.any_of<ImpassableProvinceTag, UninhabitableProvinceTag>(p_entity); }
+inline bool is_impassable_province(const Entity p_entity) { return p_entity.has<ImpassableProvinceTag>() or p_entity.has<UninhabitableProvinceTag>(); }
 
 } // namespace CG

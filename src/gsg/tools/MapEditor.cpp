@@ -26,8 +26,6 @@
 #include "cg/Map.hpp"
 #include "cg/MapUtils.hpp"
 
-#include "ecs/Registry.hpp"
-
 using namespace CG;
 
 /* MapEditorNode */
@@ -162,8 +160,8 @@ void MapEditor::create_text_locator(int p_province_entity) {
 	MapEditorPlugin::map_editor_node->add_child(label);
 	label->set_owner(MapEditorPlugin::map_editor_node);
 
-	const Entity entity = Registry::self->get_entity<ProvinceTag>(p_province_entity);
-	label->set_text(tr(Registry::self->get<Name>(entity)));
+	const ProvinceEntity entity = ECS::self->scope_lookup("p", p_province_entity);
+	label->set_text(tr(*entity.get<String>()));
 	label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
 	label->set_modulate(Color(0, 0, 0, 0.93));
 	label->set_outline_modulate(Color(0, 0, 0, 0));

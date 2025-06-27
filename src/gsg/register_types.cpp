@@ -1,20 +1,14 @@
 #include "register_types.h"
 
-#include "core/object/class_db.h"
-
 #include "cg/Locator.hpp"
 #include "cg/MapCamera.hpp"
 
-#include "ecs/Registry.hpp"
-
+#include "ecs_components.hpp"
 #include "gui/Hud.hpp"
-#include "Map.hpp"
 #include "nodes/Map3D.hpp"
 
 #ifdef TOOLS_ENABLED
-
 #include "tools/MapEditor.hpp"
-
 #endif
 
 using namespace CG;
@@ -23,7 +17,7 @@ void initialize_gsg_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE)
 		return;
 
-	new Registry;
+	new ECS;
 
 	GDREGISTER_RUNTIME_CLASS(Map3D)
 	GDREGISTER_RUNTIME_CLASS(MapCamera)
@@ -43,8 +37,9 @@ void uninitialize_gsg_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE)
 		return;
 
-	delete Registry::self;
 #ifdef TOOLS_ENABLED
 	memdelete_notnull(EditorLocators::self);
 #endif
+
+	delete ECS::self;
 }

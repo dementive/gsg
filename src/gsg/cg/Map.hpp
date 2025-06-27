@@ -5,11 +5,10 @@
 
 #include "scene/resources/image_texture.h"
 
-#include "ecs/Entity.hpp"
-
 #include "templates/Vec.hpp"
 
 #include "defs/singleton.hpp"
+#include "ecs_entity.hpp"
 
 class SurfaceTool;
 class ArrayMesh;
@@ -19,7 +18,6 @@ class Node3D;
 namespace CG {
 
 class MapLabel;
-struct Registry;
 enum class ProvinceBorderType : uint8_t;
 enum class MapMode : uint8_t;
 
@@ -39,22 +37,22 @@ private:
 	static float calculate_orientation(const Polygon &p_polygon, const Vector2 &p_centroid);
 	static Color get_random_area_color();
 	static Color get_lookup_color(ProvinceIndex p_province_id);
-	ProvinceColorMap load_map_config(Registry &p_registry);
+	ProvinceColorMap load_map_config();
 
-	static bool is_lake_border(const Registry &p_registry, const Border &p_border);
-	static void fill_province_adjacency_data(Registry &p_registry, const Border &p_border);
-	static ProvinceBorderType fill_province_border_data(Registry &p_registry, const Border &p_border, const RID &p_rid);
+	static bool is_lake_border(const Border &p_border);
+	static void fill_province_adjacency_data(const Border &p_border);
+	static ProvinceBorderType fill_province_border_data(const Border &p_border, const RID &p_rid);
 
 	static void add_rounded_border_corners(Ref<SurfaceTool> &p_st, const Vector2 &p_v1, const Vector2 &p_v2, float p_radius);
 	void create_border_materials();
 	static Ref<ArrayMesh> create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
-	void create_map_labels(const Registry &p_registry, Node3D *p_map, int p_map_width, int p_map_height);
-	void create_border_meshes(Registry &p_registry, Node3D *p_map, Dictionary p_border_dict, bool is_map_editor);
-	void load_locators(Registry &p_registry);
+	void create_map_labels(Node3D *p_map, int p_map_width, int p_map_height);
+	void create_border_meshes(Node3D *p_map, const Dictionary &p_border_dict, bool is_map_editor);
+	void load_locators();
 
-	Color get_country_map_mode(const Registry &p_registry, ProvinceEntity p_province_entity);
-	Color get_area_map_mode(const Registry &p_registry, ProvinceEntity p_province_entity);
-	Color get_region_map_mode(const Registry &p_registry, ProvinceEntity p_province_entity);
+	Color get_country_map_mode(ProvinceEntity p_province_entity);
+	Color get_area_map_mode(ProvinceEntity p_province_entity);
+	Color get_region_map_mode(ProvinceEntity p_province_entity);
 
 public:
 	template <bool is_map_editor> void load_map(Node3D *p_map);
