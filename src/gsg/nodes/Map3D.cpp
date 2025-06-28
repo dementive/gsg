@@ -65,7 +65,7 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 	if (province_id == 0)
 		return;
 
-	const ProvinceEntity province_entity = ECS::self->scope_lookup("p", province_id);
+	const ProvinceEntity province_entity = ECS::self->scope_lookup(Scope::Province, uitos(province_id));
 	if (province_entity.has<LandProvinceTag>()) {
 		const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
 		PackedColorArray selected_areas;

@@ -7,7 +7,7 @@
 template <typename Key, typename Value, std::size_t Size> struct ConstMap {
 	std::array<std::pair<Key, Value>, Size> data;
 
-	consteval Value at(const Key &key) const {
+	constexpr Value at(const Key &key) const {
 		for (const auto &pair : data)
 			if (pair.first == key)
 				return pair.second;
@@ -16,7 +16,7 @@ template <typename Key, typename Value, std::size_t Size> struct ConstMap {
 		return var.second;
 	}
 
-	consteval Value operator[](const Key &key) const {
+	constexpr Value operator[](const Key &key) const {
 		for (const auto &pair : data)
 			if (pair.first == key)
 				return pair.second;
@@ -25,8 +25,8 @@ template <typename Key, typename Value, std::size_t Size> struct ConstMap {
 		return var.second;
 	}
 
-	consteval ConstMap() = default;
-	consteval ConstMap(std::initializer_list<std::pair<Key, Value>> p_init) {
+	constexpr ConstMap() = default;
+	constexpr ConstMap(std::initializer_list<std::pair<Key, Value>> p_init) {
 		for (int i = 0; const std::pair<Key, Value> &E : p_init) {
 			data[i] = E;
 			i++;

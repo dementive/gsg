@@ -61,13 +61,6 @@ Color Map::get_lookup_color(ProvinceIndex p_province_id) {
 ProvinceColorMap Map::load_map_config() {
 	ECS &ecs = *ECS::self;
 
-	// Top level scope entities. Adding each entity types to these as children allows using ecs.lookup("p::1") syntax to lookup entities.
-	// These entities hold no data they just act as namespaces inside of flecs.
-	Entity top_level_province_entity = ecs.entity("p");
-	Entity top_level_region_entity = ecs.entity("region");
-	Entity top_level_area_entity = ecs.entity("area");
-	Entity top_level_country_entity = ecs.entity("c");
-
 	ProvinceColorMap provinces_map{};
 
 	const Ref<ConfigFile> province_config = memnew(ConfigFile());
@@ -100,10 +93,6 @@ ProvinceColorMap Map::load_map_config() {
 	ecs.component<TextLocator>();
 
 	// Register tag components
-	ecs.component<Capital>();
-	ecs.component<ProvinceOwner>();
-	ecs.component<OwnedProvince>();
-
 	ecs.component<AreaTag>();
 	ecs.component<CountryTag>();
 	ecs.component<RegionTag>();
@@ -114,6 +103,13 @@ ProvinceColorMap Map::load_map_config() {
 	ecs.component<RiverProvinceTag>();
 	ecs.component<ImpassableProvinceTag>();
 	ecs.component<UninhabitableProvinceTag>();
+
+	// Top level scope entities. Adding each entity types to these as children allows using ecs.lookup("p::1") syntax to lookup entities.
+	// These entities hold no data they just act as namespaces inside of flecs.
+	ecs.register_scopes();
+
+	// Create all relationship entities
+	ecs.register_relations();
 
 	for (const String &section : province_sections) {
 		const ProvinceIndex province_id = section.to_int();
@@ -127,7 +123,7 @@ ProvinceColorMap Map::load_map_config() {
 
 		const String province_name = uitos(province_id);
 		ProvinceEntity province_entity = ecs.entity(province_name.utf8().ptr());
-		province_entity.child_of(top_level_province_entity);
+		province_entity.child_of(ecs.get_scope(Scope::Province));
 
 		province_entity.set<String>(String("PROV") + uitos(province_id));
 		province_entity.add<ProvinceTag>();
@@ -153,25 +149,22 @@ ProvinceColorMap Map::load_map_config() {
 		Color color = area_config->get_value(section, "color", get_random_area_color());
 		color = Color::from_rgba8(color.r, color.g, color.b);
 
-		const int capital = area_config->get_value(section, "capital");
-		const ProvinceEntity capital_entity = ecs.scope_lookup(top_level_province_entity, capital);
+		const String capital = area_config->get_value(section, "capital");
 
+		const ProvinceEntity capital_entity = ecs.scope_lookup(Scope::Province, capital);
 		const AreaEntity area_entity = ecs.entity(section.utf8().ptr());
-		area_entity.child_of(top_level_area_entity);
+		area_entity.child_of(ecs.get_scope(Scope::Area));
 
 		const PackedInt32Array area_provinces_config = area_config->get_value(section, "provinces");
 		for (const int province : area_provinces_config) {
-			const ProvinceEntity province_entity = ecs.scope_lookup(top_level_province_entity, province);
-			province_entity.child_of(area_entity); // Province are children of areas
+			const ProvinceEntity province_entity = ecs.scope_lookup(Scope::Province, uitos(province));
+			// province_entity.child_of(area_entity); // Province are children of areas
 		}
 
 		area_entity.add<AreaTag>();
-		area_entity.add<Capital>(capital_entity);
+		area_entity.add(Relationship(Capital), capital_entity);
 
 		area_entity.set<Color>(color);
-
-		print_line("Set area entity to color: ", area_entity.get<Color>());
-
 		area_entity.set<String>(section);
 	}
 
@@ -179,20 +172,20 @@ ProvinceColorMap Map::load_map_config() {
 		Color color = region_config->get_value(section, "color", get_random_area_color());
 		color = Color::from_rgba8(color.r, color.g, color.b);
 
-		const int capital = region_config->get_value(section, "capital");
-		const ProvinceEntity capital_entity = ecs.scope_lookup(top_level_province_entity, capital);
+		const String capital = region_config->get_value(section, "capital");
+		const ProvinceEntity capital_entity = ecs.scope_lookup(Scope::Province, capital);
 
 		const RegionEntity region_entity = ecs.entity(section.utf8().ptr());
-		region_entity.child_of(top_level_region_entity);
+		region_entity.child_of(ecs.get_scope(Scope::Region));
 
 		const PackedStringArray region_areas_config = region_config->get_value(section, "areas");
 		for (const String &area : region_areas_config) {
-			const AreaEntity area_entity = ecs.scope_lookup(top_level_area_entity, area);
+			const AreaEntity area_entity = ecs.scope_lookup(Scope::Area, area);
 			area_entity.child_of(region_entity); // Areas are children of regions
 		}
 
 		region_entity.add<AreaTag>();
-		region_entity.add<Capital>(capital_entity);
+		region_entity.add(Relationship(Capital), capital_entity);
 
 		region_entity.set<Color>(color);
 		region_entity.set<String>(section);
@@ -203,21 +196,25 @@ ProvinceColorMap Map::load_map_config() {
 		color = Color::from_rgba8(color.r, color.g, color.b);
 
 		const PackedInt32Array owned_provinces_config = country_config->get_value(section, "provinces");
-		const int capital = country_config->get_value(section, "capital");
-		const ProvinceEntity capital_entity = ecs.scope_lookup(top_level_province_entity, capital);
+		const String capital = country_config->get_value(section, "capital");
+		const ProvinceEntity capital_entity = ecs.scope_lookup(Scope::Province, capital);
 
 		const CountryEntity country_entity = ecs.entity(section.utf8().ptr());
-		country_entity.child_of(top_level_country_entity);
+		country_entity.child_of(ecs.get_scope(Scope::Country));
 
 		for (const int &province : owned_provinces_config) {
-			const ProvinceEntity province_entity = ecs.scope_lookup(top_level_province_entity, province);
+			const ProvinceEntity province_entity = ecs.scope_lookup(Scope::Province, uitos(province));
 
-			province_entity.add<ProvinceOwner>(country_entity);
-			country_entity.add<OwnedProvince>(province_entity);
+			const ProvinceEntity test_entity = ecs.get_scope(Scope::Province).lookup(uitos(province).utf8().ptr());
+
+			print_line("Looked up province entity: ", test_entity.name().c_str(), " id should be: ", province);
+
+			province_entity.add(Relationship(Owner), country_entity);
+			country_entity.add(Relationship(Owns), province_entity);
 		}
 
 		country_entity.add<CountryTag>();
-		country_entity.add<Capital>(capital_entity);
+		country_entity.add(Relationship(Capital), capital_entity);
 
 		country_entity.set<Color>(color);
 		country_entity.set<String>(section);
@@ -232,8 +229,6 @@ bool Map::is_lake_border(const Border &p_border) {
 	else
 		return false;
 }
-
-#define inc_enum(i) ((decltype(i))(static_cast<int>(i) + 1))
 
 void Map::create_border_materials() {
 	const int material_count = static_cast<int>(ProvinceBorderType::PROVINCE_BORDER_TYPE_MAX);
@@ -272,14 +267,14 @@ void Map::create_border_materials() {
 }
 
 void Map::fill_province_adjacency_data(const Border &p_border) {
-	ProvinceAdjacencyType adjacency_type = ProvinceAdjacencyType::Land;
+	// ProvinceAdjacencyType adjacency_type = ProvinceAdjacencyType::Land;
 
-	if (is_navigable_water_province(p_border.first) and is_navigable_water_province(p_border.second))
-		adjacency_type = ProvinceAdjacencyType::Water;
-	else if (is_impassable_province(p_border.first) or is_impassable_province(p_border.second))
-		adjacency_type = ProvinceAdjacencyType::Impassable;
-	else if ((p_border.first.has<OceanProvinceTag>() and p_border.second.has<LandProvinceTag>()) or (p_border.first.has<LandProvinceTag>() and p_border.second.has<OceanProvinceTag>()))
-		adjacency_type = ProvinceAdjacencyType::Coastal;
+	// if (is_navigable_water_province(p_border.first) and is_navigable_water_province(p_border.second))
+	// 	adjacency_type = ProvinceAdjacencyType::Water;
+	// else if (is_impassable_province(p_border.first) or is_impassable_province(p_border.second))
+	// 	adjacency_type = ProvinceAdjacencyType::Impassable;
+	// else if ((p_border.first.has<OceanProvinceTag>() and p_border.second.has<LandProvinceTag>()) or (p_border.first.has<LandProvinceTag>() and p_border.second.has<OceanProvinceTag>()))
+	// 	adjacency_type = ProvinceAdjacencyType::Coastal;
 
 	// TODO
 
@@ -297,8 +292,10 @@ void Map::fill_province_adjacency_data(const Border &p_border) {
 
 ProvinceBorderType Map::fill_province_border_data(const Border &p_border, const RID &p_rid) {
 	ProvinceBorderType border_type = ProvinceBorderType::Country;
+	ECS &ecs = *ECS::self;
 
-	if ((p_border.first.has<ProvinceOwner>() and p_border.second.has<ProvinceOwner>() and p_border.first.get<ProvinceOwner>() != p_border.second.get<ProvinceOwner>()))
+	if ((ecs.has_relation(p_border.first, Relation::Owner) and ecs.has_relation(p_border.second, Relation::Owner) and
+				ecs.get_target(p_border.first, Relation::Owner) != ecs.get_target(p_border.second, Relation::Owner)))
 		border_type = ProvinceBorderType::Country;
 	else if (is_navigable_water_province(p_border.first) and is_navigable_water_province(p_border.second))
 		border_type = ProvinceBorderType::Water;
@@ -408,7 +405,7 @@ void Map::create_border_meshes(Node3D *p_map, const Dictionary &p_border_dict, b
 	for (const Variant &border_key : border_keys) {
 		const PackedInt32Array key = border_key;
 		const PackedVector4Array value = p_border_dict[key];
-		const Border border = Border(ecs.scope_lookup("p", key[0]), ecs.scope_lookup("p", key[1]));
+		const Border border = Border(ecs.scope_lookup("p", uitos(key[0])), ecs.scope_lookup("p", uitos(key[1])));
 
 		const Ref<ArrayMesh> border_mesh_resource = create_border_mesh(value, 0.75, 0.75);
 		const RID border_mesh = border_mesh_resource->get_rid();
@@ -499,7 +496,7 @@ void Map::load_map_editor(Node3D *p_map) {
 			lookup_write_ptr[lookup_index + 1] = lookup_color.g;
 
 			// Make pixel dict for polygon calculations
-			const ProvinceEntity province_entity = ecs.scope_lookup("p", province_id);
+			const ProvinceEntity province_entity = ecs.scope_lookup("p", uitos(province_id));
 			pixel_dict[province_entity].push_back(Vector2(x, y));
 
 			// Get border segments
@@ -518,7 +515,7 @@ void Map::load_map_editor(Node3D *p_map) {
 
 					// Filter out borders and adjacencies with lakes
 					// movement to/from lakes is impossible and borders should never be draw on lake provinces.
-					if (is_lake_border(Border(province_entity, ecs.scope_lookup("p", from))))
+					if (is_lake_border(Border(province_entity, ecs.scope_lookup("p", uitos(from)))))
 						continue;
 
 					PackedVector4Array borders_arr = borders_dict[arr];
@@ -541,7 +538,7 @@ void Map::load_map_editor(Node3D *p_map) {
 						arr.push_back(province_id);
 					}
 
-					if (is_lake_border(Border(province_entity, ecs.scope_lookup("p", from))))
+					if (is_lake_border(Border(province_entity, ecs.scope_lookup("p", uitos(from)))))
 						continue;
 
 					PackedVector4Array borders_arr = borders_dict[arr];
@@ -600,7 +597,7 @@ void Map::load_locators() {
 
 	for (const String &section : text_sections) {
 		const int province_id = section.to_int();
-		const ProvinceEntity entity = ecs.scope_lookup("p", province_id);
+		const ProvinceEntity entity = ecs.scope_lookup("p", uitos(province_id));
 
 		TextLocator locator;
 		locator.position = text_config->get_value(section, "position");
@@ -612,7 +609,7 @@ void Map::load_locators() {
 
 	for (const String &section : unit_sections) {
 		const int province_id = section.to_int();
-		const ProvinceEntity entity = ecs.scope_lookup("p", province_id);
+		const ProvinceEntity entity = ecs.scope_lookup("p", uitos(province_id));
 
 		UnitLocator locator;
 		locator.position = unit_config->get_value(section, "position");
@@ -699,7 +696,7 @@ Color Map::get_area_map_mode(ProvinceEntity p_province_entity) {
 	const AreaEntity area_entity = p_province_entity.parent();
 	if (area_entity.is_valid()) {
 		if (has_label) {
-			const ProvinceEntity area_capital_entity = area_entity.target<Capital>();
+			const ProvinceEntity area_capital_entity = ECS::self->get_target(area_entity, Relation::Capital);
 			// Only draw label on area capital
 			if (area_capital_entity == p_province_entity) {
 				label->set_text(*area_entity.get<String>());
@@ -724,7 +721,7 @@ Color Map::get_region_map_mode(ProvinceEntity p_province_entity) {
 	const RegionEntity region_entity = p_province_entity.parent().parent();
 	if (region_entity.is_valid()) {
 		if (has_label) {
-			const ProvinceEntity region_capital_entity = region_entity.target<Capital>();
+			const ProvinceEntity region_capital_entity = ECS::self->get_target(region_entity, Relation::Capital);
 			// Only draw label on region capital
 			if (region_capital_entity == p_province_entity) {
 				label->set_text(*region_entity.get<String>());
@@ -746,11 +743,13 @@ Color Map::get_country_map_mode(ProvinceEntity p_province_entity) {
 		label->set_visible(false);
 	}
 
-	if (p_province_entity.has<ProvinceOwner>()) {
-		const CountryEntity owner = p_province_entity.target<ProvinceOwner>();
+	ECS &ecs = *ECS::self;
+
+	if (ecs.has_relation(p_province_entity, Relation::Owner)) {
+		const CountryEntity owner = ecs.get_target(p_province_entity, Relation::Owner);
 
 		if (has_label) {
-			const ProvinceEntity country_capital_entity = owner.target<Capital>();
+			const ProvinceEntity country_capital_entity = ecs.get_target(p_province_entity, Relation::Capital);
 			// Only draw label on country capital
 			if (country_capital_entity == p_province_entity) {
 				label->set_text(*owner.get<String>());
@@ -761,7 +760,7 @@ Color Map::get_country_map_mode(ProvinceEntity p_province_entity) {
 		return *owner.get<Color>();
 	}
 
-	print_line("Province: ", p_province_entity.name().c_str(), " has no owner.");
+	print_line("Province: ", p_province_entity.name().c_str(), " has no owner!");
 
 	return discard_color;
 }
@@ -775,7 +774,7 @@ template <MapMode T> Ref<ImageTexture> Map::get_map_mode() {
 
 	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
 		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
-		const ProvinceEntity province_entity = ECS::self->scope_lookup("p", int(i));
+		const ProvinceEntity province_entity = ECS::self->scope_lookup("p", uitos(i));
 		Color color;
 
 		if constexpr (T == MapMode::Area)

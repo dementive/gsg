@@ -3,7 +3,6 @@
 #include "cg/Locator.hpp"
 #include "cg/MapCamera.hpp"
 
-#include "ecs_components.hpp"
 #include "gui/Hud.hpp"
 #include "nodes/Map3D.hpp"
 

@@ -18,13 +18,6 @@ Import("env_modules")
 # Clone module env
 env_gsg = env_modules.Clone()
 
-# Add dependencies
-SConscript("../../deps/SCsub", "env_gsg")
-
-# Entt config
-env_gsg.Append(CPPDEFINES=["ENTT_DISABLE_ASSERT"])
-env_gsg.Append(CPPDEFINES=["ENTT_NO_MIXIN"])
-
 set_flecs_defines(env_gsg)
 
 # Get sources

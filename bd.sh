@@ -41,7 +41,7 @@ case "$1" in
     /home/dm/Templates/ClangBuildAnalyzer/build/ClangBuildAnalyzer --stop /home/dm/dev/gsg/src/game /home/dm/dev/gsg/build/test_timing
     /home/dm/Templates/ClangBuildAnalyzer/build/ClangBuildAnalyzer --analyze /home/dm/dev/gsg/build/test_timing ;;
   build_pch)
-    scons build_pch=yes profile=$scripts_dir/linux_debug.py $debug_options compiledb=yes;;
+    scons build_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options compiledb=yes;;
   use_pch)
     scons use_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so;;
   use_pch_fix)
