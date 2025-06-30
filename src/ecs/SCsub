@@ -70,7 +70,8 @@ def build_module():
 	env_module = env_modules.Clone()
 
 	module_sources : list[str] = [
-		"register_types.cpp"
+		"register_types.cpp",
+		"ecs.cpp"
 	]
 
 	set_cpp_standard(env_module)

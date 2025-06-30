@@ -48,7 +48,7 @@ case "$1" in
     rm -f ./bin/*
     scons use_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so
     if [ $? -eq 0 ]; then
-      scons use_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options
+      scons use_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options compiledb=yes
     fi;;
   *)
     scons use_pch=yes shared_library_module=yes profile=$scripts_dir/linux_debug.py $debug_options $llvm_so ;;
