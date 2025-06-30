@@ -1,6 +1,6 @@
 #include "Locator.hpp"
 
-#include "ecs_tags.hpp"
+#include "ecs/tags.hpp"
 
 using namespace CG;
 

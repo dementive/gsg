@@ -5,10 +5,11 @@
 
 #include "scene/resources/image_texture.h"
 
+#include "ecs/entity.hpp"
+
 #include "templates/Vec.hpp"
 
 #include "defs/singleton.hpp"
-#include "ecs_entity.hpp"
 
 class SurfaceTool;
 class ArrayMesh;

@@ -11,7 +11,8 @@
 #include "cg/MapMode.hpp"
 #include "cg/NodeManager.hpp"
 
-#include "ecs_tags.hpp"
+#include "ecs/tags.hpp"
+
 #include "gui/Hud.hpp"
 #include "MapUtils.hpp"
 

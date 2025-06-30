@@ -16,12 +16,12 @@
 #include "cg/csv.hpp"
 #include "cg/MapMode.hpp"
 
+#include "ecs/components.hpp"
 #include "ecs/ecs.hpp"
+#include "ecs/entity.hpp"
 #include "ecs/Provinces.hpp"
+#include "ecs/tags.hpp"
 
-#include "ecs_components.hpp"
-#include "ecs_entity.hpp"
-#include "ecs_tags.hpp"
 #include "MapLabel.hpp"
 
 using namespace CG;

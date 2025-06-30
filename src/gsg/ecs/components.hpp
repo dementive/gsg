@@ -3,7 +3,7 @@
 #include "core/math/vector4.h"
 #include "core/templates/rid.h"
 
-#include "Locator.hpp"
+#include "cg/Locator.hpp"
 
 namespace CG {
 

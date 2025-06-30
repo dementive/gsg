@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include "ecs_entity.hpp"
-#include "ecs_tags.hpp"
+#include "ecs/entity.hpp"
+#include "ecs/tags.hpp"
 
 namespace CG {
 
