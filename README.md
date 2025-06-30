@@ -1,5 +1,5 @@
 # gsg
-Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godotengine.org/en/stable/contributing/development/core_and_modules/custom_modules_in_cpp.html) using C++ 23 with [entt](https://github.com/skypjack/entt) ECS.
+Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godotengine.org/en/stable/contributing/development/core_and_modules/custom_modules_in_cpp.html) with [flecs](https://github.com/SanderMertens/flecs) ECS.
 
 ## Features
 
@@ -13,7 +13,7 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 - Flatmap texture that allows drawing of oceans, rivers, lakes, trees, or other map objects.
 
-- Map editor to edit map objects
+- Map editor to edit map objects and generate map data.
 
 ## TODO
 

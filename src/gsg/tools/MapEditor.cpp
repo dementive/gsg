@@ -161,7 +161,7 @@ void MapEditor::create_text_locator(int p_province_entity) {
 	label->set_owner(MapEditorPlugin::map_editor_node);
 
 	const ProvinceEntity entity = ECS::self->scope_lookup(Scope::Province, uitos(p_province_entity));
-	label->set_text(tr(*entity.get<String>()));
+	label->set_text(tr(entity.get<String>()));
 	label->set_draw_flag(Label3D::FLAG_DOUBLE_SIDED, false);
 	label->set_modulate(Color(0, 0, 0, 0.93));
 	label->set_outline_modulate(Color(0, 0, 0, 0));

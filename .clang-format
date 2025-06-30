@@ -122,10 +122,6 @@ IncludeCategories:
     Priority:        4
     SortPriority:    7
     CaseSensitive:   true
-  - Regex:           '^"(entt)/'
-    Priority:        5
-    SortPriority:    8
-    CaseSensitive:   true
   - Regex:           '^"(ecs)/'
     Priority:        5
     SortPriority:    9

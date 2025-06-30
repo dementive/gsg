@@ -700,12 +700,12 @@ Color Map::get_area_map_mode(ProvinceEntity p_province_entity) {
 			const ProvinceEntity area_capital_entity = ECS::self->get_target(area_entity, Relation::Capital);
 			// Only draw label on area capital
 			if (area_capital_entity == p_province_entity) {
-				label->set_text(*area_entity.get<String>());
+				label->set_text(area_entity.get<String>());
 				label->set_visible(true);
 			}
 		}
 
-		return *area_entity.get<Color>();
+		return area_entity.get<Color>();
 	}
 
 	return discard_color;
@@ -725,12 +725,12 @@ Color Map::get_region_map_mode(ProvinceEntity p_province_entity) {
 			const ProvinceEntity region_capital_entity = ECS::self->get_target(region_entity, Relation::Capital);
 			// Only draw label on region capital
 			if (region_capital_entity == p_province_entity) {
-				label->set_text(*region_entity.get<String>());
+				label->set_text(region_entity.get<String>());
 				label->set_visible(true);
 			}
 		}
 
-		return *region_entity.get<Color>();
+		return region_entity.get<Color>();
 	}
 
 	return discard_color;
@@ -754,12 +754,12 @@ Color Map::get_country_map_mode(ProvinceEntity p_province_entity) {
 
 			// Only draw label on country capital
 			if (country_capital_entity == p_province_entity) {
-				label->set_text(*owner.get<String>());
+				label->set_text(owner.get<String>());
 				label->set_visible(true);
 			}
 		}
 
-		return *owner.get<Color>();
+		return owner.get<Color>();
 	}
 
 	return discard_color;

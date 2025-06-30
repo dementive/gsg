@@ -14,17 +14,6 @@ if TYPE_CHECKING:
 Import("env")
 Import("env_modules")
 
-def find_ecs_header_dirs():
-	header_dirs = set()
-	for root, _, files in os.walk("."):
-		if (root.startswith(f".{os.sep}flecs")): # Exclude all flecs dirs
-			continue
-
-		if any(file.endswith(".h") or file.endswith(".hpp") for file in files):
-			header_dirs.add(root)
-
-	return list(header_dirs)
-
 def find_flecs_header_dirs(path):
 	hpp_dirs = set()
 	for root, _, files in os.walk(path):
@@ -35,22 +24,11 @@ def find_flecs_header_dirs(path):
 def build_flecs():
 	env_flecs = env_modules.Clone()
 
-	flecs_dir: Path = Path.cwd() / "flecs"
-	flecs_dir = flecs_dir / "distr"
-
-	flecs_header_dirs = [
-		flecs_dir
+	flecs_sources : list[str] = [
+		"flecs.c"
 	]
 
-	flecs_sources = [
-		flecs_dir / "flecs.c"
-	]
-
-	flecs_sources  = [file.resolve().__str__() for file in flecs_sources]
-	flecs_header_dirs = [directory.resolve().__str__() for directory in flecs_header_dirs]
-
-	env_flecs.Append(CPPPATH=flecs_header_dirs)
-
+	env_flecs.Append(CPPPATH=find_header_dirs())
 	set_flecs_defines(env_flecs)
 
 	# Compile flecs.c with C99
@@ -78,7 +56,7 @@ def build_module():
 	enable_all_warnings(env_module)
 	set_flecs_defines(env_module)
 
-	env_module.Append(CPPPATH=find_ecs_header_dirs())
+	env_module.Append(CPPPATH=find_header_dirs())
 	env_module.add_source_files(env.modules_sources, module_sources)
 
 build_flecs()

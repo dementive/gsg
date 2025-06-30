@@ -3,7 +3,7 @@
 #include "core/string/ustring.h"
 #include "core/templates/fixed_vector.h"
 
-#include "flecs/distr/flecs.h"
+#include "flecs.h"
 
 using Entity = flecs::entity;
 
