@@ -9,9 +9,15 @@ using Entity = flecs::entity;
 
 #define inc_enum(i) ((decltype(i))(static_cast<int>(i) + 1))
 
-enum class Relation : uint8_t { Capital, Owner, Owns, InArea, InRegion, ProvinceIn, RELATION_MAX };
+enum class Relation : uint8_t { Capital, Owner, Owns, InArea, InRegion, ProvinceIn, Border, Adjacency, AdjacencyTo, AdjacencyFrom, RELATION_MAX };
 
-enum class Scope : uint8_t { Province, Country, Area, Region, SCOPE_MAX };
+enum class Scope : uint8_t {
+	Province,
+	Country,
+	Area,
+	Region,
+	None // Use None for entity relationships whose target has no scope.
+};
 
 // Get a relationship entity
 #define Relationship(m_relationship) ecs.get_relation(Relation::m_relationship)
@@ -46,5 +52,5 @@ struct ECS : flecs::world {
 
 private:
 	FixedVector<Entity, int(Relation::RELATION_MAX)> relations;
-	FixedVector<Entity, int(Scope::SCOPE_MAX)> scopes;
+	FixedVector<Entity, int(Scope::None)> scopes;
 };

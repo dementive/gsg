@@ -404,7 +404,7 @@ void MapEditorPlugin::select_province(const int p_province_id) {
 	// Find key from value and apply it to the shader
 	for (const KeyValue<Color, int> &kv : map) {
 		if (kv.value == p_province_id) {
-			const Color &srgb_province_color = kv.key.linear_to_srgb();
+			const Color srgb_province_color = kv.key.linear_to_srgb();
 			selected_areas.push_back(srgb_province_color);
 
 			const Ref<ShaderMaterial> material = map_editor_node->map_mesh->get_mesh()->surface_get_material(0);

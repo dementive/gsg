@@ -127,7 +127,7 @@ class MapEditorPlugin : public EditorPlugin {
 	GDCLASS(MapEditorPlugin, EditorPlugin);
 
 private:
-	PackedColorArray selected_areas; // TODO - make this a FixedVector<Color, 10> when updating to 4.5. Right now it will proabbly causes bugs with more than 10 selections.
+	PackedColorArray selected_areas;
 
 public:
 	MapEditor *map_editor{};
