@@ -38,6 +38,16 @@ builtin_brotli = "no"
 
 # disabled modules
 disable_xr="yes"
+# disable_physics_2d="yes"
+# disable_physics_3d="yes"
+# disable_navigation_2d="yes"
+# disable_navigation_3d="yes"
+
+module_godot_physics_2d_enabled="no"
+module_godot_physics_3d_enabled="no"
+module_jolt_physics_enabled="no"
+module_navigation_2d_enabled="no"
+module_navigation_3d_enabled="no"
 module_enet_enabled = "no"
 module_gridmap_enabled = "no"
 module_mbedtls_enabled = "no"

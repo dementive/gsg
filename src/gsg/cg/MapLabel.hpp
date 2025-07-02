@@ -52,12 +52,15 @@ private:
 	Vector<RID> lines_rid;
 
 	RID base_material;
+	AABB aabb;
+	AABB province_aabb;
+	Transform3D transform;
 
 	bool dirty_lines = true;
 	bool dirty_font = true;
 	bool dirty_text = true;
 
-	inline static int font_size = 32;
+	static constexpr int font_size = 32;
 	static constexpr int outline_size = 1;
 	inline static Color outline_modulate = Color(0, 0, 0, 0);
 	inline static Color modulate = Color(0, 0, 0, 0.93);
@@ -78,14 +81,12 @@ private:
 
 public:
 	void set_text(const String &p_string);
-	void set_font_size(int p_size);
 	void set_visible(bool p_visible);
 	void set_transform(const Transform3D &p_transform);
+	AABB get_aabb() const;
 
-	// void set_visibility_range() {
-	//  RS::get_singleton()->instance_geometry_set_visibility_range(instance, visibility_range_begin, visibility_range_end, visibility_range_begin_margin, visibility_range_end_margin,
-	//  (RS::VisibilityRangeFadeMode)visibility_range_fade_mode);
-	//}
+	// Set the province AABB before doing anything else.
+	void set_province_aabb(const AABB &p_aabb);
 
 	MapLabel();
 	~MapLabel();

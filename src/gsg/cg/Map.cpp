@@ -3,7 +3,6 @@
 #include "core/crypto/hashing_context.h"
 #include "core/io/config_file.h"
 #include "core/io/file_access.h"
-#include "core/math/geometry_2d.h"
 #include "core/os/memory.h"
 #include "core/variant/typed_dictionary.h"
 
@@ -36,19 +35,30 @@ Vector2 Map::calculate_centroid(const Polygon &p_polygon) {
 	return sum / p_polygon.size();
 }
 
-float Map::calculate_orientation(const Polygon &p_polygon, const Vector2 &p_centroid) {
+Map::CachedMapData Map::calc_map_data(const Polygon &p_polygon, const Vector2 &p_centroid) {
 	float mu11 = 0.0;
 	float mu20 = 0.0;
 	float mu02 = 0.0;
+
+	float min_x = std::numeric_limits<float>::infinity();
+	float max_x = -std::numeric_limits<float>::infinity();
+	float min_y = std::numeric_limits<float>::infinity();
+	float max_y = -std::numeric_limits<float>::infinity();
+
 	for (const Vector2 &point : p_polygon) {
 		const float x = point.x - p_centroid.x;
 		const float y = point.y - p_centroid.y;
 		mu20 += x * x;
 		mu02 += y * y;
 		mu11 += x * y;
+
+		min_x = MIN(min_x, point.x);
+		max_x = MAX(max_x, point.x);
+		min_y = MIN(min_y, point.y);
+		max_y = MAX(max_y, point.y);
 	}
 
-	return Math::rad_to_deg(0.5 * atan2(2 * mu11, mu20 - mu02));
+	return { .orientation = float(Math::rad_to_deg(0.5 * Math::atan2(2 * mu11, mu20 - mu02))), .aabb = AABB(Vector3(min_x, 0, min_y), Vector3(max_x - min_x, 0, max_y - min_y)) };
 }
 
 Color Map::get_random_area_color() { return { CLAMP(Math::randf(), float(76), float(178)), CLAMP(Math::randf(), float(76), float(178)), CLAMP(Math::randf(), float(76), float(178)) }; }
@@ -85,6 +95,7 @@ ProvinceColorMap Map::load_map_config() {
 	// Register variant components
 	ecs.component<LocKey>();
 	ecs.component<Color>();
+	ecs.component<AABB>();
 
 	// Register components
 	ecs.component<CrossingLocator>();
@@ -103,6 +114,7 @@ ProvinceColorMap Map::load_map_config() {
 	ecs.component<LandProvinceTag>();
 	ecs.component<OceanProvinceTag>();
 	ecs.component<RiverProvinceTag>();
+	ecs.component<LakeProvinceTag>();
 	ecs.component<ImpassableProvinceTag>();
 	ecs.component<UninhabitableProvinceTag>();
 
@@ -322,18 +334,6 @@ ProvinceBorderType Map::fill_province_border_data(const Border &p_border, const 
 	p_border.first.add(Relationship(Border), border_entity);
 	p_border.second.add(Relationship(Border), border_entity);
 
-	// const Entity border_entity = ECS::self->entity();
-	// p_registry.emplace<AdjacencyTo>(border_entity, p_border.first);
-	// p_registry.emplace<AdjacencyFrom>(border_entity, p_border.second);
-	// p_registry.emplace<ProvinceBorderType>(border_entity, border_type);
-	// p_registry.emplace<ProvinceBorderMeshRID>(border_entity, p_rid);
-
-	// ProvinceBorders &to_province_borders = p_registry.get_or_emplace<ProvinceBorders>(p_border.first, ProvinceBorders());
-	// to_province_borders.push_back(border_entity);
-
-	// ProvinceBorders &from_province_borders = p_registry.get_or_emplace<ProvinceBorders>(p_border.second, ProvinceBorders());
-	// from_province_borders.push_back(border_entity);
-
 	return border_type;
 }
 
@@ -381,10 +381,10 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vec<Vector4> &p_segments, float p_b
 	return st->commit();
 }
 
-void Map::create_map_labels(Node3D *p_map, int p_map_width, int p_map_height) {
-	const auto province_query = ECS::self->query_builder<TextLocator, LocKey>().with<LandProvinceTag>().build();
+void Map::create_map_labels(Node3D *p_map) {
+	const auto province_query = ECS::self->query_builder<TextLocator, AABB>().with<LandProvinceTag>().build();
 
-	province_query.each([p_map, this](flecs::entity entity, const TextLocator &locator, const String &loc_key) {
+	province_query.each([this](flecs::entity entity, const TextLocator &locator, const AABB &aabb) {
 		MapLabel *label = memnew(MapLabel());
 
 		Transform3D text_transform;
@@ -393,8 +393,9 @@ void Map::create_map_labels(Node3D *p_map, int p_map_width, int p_map_height) {
 		text_transform.basis.scale(Vector3(locator.scale, locator.scale, locator.scale));
 		text_transform.basis.rotate(Vector3(-1.570796, locator.orientation, 0.0));
 
-		label->set_text(p_map->tr(loc_key));
+		label->set_province_aabb(aabb);
 		label->set_transform(text_transform);
+
 		map_labels[entity] = label;
 	});
 }
@@ -412,7 +413,7 @@ void Map::create_border_meshes(Node3D *p_map, const Dictionary &p_border_dict, b
 	for (const Variant &border_key : border_keys) {
 		const PackedInt32Array key = border_key;
 		const PackedVector4Array value = p_border_dict[key];
-		const Border border = Border(ecs.scope_lookup("p", uitos(key[0])), ecs.scope_lookup("p", uitos(key[1])));
+		const Border border = Border(ecs.scope_lookup(Scope::Province, uitos(key[0])), ecs.scope_lookup(Scope::Province, uitos(key[1])));
 
 		const Ref<ArrayMesh> border_mesh_resource = create_border_mesh(value, 0.75, 0.75);
 		const RID border_mesh = border_mesh_resource->get_rid();
@@ -503,7 +504,7 @@ void Map::load_map_editor(Node3D *p_map) {
 			lookup_write_ptr[lookup_index + 1] = lookup_color.g;
 
 			// Make pixel dict for polygon calculations
-			const ProvinceEntity province_entity = ecs.scope_lookup("p", uitos(province_id));
+			const ProvinceEntity province_entity = ecs.scope_lookup(Scope::Province, uitos(province_id));
 			pixel_dict[province_entity].push_back(Vector2(x, y));
 
 			// Get border segments
@@ -522,7 +523,7 @@ void Map::load_map_editor(Node3D *p_map) {
 
 					// Filter out borders and adjacencies with lakes
 					// movement to/from lakes is impossible and borders should never be draw on lake provinces.
-					if (is_lake_border(Border(province_entity, ecs.scope_lookup("p", uitos(from)))))
+					if (is_lake_border(Border(province_entity, ecs.scope_lookup(Scope::Province, uitos(from)))))
 						continue;
 
 					PackedVector4Array borders_arr = borders_dict[arr];
@@ -545,7 +546,7 @@ void Map::load_map_editor(Node3D *p_map) {
 						arr.push_back(province_id);
 					}
 
-					if (is_lake_border(Border(province_entity, ecs.scope_lookup("p", uitos(from)))))
+					if (is_lake_border(Border(province_entity, ecs.scope_lookup(Scope::Province, uitos(from)))))
 						continue;
 
 					PackedVector4Array borders_arr = borders_dict[arr];
@@ -562,25 +563,27 @@ void Map::load_map_editor(Node3D *p_map) {
 
 	// Fill in Provinces data from pixel data
 	Ref<ConfigFile> province_data_config = memnew(ConfigFile());
+	Ref<ConfigFile> runtime_province_data_config = memnew(ConfigFile());
+
 	for (const KeyValue<ProvinceEntity, Vec<Vector2>> &kv : pixel_dict) {
 		const Vector2 centroid = calculate_centroid(kv.value);
-		float orientation = 0.0;
 		int province_id = atoi(kv.key.name());
 
 		if (province_id == 0)
 			return;
 
-		if (!kv.key.has<LandProvinceTag>()) {
-			province_data_config->set_value(itos(province_id), "orientation", orientation);
-		} else {
-			orientation = calculate_orientation(Geometry2D::convex_hull(kv.value), centroid);
-			province_data_config->set_value(itos(province_id), "orientation", orientation);
+		const String province_id_string = uitos(province_id);
+		if (kv.key.has<LandProvinceTag>()) {
+			const CachedMapData map_data = calc_map_data(kv.value, centroid);
+			province_data_config->set_value(province_id_string, "orientation", map_data.orientation);
+			runtime_province_data_config->set_value(province_id_string, "aabb", map_data.aabb);
 		}
 
-		province_data_config->set_value(itos(province_id), "centroid", centroid);
+		province_data_config->set_value(province_id_string, "centroid", centroid);
 	}
 
 	province_data_config->save("res://data/gen/province_data.cfg");
+	runtime_province_data_config->save("res://data/gen/runtime_province_data.cfg");
 
 	map_data_config->set_value("map_data", "borders", borders_dict);
 	map_data_config->save("res://data/gen/map_data.cfg");
@@ -589,6 +592,19 @@ void Map::load_map_editor(Node3D *p_map) {
 }
 
 #endif
+
+void Map::load_map_data() {
+	Ref<ConfigFile> config = memnew(ConfigFile());
+	config->load("res://data/gen/runtime_province_data.cfg");
+	const Vector<String> sections = config->get_sections();
+
+	for (const String &section : sections) {
+		const ProvinceEntity entity = ECS::self->scope_lookup(Scope::Province, section);
+
+		const AABB aabb = config->get_value(section, "aabb");
+		entity.set<AABB>(aabb);
+	}
+}
 
 void Map::load_locators() {
 	Ref<ConfigFile> text_config = memnew(ConfigFile());
@@ -604,7 +620,7 @@ void Map::load_locators() {
 
 	for (const String &section : text_sections) {
 		const int province_id = section.to_int();
-		const ProvinceEntity entity = ecs.scope_lookup("p", uitos(province_id));
+		const ProvinceEntity entity = ecs.scope_lookup(Scope::Province, uitos(province_id));
 
 		TextLocator locator;
 		locator.position = text_config->get_value(section, "position");
@@ -616,7 +632,7 @@ void Map::load_locators() {
 
 	for (const String &section : unit_sections) {
 		const int province_id = section.to_int();
-		const ProvinceEntity entity = ecs.scope_lookup("p", uitos(province_id));
+		const ProvinceEntity entity = ecs.scope_lookup(Scope::Province, uitos(province_id));
 
 		UnitLocator locator;
 		locator.position = unit_config->get_value(section, "position");
@@ -652,9 +668,10 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 
 	if constexpr (!is_map_editor) {
 		load_locators();
+		load_map_data();
 
 		// Setup map labels
-		create_map_labels(p_map, province_image_width, province_image_height);
+		create_map_labels(p_map);
 
 		// Parse border crossings
 		const Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
@@ -771,7 +788,7 @@ template <MapMode T> Ref<ImageTexture> Map::get_map_mode() {
 
 	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
 		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
-		const ProvinceEntity province_entity = ECS::self->scope_lookup("p", uitos(i));
+		const ProvinceEntity province_entity = ECS::self->scope_lookup(Scope::Province, uitos(i));
 		Color color;
 
 		if constexpr (T == MapMode::Area)

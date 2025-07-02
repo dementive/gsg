@@ -125,6 +125,11 @@ camera_pan={
 ]
 }
 
+[physics]
+
+2d/physics_engine="Dummy"
+3d/physics_engine="Dummy"
+
 [rendering]
 
 anti_aliasing/quality/msaa_3d=3

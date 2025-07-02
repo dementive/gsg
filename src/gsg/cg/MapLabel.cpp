@@ -5,6 +5,7 @@
 
 #include "cg/NodeManager.hpp"
 
+#include "DebugDraw.hpp"
 #include "nodes/Map3D.hpp"
 
 using namespace CG;
@@ -161,6 +162,7 @@ void MapLabel::_shape() {
 
 	// Clear mesh.
 	RS::get_singleton()->mesh_clear(mesh);
+	aabb = AABB();
 
 	// Clear materials.
 	for (const KeyValue<SurfaceKey, SurfaceData> &E : surfaces)
@@ -225,11 +227,18 @@ void MapLabel::_shape() {
 		offset.x += pixel_size;
 		offset.y -= TS->shaped_text_get_ascent(i) * pixel_size;
 
+		if (aabb == AABB()) {
+			aabb.position = Vector3(offset.x, offset.y, 0);
+			aabb.expand_to(Vector3(offset.x + line_width, offset.y - ((TS->shaped_text_get_size(i).y + line_spacing) * pixel_size), 0));
+		} else {
+			aabb.expand_to(Vector3(offset.x, offset.y, 0));
+			aabb.expand_to(Vector3(offset.x + line_width, offset.y - ((TS->shaped_text_get_size(i).y + line_spacing) * pixel_size), 0));
+		}
+
 		if (outline_modulate.a != 0.0 && outline_size > 0) {
 			// Outline surfaces.
-			Vector2 ol_offset = offset;
 			for (int j = 0; j < gl_size; j++)
-				_generate_glyph_surfaces(glyphs[j], ol_offset, outline_modulate, outline_render_priority, outline_size);
+				_generate_glyph_surfaces(glyphs[j], offset, outline_modulate, outline_render_priority, outline_size);
 		}
 
 		// Main text surfaces.
@@ -237,6 +246,25 @@ void MapLabel::_shape() {
 			_generate_glyph_surfaces(glyphs[j], offset, modulate, render_priority);
 		offset.y -= (TS->shaped_text_get_descent(i) + line_spacing) * pixel_size;
 	}
+
+	// TODO - scale text based on if it is inside the province borders
+	// I tried to do this with the AABB but that doesn't really work
+	// AABB text_aabb = transform.xform(aabb);
+	// Vector3 text_pos = text_aabb.get_position();
+	// Vector3 text_size = text_aabb.get_size();
+
+	// text_pos.y = 0.0;
+	// text_aabb.set_position(text_pos);
+
+	// text_size.y = 0.0;
+	// text_aabb.set_size(text_size);
+
+	// RID scenario = NM::map->get_world_3d()->get_scenario();
+	// AABBRenderer *aabb_renderer = new AABBRenderer(province_aabb, scenario);
+	// AABBRenderer *aabb_renderer2 = new AABBRenderer(text_aabb, scenario);
+
+	// print_line("Label AABB: ", text_aabb, ". Province AABB: ", province_aabb);
+	// print_line("Province AABB enclodes label AABB: ", province_aabb.encloses(text_aabb));
 
 	for (const KeyValue<SurfaceKey, SurfaceData> &E : surfaces) {
 		Array mesh_array;
@@ -290,14 +318,13 @@ void MapLabel::set_text(const String &p_string) {
 	_shape();
 }
 
-void MapLabel::set_font_size(int p_size) {
-	if (font_size != p_size) {
-		font_size = p_size;
-		dirty_font = true;
-		_shape();
-	}
-}
-
 void MapLabel::set_visible(bool p_visible) { RS::get_singleton()->instance_set_visible(instance, p_visible); }
 
-void MapLabel::set_transform(const Transform3D &p_transform) { RS::get_singleton()->instance_set_transform(instance, p_transform); }
+void MapLabel::set_transform(const Transform3D &p_transform) {
+	transform = p_transform;
+	RS::get_singleton()->instance_set_transform(instance, p_transform);
+}
+
+AABB MapLabel::get_aabb() const { return aabb; }
+
+void MapLabel::set_province_aabb(const AABB &p_aabb) { province_aabb = p_aabb; }
