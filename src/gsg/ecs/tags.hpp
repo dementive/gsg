@@ -16,4 +16,7 @@ struct RiverProvinceTag {};
 struct ImpassableProvinceTag {};
 struct UninhabitableProvinceTag {};
 
+// Special country tags
+static constexpr const char *OBSERVER_TAG = "OBSERVER_NATION";
+
 } // namespace CG

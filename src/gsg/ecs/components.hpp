@@ -40,6 +40,12 @@ struct ProvinceBorderMeshRID {
 struct UnitLocator : Locator {};
 struct TextLocator : Locator {};
 
+/* Country components */
+
+struct Player {
+	MAKE_SAME(Player, Entity)
+};
+
 #undef MAKE_SAME
 
 } // namespace CG

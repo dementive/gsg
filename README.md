@@ -27,8 +27,6 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 - Dynamic map objects placed at locator positions (ports, cities, special buildings, etc...)
 
-- Player country selection
-
 - Fog of war system
 
 - Surround map clouds shader. This is sorta implemented but not working how I want, the clouds should extend to everywhere the camera can see.

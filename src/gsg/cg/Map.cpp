@@ -104,6 +104,7 @@ ProvinceColorMap Map::load_map_config() {
 	ecs.component<TextLocator>();
 	ecs.component<ProvinceAdjacencyType>();
 	ecs.component<ProvinceBorderType>();
+	ecs.component<Player>();
 
 	// Register tag components
 	ecs.component<AreaTag>();
@@ -210,6 +211,10 @@ ProvinceColorMap Map::load_map_config() {
 		region_entity.set<Color>(color);
 		region_entity.set<LocKey>(section);
 	}
+
+	const CountryEntity observer_country_entity = ecs.entity(OBSERVER_TAG);
+	observer_country_entity.set<LocKey>(String(OBSERVER_TAG));
+	ecs.set<Player>(observer_country_entity);
 
 	for (const String &section : country_sections) {
 		Color color = country_config->get_value(section, "color", get_random_area_color());

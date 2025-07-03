@@ -9,12 +9,13 @@
 
 #include "cg/Map.hpp"
 #include "cg/MapMode.hpp"
+#include "cg/MapUtils.hpp"
 #include "cg/NodeManager.hpp"
 
+#include "ecs/components.hpp"
 #include "ecs/tags.hpp"
 
 #include "gui/Hud.hpp"
-#include "MapUtils.hpp"
 
 using namespace CG;
 
@@ -48,8 +49,8 @@ void Map3D::_notification(int p_what) {
 }
 
 void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
-	const Ref<InputEventMouseButton> input_event_mouse_button = p_event;
-	if (!input_event_mouse_button.is_valid() or !input_event_mouse_button->is_pressed() or input_event_mouse_button->get_button_index() != MouseButton::LEFT)
+	const Ref<InputEventMouseButton> mb = p_event;
+	if (!mb.is_valid() or !mb->is_pressed() or mb->get_button_index() != MouseButton::LEFT)
 		return;
 
 	Viewport *vp = get_viewport();
@@ -67,6 +68,23 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 		return;
 
 	const ProvinceEntity province_entity = ECS::self->scope_lookup(Scope::Province, uitos(province_id));
+	ECS &ecs = *ECS::self;
+	if (mb->is_ctrl_pressed() and ecs.has_relation(province_entity, Relation::Owner)) {
+		const CountryEntity owner = ecs.get_target(province_entity, Relation::Owner);
+		const CountryEntity current_player = ecs.get<Player>();
+
+		if (current_player == owner) {
+			ecs.set<Player>(ecs.lookup(OBSERVER_TAG));
+			print_line("Set player to: Observer");
+		} else {
+			ecs.set<Player>(owner);
+			print_line("Set player to: ", owner.name().c_str());
+		}
+
+		vp->set_input_as_handled();
+		return;
+	}
+
 	if (province_entity.has<LandProvinceTag>()) {
 		const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
 		PackedColorArray selected_areas;

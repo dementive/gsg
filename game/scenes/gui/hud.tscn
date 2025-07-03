@@ -61,3 +61,22 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 metadata/pressed = "SetMapMode(2)"
+
+[node name="MarginContainer2" type="MarginContainer" parent="."]
+layout_mode = 1
+offset_right = 190.0
+offset_bottom = 54.0
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer2"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer2/PanelContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="CountryNameLabel" type="Label" parent="MarginContainer2/PanelContainer/HBoxContainer"]
+layout_mode = 2
+text = "Country Name"
+metadata/text = "GetPlayerName()"

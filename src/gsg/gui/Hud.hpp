@@ -12,8 +12,8 @@ protected:
 
 public:
 	Hud();
-
 	void SetMapMode(int p_map_mode);
+	String GetPlayerName();
 };
 
 } // namespace CG

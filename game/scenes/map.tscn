@@ -74,3 +74,5 @@ texture = ExtResource("5_be0no")
 [node name="EdgeClouds" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0)
 mesh = SubResource("QuadMesh_2klcf")
+
+[node name="ClickLayer" type="ClickLayer" parent="."]

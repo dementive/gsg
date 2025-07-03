@@ -3,6 +3,7 @@
 #include "cg/Locator.hpp"
 #include "cg/MapCamera.hpp"
 
+#include "gui/ClickLayer.hpp"
 #include "gui/Hud.hpp"
 #include "nodes/Map3D.hpp"
 
@@ -23,6 +24,7 @@ void initialize_gsg_module(ModuleInitializationLevel p_level) {
 
 	GDREGISTER_RUNTIME_CLASS(DataBind)
 	GDREGISTER_RUNTIME_CLASS(Hud)
+	GDREGISTER_CLASS(ClickLayer)
 
 #ifdef TOOLS_ENABLED
 	GDREGISTER_CLASS(MapEditorNode)
