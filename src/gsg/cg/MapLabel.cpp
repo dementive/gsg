@@ -5,7 +5,6 @@
 
 #include "cg/NodeManager.hpp"
 
-#include "DebugDraw.hpp"
 #include "nodes/Map3D.hpp"
 
 using namespace CG;

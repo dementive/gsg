@@ -9,13 +9,27 @@ using Entity = flecs::entity;
 
 #define inc_enum(i) ((decltype(i))(static_cast<int>(i) + 1))
 
-enum class Relation : uint8_t { Capital, Owner, Owns, InArea, InRegion, ProvinceIn, Border, Adjacency, AdjacencyTo, AdjacencyFrom, RELATION_MAX };
+enum class Relation : uint8_t {
+	Capital,
+	Owner,
+	Unit,
+	Province,
+	InArea,
+	InRegion,
+	ProvinceIn,
+	Border,
+	Adjacency, // province entity -> adjacency entity
+	AdjacencyTo,
+	AdjacencyFrom,
+	RELATION_MAX
+};
 
 enum class Scope : uint8_t {
 	Province,
 	Country,
 	Area,
 	Region,
+	Unit,
 	None // Use None for entity relationships whose target has no scope.
 };
 

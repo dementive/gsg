@@ -11,6 +11,7 @@ using ProvinceEntity = Entity;
 using CountryEntity = Entity;
 using RegionEntity = Entity;
 using AreaEntity = Entity;
+using UnitEntity = Entity;
 
 struct EntityHasher {
 	static uint64_t hash(const Entity p_entity) { return hash_one_uint64(uint64_t(p_entity)); }

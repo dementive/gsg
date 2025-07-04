@@ -126,9 +126,6 @@ void MapEditor::province_inspector_item_list_node_selected(int p_index) {
 	map_object_toolbar_province_selection_button->set_pressed(false);
 }
 
-static constexpr float LOCATOR_UNIT_X_ROTATION = -1.308997;
-static constexpr int LOCATOR_UNIT_Y_POSITION = 15;
-
 void MapEditor::create_unit_locator(int p_province_entity) {
 	if (!EditorLocators::self->has_locator(LocatorType::Unit, p_province_entity))
 		return;
@@ -140,12 +137,12 @@ void MapEditor::create_unit_locator(int p_province_entity) {
 	sprite->set_draw_flag(Sprite3D::DrawFlags::FLAG_DOUBLE_SIDED, false);
 	sprite->set_draw_flag(Sprite3D::DrawFlags::FLAG_SHADED, true);
 
-	MapEditorPlugin::map_editor_node->add_child(sprite);
+	MapEditorPlugin::map_editor_node->add_child(sprite, false, InternalMode::INTERNAL_MODE_BACK);
 	sprite->set_owner(MapEditorPlugin::map_editor_node);
 
-	sprite->set_rotation(Vector3(LOCATOR_UNIT_X_ROTATION, locator.orientation, 0));
+	sprite->set_rotation(Vector3(unit_x_rotation, locator.orientation, 0));
 	sprite->set_scale(Vector3(locator.scale, locator.scale, locator.scale));
-	sprite->set_global_position(Vector3(locator.position.x, LOCATOR_UNIT_Y_POSITION, locator.position.y));
+	sprite->set_global_position(Vector3(locator.position.x, unit_map_layer, locator.position.y));
 
 	edited_unit_nodes[p_province_entity] = sprite;
 	int item_index = node_item_list->add_item(String(uitos(p_province_entity) + ":    Unit"));
@@ -159,7 +156,7 @@ void MapEditor::create_text_locator(int p_province_entity) {
 	const Locator locator = EditorLocators::self->get_locator(LocatorType::Text, p_province_entity);
 	MapEditorLabel *label = memnew(MapEditorLabel());
 
-	MapEditorPlugin::map_editor_node->add_child(label);
+	MapEditorPlugin::map_editor_node->add_child(label, false, InternalMode::INTERNAL_MODE_BACK);
 	label->set_owner(MapEditorPlugin::map_editor_node);
 
 	const ProvinceEntity entity = ECS::self->scope_lookup(Scope::Province, uitos(p_province_entity));

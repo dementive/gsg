@@ -7,6 +7,7 @@ struct ProvinceTag {};
 struct CountryTag {};
 struct RegionTag {};
 struct AreaTag {};
+struct UnitTag {};
 
 /* Province type tags */
 struct LandProvinceTag {};

@@ -28,7 +28,8 @@ void ECS::register_relations() {
 	constexpr ConstMap<Relation, Scope, int(Relation::RELATION_MAX)> relation_scopes{
 		{ Relation::Capital, Scope::Province },
 		{ Relation::Owner, Scope::Country },
-		{ Relation::Owns, Scope::Province },
+		{ Relation::Unit, Scope::Unit },
+		{ Relation::Province, Scope::Province },
 		{ Relation::InArea, Scope::Area }, // Province in an area
 		{ Relation::InRegion, Scope::Region }, // Province/area in a region
 		{ Relation::ProvinceIn, Scope::Province }, // Province in a region/area
@@ -62,7 +63,8 @@ void ECS::register_scopes() {
 		"p",
 		"c",
 		"area",
-		"region"
+		"region",
+		"unit"
 	};
 	// clang-format on
 	for (int i = 0; i < int(Scope::None); ++i)

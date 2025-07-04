@@ -7,6 +7,7 @@
 #include "core/variant/typed_dictionary.h"
 
 #include "scene/3d/node_3d.h"
+#include "scene/3d/sprite_3d.h"
 #include "scene/resources/compressed_texture.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/shader.h"
@@ -111,6 +112,7 @@ ProvinceColorMap Map::load_map_config() {
 	ecs.component<CountryTag>();
 	ecs.component<RegionTag>();
 	ecs.component<ProvinceTag>();
+	ecs.component<UnitTag>();
 
 	ecs.component<LandProvinceTag>();
 	ecs.component<OceanProvinceTag>();
@@ -230,7 +232,7 @@ ProvinceColorMap Map::load_map_config() {
 		for (const int &province : owned_provinces_config) {
 			const ProvinceEntity province_entity = ecs.scope_lookup(Scope::Province, uitos(province));
 			province_entity.add(Relationship(Owner), country_entity);
-			country_entity.add(Relationship(Owns), province_entity);
+			country_entity.add(Relationship(Province), province_entity);
 		}
 
 		country_entity.add<CountryTag>();
@@ -238,6 +240,13 @@ ProvinceColorMap Map::load_map_config() {
 
 		country_entity.set<Color>(color);
 		country_entity.set<LocKey>(section);
+
+		// Add a unit entity at every countries capital
+		const UnitEntity unit_entity = ecs.entity();
+
+		unit_entity.add(Relationship(Owner), country_entity);
+		country_entity.add(Relationship(Unit), unit_entity);
+		unit_entity.add<UnitTag>();
 	}
 
 	return provinces_map;
@@ -386,15 +395,39 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vec<Vector4> &p_segments, float p_b
 	return st->commit();
 }
 
-void Map::create_map_labels(Node3D *p_map) {
+void Map::create_unit_models(Node3D *p_map) {
+	const auto unit_query = ECS::self->query_builder<>().with<UnitTag>().build();
+
+	unit_query.each([p_map](UnitEntity unit_entity) {
+		const CountryEntity owner = ECS::self->get_target(unit_entity, Relation::Owner);
+		const ProvinceEntity capital = ECS::self->get_target(owner, Relation::Capital);
+		const UnitLocator locator = capital.get<UnitLocator>();
+
+		Sprite3D *sprite = memnew(Sprite3D());
+
+		Transform3D unit_transform;
+		unit_transform.origin = Vector3((locator.position.x - 512.0), unit_map_layer, (locator.position.y - 512.0));
+		unit_transform.basis.scale(Vector3(locator.scale, locator.scale, locator.scale));
+		unit_transform.basis.rotate(Vector3(unit_x_rotation, locator.orientation, 0.0));
+
+		sprite->set_transform(unit_transform);
+		sprite->set_texture(ResourceLoader::load("res://gfx/icon.svg"));
+		sprite->set_draw_flag(Sprite3D::DrawFlags::FLAG_SHADED, true);
+		sprite->set_draw_flag(Sprite3D::DrawFlags::FLAG_DOUBLE_SIDED, false);
+		sprite->set_alpha_cut_mode(Sprite3D::AlphaCutMode::ALPHA_CUT_DISCARD);
+
+		p_map->add_child(sprite);
+	});
+}
+
+void Map::create_map_labels() {
 	const auto province_query = ECS::self->query_builder<TextLocator, AABB>().with<LandProvinceTag>().build();
 
-	province_query.each([this](flecs::entity entity, const TextLocator &locator, const AABB &aabb) {
+	province_query.each([this](Entity entity, const TextLocator &locator, const AABB &aabb) {
 		MapLabel *label = memnew(MapLabel());
 
 		Transform3D text_transform;
 		text_transform.origin = Vector3(locator.position.x, label_map_layer, locator.position.y);
-		text_transform.basis = Basis();
 		text_transform.basis.scale(Vector3(locator.scale, locator.scale, locator.scale));
 		text_transform.basis.rotate(Vector3(-1.570796, locator.orientation, 0.0));
 
@@ -405,7 +438,7 @@ void Map::create_map_labels(Node3D *p_map) {
 	});
 }
 
-void Map::create_border_meshes(Node3D *p_map, const Dictionary &p_border_dict, bool is_map_editor) {
+void Map::create_border_meshes(const RID &p_scenario, const Dictionary &p_border_dict, bool is_map_editor) {
 	// Create border materials
 	create_border_materials();
 	RenderingServer &rs = *RS::get_singleton();
@@ -422,7 +455,7 @@ void Map::create_border_meshes(Node3D *p_map, const Dictionary &p_border_dict, b
 
 		const Ref<ArrayMesh> border_mesh_resource = create_border_mesh(value, 0.75, 0.75);
 		const RID border_mesh = border_mesh_resource->get_rid();
-		const RID mesh_instance = rs.instance_create2(border_mesh, p_map->get_world_3d()->get_scenario());
+		const RID mesh_instance = rs.instance_create2(border_mesh, p_scenario);
 
 		const BorderMeshStorage border_mesh_storage{ .mesh = border_mesh_resource, .instance = mesh_instance };
 		border_meshes.push_back(border_mesh_storage);
@@ -592,8 +625,6 @@ void Map::load_map_editor(Node3D *p_map) {
 
 	map_data_config->set_value("map_data", "borders", borders_dict);
 	map_data_config->save("res://data/gen/map_data.cfg");
-
-	create_border_meshes(p_map, borders_dict, true);
 }
 
 #endif
@@ -675,8 +706,8 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 		load_locators();
 		load_map_data();
 
-		// Setup map labels
-		create_map_labels(p_map);
+		create_map_labels();
+		create_unit_models(p_map);
 
 		// Parse border crossings
 		const Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
@@ -693,11 +724,11 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 			adjacency_entity.set<CrossingLocator>(Vector4(crossing[2], crossing[3], crossing[4], crossing[5]));
 		}
 
-		create_border_meshes(p_map, map_data_config->get_value("map_data", "borders"), false);
+		create_border_meshes(p_map->get_world_3d()->get_scenario(), map_data_config->get_value("map_data", "borders"), false);
 	}
 
 	if constexpr (is_map_editor)
-		create_border_meshes(p_map, map_data_config->get_value("map_data", "borders"), true);
+		create_border_meshes(p_map->get_world_3d()->get_scenario(), map_data_config->get_value("map_data", "borders"), true);
 }
 
 Ref<ImageTexture> Map::get_lookup_texture() { return ImageTexture::create_from_image(lookup_image); }

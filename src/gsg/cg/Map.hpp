@@ -27,6 +27,8 @@ using ProvinceColorMap = AHashMap<Color, ProvinceIndex>;
 
 static constexpr float border_map_layer = 0.01;
 static constexpr float label_map_layer = 0.015;
+static constexpr float unit_map_layer = 15.0;
+static constexpr float unit_x_rotation = -1.308997;
 
 class Map {
 	SINGLETON(Map)
@@ -53,8 +55,9 @@ private:
 	static void add_rounded_border_corners(Ref<SurfaceTool> &p_st, const Vector2 &p_v1, const Vector2 &p_v2, float p_radius);
 	void create_border_materials();
 	static Ref<ArrayMesh> create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
-	void create_map_labels(Node3D *p_map);
-	void create_border_meshes(Node3D *p_map, const Dictionary &p_border_dict, bool is_map_editor);
+	void create_map_labels();
+	void create_unit_models(Node3D *p_map);
+	void create_border_meshes(const RID &p_scenario, const Dictionary &p_border_dict, bool is_map_editor);
 	void load_locators();
 	void load_map_data();
 
