@@ -23,6 +23,8 @@
 #include "ecs/tags.hpp"
 
 #include "MapLabel.hpp"
+#include "MapUnit.hpp"
+#include "MapUtils.hpp"
 
 using namespace CG;
 
@@ -106,6 +108,7 @@ ProvinceColorMap Map::load_map_config() {
 	ecs.component<ProvinceAdjacencyType>();
 	ecs.component<ProvinceBorderType>();
 	ecs.component<Player>();
+	ecs.component<UnitModel>();
 
 	// Register tag components
 	ecs.component<AreaTag>();
@@ -403,20 +406,21 @@ void Map::create_unit_models(Node3D *p_map) {
 		const ProvinceEntity capital = ECS::self->get_target(owner, Relation::Capital);
 		const UnitLocator locator = capital.get<UnitLocator>();
 
-		Sprite3D *sprite = memnew(Sprite3D());
+		MapUnit *unit_mesh = memnew(MapUnit());
+		unit_entity.set<UnitModel>(unit_mesh);
 
 		Transform3D unit_transform;
-		unit_transform.origin = Vector3((locator.position.x - 512.0), unit_map_layer, (locator.position.y - 512.0));
+		unit_transform.origin = Vector3((locator.position.x - (map_dimensions.x / 2.0)), unit_map_layer, (locator.position.y - (map_dimensions.y / 2.0)));
 		unit_transform.basis.scale(Vector3(locator.scale, locator.scale, locator.scale));
 		unit_transform.basis.rotate(Vector3(unit_x_rotation, locator.orientation, 0.0));
 
-		sprite->set_transform(unit_transform);
-		sprite->set_texture(ResourceLoader::load("res://gfx/icon.svg"));
-		sprite->set_draw_flag(Sprite3D::DrawFlags::FLAG_SHADED, true);
-		sprite->set_draw_flag(Sprite3D::DrawFlags::FLAG_DOUBLE_SIDED, false);
-		sprite->set_alpha_cut_mode(Sprite3D::AlphaCutMode::ALPHA_CUT_DISCARD);
+		unit_mesh->set_transform(unit_transform);
+		unit_mesh->set_texture(ResourceLoader::load("res://gfx/icon.svg"));
+		unit_mesh->set_draw_flag(Sprite3D::DrawFlags::FLAG_SHADED, true);
+		unit_mesh->set_draw_flag(Sprite3D::DrawFlags::FLAG_DOUBLE_SIDED, false);
+		unit_mesh->set_alpha_cut_mode(Sprite3D::AlphaCutMode::ALPHA_CUT_DISCARD);
 
-		p_map->add_child(sprite);
+		p_map->add_child(unit_mesh);
 	});
 }
 

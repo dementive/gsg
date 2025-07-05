@@ -22,6 +22,8 @@ public:
 #endif
 
 private:
+	template <bool is_click> void update_selected_units();
+
 	bool selecting = false;
 	Vector2 drag_start;
 	Rect2 select_box;

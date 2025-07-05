@@ -50,7 +50,7 @@ void Map3D::_notification(int p_what) {
 
 void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 	const Ref<InputEventMouseButton> mb = p_event;
-	if (!mb.is_valid() or !mb->is_pressed() or mb->get_button_index() != MouseButton::LEFT)
+	if (!mb.is_valid() or !mb->is_released() or mb->get_button_index() != MouseButton::LEFT)
 		return;
 
 	Viewport *vp = get_viewport();

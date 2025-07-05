@@ -17,9 +17,9 @@ Entity ECS::scope_lookup(const Scope p_scope, const String &p_arg) { return get_
 
 bool ECS::has_relation(const Entity p_entity, Relation p_relation) { return p_entity.has(relations[uint8_t(p_relation)], flecs::Wildcard); }
 
-Entity ECS::get_relation(Relation p_relation) { return relations[uint8_t(p_relation)]; }
+RelationEntity ECS::get_relation(Relation p_relation) { return relations[uint8_t(p_relation)]; }
 
-Entity ECS::get_scope(Scope p_scope) { return scopes[uint8_t(p_scope)]; }
+ScopeEntity ECS::get_scope(Scope p_scope) { return scopes[uint8_t(p_scope)]; }
 
 Entity ECS::get_target(Entity p_entity, Relation p_relation) { return p_entity.target(relations[uint8_t(p_relation)]); }
 
@@ -42,12 +42,12 @@ void ECS::register_relations() {
 
 	for (int i = 0; i < int(Relation::RELATION_MAX); ++i) {
 		const Scope scope = relation_scopes[Relation(i)];
-		Entity relation_entity;
+		RelationEntity relation_entity;
 
 		if (scope == Scope::None) {
 			relation_entity = entity().add(flecs::Relationship);
 		} else {
-			const Entity scope_entity = scopes[uint8_t(scope)];
+			const ScopeEntity scope_entity = scopes[uint8_t(scope)];
 			// flecs::Relationship ensures this entity can only be used as a relationship
 			// flecs::OneOf makes sure that it can only be used to make relationships with children of scope_entity.
 			relation_entity = entity().add(flecs::Relationship).add(flecs::OneOf, scope_entity);

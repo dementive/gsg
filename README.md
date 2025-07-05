@@ -19,8 +19,6 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 - Province adjacency and crossings
 
-- Military unit selection.
-
 - Unit path finding between province unit locators for ships and land units.
 
 - Tooltip that shows up when hovering over a province with info about it.
@@ -36,8 +34,6 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 - Roads spline network
 
 - Subdivide map mesh into a bunch of quads so culling will work. Will need to figure out correct number of subdivisions, generate the meshes, and then do some UV adjustments in the Map vertex shader.
-
-- Figure out how to draw curved text. I sorta got this working with a vertex shader on a TextMesh but it didn't work very well when scaling the text or when it had to change size.
 
 - Improve border mesh generation and shader. UVs are broken right now so the shader is scuffed. Should also be able to specify a different texture for each border type. Border rounding should also be better so there are no sharp corners.
 

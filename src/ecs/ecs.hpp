@@ -6,6 +6,8 @@
 #include "flecs.h"
 
 using Entity = flecs::entity;
+using RelationEntity = Entity;
+using ScopeEntity = Entity;
 
 #define inc_enum(i) ((decltype(i))(static_cast<int>(i) + 1))
 
@@ -49,10 +51,10 @@ struct ECS : flecs::world {
 	bool has_relation(Entity p_entity, Relation p_relation);
 
 	// Get the Entity that represents a Relation
-	Entity get_relation(Relation p_relation);
+	RelationEntity get_relation(Relation p_relation);
 
 	// Get the Entity of a top level scope
-	Entity get_scope(Scope p_scope);
+	ScopeEntity get_scope(Scope p_scope);
 
 	// Get the target of an entity's relationship
 	Entity get_target(Entity p_entity, Relation p_relation);
@@ -65,6 +67,6 @@ struct ECS : flecs::world {
 	void register_scopes();
 
 private:
-	FixedVector<Entity, int(Relation::RELATION_MAX)> relations;
-	FixedVector<Entity, int(Scope::None)> scopes;
+	FixedVector<RelationEntity, int(Relation::RELATION_MAX)> relations;
+	FixedVector<ScopeEntity, int(Scope::None)> scopes;
 };
