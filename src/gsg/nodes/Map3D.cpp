@@ -50,7 +50,7 @@ void Map3D::_notification(int p_what) {
 
 void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 	const Ref<InputEventMouseButton> mb = p_event;
-	if (!mb.is_valid() or !mb->is_released() or mb->get_button_index() != MouseButton::LEFT)
+	if (!mb.is_valid() or !mb->is_released() or (mb->get_button_index() != MouseButton::LEFT and mb->get_button_index() != MouseButton::RIGHT))
 		return;
 
 	Viewport *vp = get_viewport();
@@ -85,11 +85,34 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 		return;
 	}
 
-	if (province_entity.has<LandProvinceTag>()) {
-		const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
-		PackedColorArray selected_areas;
-		selected_areas.push_back(province_color.linear_to_srgb());
+	if (!province_entity.has<LandProvinceTag>())
+		return;
 
+	const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
+	PackedColorArray selected_areas;
+
+	if (mb->get_button_index() == MouseButton::RIGHT) {
+		if (!ecs.has_relation(province_entity, Relation::Owner))
+			return;
+
+		const CountryEntity owner = ecs.get_target(province_entity, Relation::Owner);
+		RelationEntity province_relation = ecs.get_relation(Relation::Province);
+
+		ProvinceEntity entity;
+		int idx = 0;
+
+		while ((entity = owner.target(province_relation, idx++))) {
+			const int p_id = atoi(entity.name());
+			const auto kv = Map::self->get_color_to_id_map().get_by_index(p_id - 1); // province ids start at 1
+			selected_areas.push_back(kv.key.linear_to_srgb());
+		}
+
+		material->set_shader_parameter("selected_areas", selected_areas);
+		material->set_shader_parameter("selected_areas_total", selected_areas.size());
+		vp->set_input_as_handled();
+		return;
+	} else {
+		selected_areas.push_back(province_color.linear_to_srgb());
 		material->set_shader_parameter("selected_areas", selected_areas);
 		material->set_shader_parameter("selected_areas_total", 1);
 		vp->set_input_as_handled();

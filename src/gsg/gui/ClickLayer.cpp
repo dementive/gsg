@@ -1,7 +1,6 @@
 #include "ClickLayer.hpp"
 
 #include "core/input/input_event.h"
-#include "core/string/print_string.h"
 
 #include "scene/3d/camera_3d.h"
 #include "scene/main/viewport.h"
