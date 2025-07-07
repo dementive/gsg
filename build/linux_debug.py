@@ -16,15 +16,17 @@ c_compiler_launcher="ccache"
 cpp_compiler_launcher="ccache"
 accesskit="no"
 deprecated="no"
+x11="no"
+sdl="no"
 
 # only for my computer
+wayland="yes"
 speechd = "no"
 touch = "no"
 
 builtin_zstd = "no"
 builtin_zlib = "no"
 builtin_pcre2 = "no"
-builtin_openxr = "no"
 builtin_mbedtls = "no"
 builtin_libwebp = "no"
 builtin_libvorbis = "no"
