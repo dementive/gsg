@@ -11,9 +11,24 @@ Godot 4.4 Grand Strategy map prototype built as a [C++ module](https://docs.godo
 
 - Map labels for provinces
 
+- Label and Border meshes do not godot Nodes/Objects, they are normal C++ structs that hold RIDs from the RenderingServer. This avoids doing any kind of SceneTree processing for all of these meshes and saves a lot of memory. There can be tens of thousands of these on the map so using Nodes just won't work at scale.
+
 - Flatmap texture that allows drawing of oceans, rivers, lakes, trees, or other map objects.
 
-- Map editor to edit map objects and generate map data.
+- Surround map texture that applies a cloud effect to the edge of the map.
+
+- Map editor to edit map objects and generate map data. The map editor runs as a EditorPlugin scene in the godot editor.
+
+- Map Data caching. Computing some map data like border segments and the province lookup image is slow because it requires iterating over every pixel of the province map and doing a bunch of math on it.
+Thankfully this data doesn't actually have to be computed every time the game is run. We can do almost all of the expensive work in the map editor, cache the results, and then load them in at runtime instead of computing everything everytime.
+
+- Country selection with ctrl+click
+
+- Select provinces by clicking on them. Select all provinces a country owns by right clicking on any of their owned provinces.
+
+- Select units by clicking on them or by dragging with a selection box.
+
+- Grand strategy map camera with camera bounds, zooming, movement, mouse panning, rotation, and edge scrolling.
 
 ## TODO
 
