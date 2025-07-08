@@ -75,7 +75,7 @@ private:
 	static constexpr bool uppercase = false;
 	static constexpr float width = 500.0;
 
-	Ref<Font> _get_font_or_default() const;
+	static Ref<Font> _get_font_or_default();
 	void _generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset, const Color &p_modulate, int p_priority = 0, int p_outline_size = 0);
 	void _shape();
 

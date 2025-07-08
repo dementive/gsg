@@ -12,7 +12,7 @@ protected:
 
 public:
 	Hud();
-	void SetMapMode(int p_map_mode);
+	static void SetMapMode(int p_map_mode);
 	String GetPlayerName();
 };
 

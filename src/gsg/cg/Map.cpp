@@ -90,10 +90,10 @@ ProvinceColorMap Map::load_map_config() {
 	if (area_config->load("res://data/areas.cfg") != OK)
 		return provinces_map;
 
-	Vector<String> province_sections = province_config->get_sections();
-	Vector<String> country_sections = country_config->get_sections();
-	Vector<String> region_sections = region_config->get_sections();
-	Vector<String> area_sections = area_config->get_sections();
+	const Vector<String> province_sections = province_config->get_sections();
+	const Vector<String> country_sections = country_config->get_sections();
+	const Vector<String> region_sections = region_config->get_sections();
+	const Vector<String> area_sections = area_config->get_sections();
 
 	// Register variant components
 	ecs.component<LocKey>();
@@ -142,7 +142,7 @@ ProvinceColorMap Map::load_map_config() {
 		const String province_type = province_config->get_value(section, "type", "land");
 
 		const String province_name = uitos(province_id);
-		ProvinceEntity province_entity = ecs.entity(province_name.utf8().ptr());
+		const ProvinceEntity province_entity = ecs.entity(province_name.utf8().ptr());
 		province_entity.child_of(ecs.get_scope(Scope::Province));
 
 		province_entity.set<LocKey>(String("PROV") + section);
@@ -333,8 +333,8 @@ ProvinceBorderType Map::fill_province_border_data(const Border &p_border, const 
 	else if ((p_border.first.has<OceanProvinceTag>() and p_border.second.has<LandProvinceTag>()) or (p_border.first.has<LandProvinceTag>() and p_border.second.has<OceanProvinceTag>()))
 		border_type = ProvinceBorderType::Coastal;
 
-	AreaEntity to_area = ecs.get_target(p_border.first, Relation::InArea);
-	AreaEntity from_area = ecs.get_target(p_border.second, Relation::InArea);
+	const AreaEntity to_area = ecs.get_target(p_border.first, Relation::InArea);
+	const AreaEntity from_area = ecs.get_target(p_border.second, Relation::InArea);
 	if (to_area.is_valid() and from_area.is_valid()) {
 		if (from_area != to_area)
 			border_type = ProvinceBorderType::Area;
@@ -362,8 +362,8 @@ void Map::add_rounded_border_corners(Ref<SurfaceTool> &p_st, const Vector2 &p_v1
 	const int segments = 2;
 	for (int i = 0; i < segments + 1; ++i) {
 		const float angle = angle_start + ((angle_end - angle_start) * (i / float(segments)));
-		const float x = center.x + (cos(angle) * p_radius);
-		const float y = center.y + (sin(angle) * p_radius);
+		const float x = center.x + (std::cos(angle) * p_radius);
+		const float y = center.y + (std::sin(angle) * p_radius);
 		p_st->add_vertex(Vector3(x, y, 0));
 	}
 }
@@ -481,12 +481,12 @@ template void Map::load_map<true>(Node3D *p_map);
 
 void Map::load_map_editor(Node3D *p_map) {
 	const Ref<Texture2D> province_texture = ResourceLoader::load("res://gfx/map/provinces.png", "Texture2D", ResourceFormatLoader::CACHE_MODE_IGNORE_DEEP);
-	String province_data_file = FileAccess::open("res://data/provinces.cfg", FileAccess::READ)->get_as_text();
+	const String province_data_file = FileAccess::open("res://data/provinces.cfg", FileAccess::READ)->get_as_text();
 
 	// Generating the lookup image and map data can be very slow and 90% of the time the map editor is loaded the province config and png haven't actually been changed.
 	// To make it faster to open in the common case of no data changing, hash provinces.png and provinces.cfg together and compare them to a cached hash to check if the map data needs to be
 	// regenerated. If the hashes are the same, nothing has changed and can just load the saved data. If the hashes are different then have to regenerate all the map data.
-	Ref<HashingContext> hash_context = memnew(HashingContext());
+	const Ref<HashingContext> hash_context = memnew(HashingContext());
 	hash_context->start(HashingContext::HashType::HASH_MD5);
 	hash_context->update(province_texture->get_image()->get_data());
 	hash_context->update(province_data_file.md5_buffer());
@@ -518,7 +518,7 @@ void Map::load_map_editor(Node3D *p_map) {
 	const int province_image_width = province_image->get_width();
 	const int province_image_height = province_image->get_width();
 
-	Ref<ConfigFile> map_data_config = memnew(ConfigFile());
+	const Ref<ConfigFile> map_data_config = memnew(ConfigFile());
 	map_data_config->set_value("map_data", "width", province_image_width);
 	map_data_config->set_value("map_data", "height", province_image_height);
 
@@ -604,12 +604,12 @@ void Map::load_map_editor(Node3D *p_map) {
 	lookup_image->save_exr("res://gfx/gen/province_lookup.exr");
 
 	// Fill in Provinces data from pixel data
-	Ref<ConfigFile> province_data_config = memnew(ConfigFile());
-	Ref<ConfigFile> runtime_province_data_config = memnew(ConfigFile());
+	const Ref<ConfigFile> province_data_config = memnew(ConfigFile());
+	const Ref<ConfigFile> runtime_province_data_config = memnew(ConfigFile());
 
 	for (const KeyValue<ProvinceEntity, Vec<Vector2>> &kv : pixel_dict) {
 		const Vector2 centroid = calculate_centroid(kv.value);
-		int province_id = atoi(kv.key.name());
+		const int province_id = atoi(kv.key.name());
 
 		if (province_id == 0)
 			return;
@@ -634,7 +634,7 @@ void Map::load_map_editor(Node3D *p_map) {
 #endif
 
 void Map::load_map_data() {
-	Ref<ConfigFile> config = memnew(ConfigFile());
+	const Ref<ConfigFile> config = memnew(ConfigFile());
 	config->load("res://data/gen/runtime_province_data.cfg");
 	const Vector<String> sections = config->get_sections();
 
@@ -647,14 +647,14 @@ void Map::load_map_data() {
 }
 
 void Map::load_locators() {
-	Ref<ConfigFile> text_config = memnew(ConfigFile());
-	Ref<ConfigFile> unit_config = memnew(ConfigFile());
+	const Ref<ConfigFile> text_config = memnew(ConfigFile());
+	const Ref<ConfigFile> unit_config = memnew(ConfigFile());
 
 	text_config->load("res://data/locators/text.cfg");
 	unit_config->load("res://data/locators/unit.cfg");
 
-	Vector<String> text_sections = text_config->get_sections();
-	Vector<String> unit_sections = unit_config->get_sections();
+	const Vector<String> text_sections = text_config->get_sections();
+	const Vector<String> unit_sections = unit_config->get_sections();
 
 	ECS &ecs = *ECS::self;
 
@@ -690,9 +690,9 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	// probably just add a "bool reloading" parameter to load_map but it's tough because some parts of load_map write to the registry.
 	ecs.reset();
 
-	ProvinceColorMap provinces_map = load_map_config();
+	const ProvinceColorMap provinces_map = load_map_config();
 
-	Ref<ConfigFile> map_data_config = memnew(ConfigFile());
+	const Ref<ConfigFile> map_data_config = memnew(ConfigFile());
 	map_data_config->load("res://data/gen/map_data.cfg");
 
 	const int province_image_width = map_data_config->get_value("map_data", "width");
@@ -702,7 +702,7 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	p_map->set_position(Vector3(province_image_width / 2.0, 0, province_image_height / 2.0));
 
 	// Load lookup image
-	Ref<CompressedTexture2D> compressed_lookup_texture = ResourceLoader::load("res://gfx/gen/province_lookup.exr");
+	const Ref<CompressedTexture2D> compressed_lookup_texture = ResourceLoader::load("res://gfx/gen/province_lookup.exr");
 	lookup_image = compressed_lookup_texture->get_image();
 	map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBF);
 
@@ -742,7 +742,7 @@ Ref<Image> Map::get_lookup_image() { return lookup_image; }
 ProvinceColorMap Map::get_color_to_id_map() { return color_to_id_map; }
 
 Color Map::get_area_map_mode(ProvinceEntity p_province_entity) {
-	bool has_label = map_labels.has(p_province_entity) ? true : false;
+	const bool has_label = map_labels.has(p_province_entity) ? true : false;
 	MapLabel *label{};
 	if (has_label) {
 		label = map_labels[p_province_entity];
@@ -767,7 +767,7 @@ Color Map::get_area_map_mode(ProvinceEntity p_province_entity) {
 }
 
 Color Map::get_region_map_mode(ProvinceEntity p_province_entity) {
-	bool has_label = map_labels.has(p_province_entity) ? true : false;
+	const bool has_label = map_labels.has(p_province_entity) ? true : false;
 	MapLabel *label{};
 	if (has_label) {
 		label = map_labels[p_province_entity];
@@ -792,7 +792,7 @@ Color Map::get_region_map_mode(ProvinceEntity p_province_entity) {
 }
 
 Color Map::get_country_map_mode(ProvinceEntity p_province_entity) {
-	bool has_label = map_labels.has(p_province_entity) ? true : false;
+	const bool has_label = map_labels.has(p_province_entity) ? true : false;
 	MapLabel *label{};
 	if (has_label) {
 		label = map_labels[p_province_entity];
@@ -827,7 +827,7 @@ template <MapMode T> Ref<ImageTexture> Map::get_map_mode() {
 	float *write_ptr = reinterpret_cast<float *>(map_mode_image->ptrw());
 
 	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
-		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
+		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, std::floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
 		const ProvinceEntity province_entity = ECS::self->scope_lookup(Scope::Province, uitos(i));
 		Color color;
 

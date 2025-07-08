@@ -96,7 +96,7 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 			return;
 
 		const CountryEntity owner = ecs.get_target(province_entity, Relation::Owner);
-		RelationEntity province_relation = ecs.get_relation(Relation::Province);
+		const RelationEntity province_relation = ecs.get_relation(Relation::Province);
 
 		ProvinceEntity entity;
 		int idx = 0;

@@ -49,7 +49,7 @@ void MapEditorNode::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_EXIT_TREE: {
 			memdelete_notnull(Map::self);
-			MapEditorPlugin::map_editor_node->has_loaded_map = false;
+			MapEditorNode::has_loaded_map = false;
 			MapEditorPlugin::self->map_editor->clear_item_lists();
 		} break;
 	}
@@ -145,7 +145,7 @@ void MapEditor::create_unit_locator(int p_province_entity) {
 	sprite->set_global_position(Vector3(locator.position.x, unit_map_layer, locator.position.y));
 
 	edited_unit_nodes[p_province_entity] = sprite;
-	int item_index = node_item_list->add_item(String(uitos(p_province_entity) + ":    Unit"));
+	const int item_index = node_item_list->add_item(String(uitos(p_province_entity) + ":    Unit"));
 	node_item_list->set_item_metadata(item_index, sprite);
 }
 
@@ -171,7 +171,7 @@ void MapEditor::create_text_locator(int p_province_entity) {
 	label->set_global_position(Vector3(locator.position.x, label_map_layer, locator.position.y));
 
 	edited_label_nodes[p_province_entity] = label;
-	int item_index = node_item_list->add_item(String(uitos(p_province_entity) + ":    Text"));
+	const int item_index = node_item_list->add_item(String(uitos(p_province_entity) + ":    Text"));
 	node_item_list->set_item_metadata(item_index, label);
 }
 

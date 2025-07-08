@@ -42,7 +42,7 @@ private:
 	};
 
 	static Vector2 calculate_centroid(const Polygon &p_polygon);
-	CachedMapData calc_map_data(const Polygon &p_polygon, const Vector2 &p_centroid);
+	static CachedMapData calc_map_data(const Polygon &p_polygon, const Vector2 &p_centroid);
 
 	static Color get_random_area_color();
 	static Color get_lookup_color(ProvinceIndex p_province_id);
@@ -56,10 +56,10 @@ private:
 	void create_border_materials();
 	static Ref<ArrayMesh> create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
 	void create_map_labels();
-	void create_unit_models(Node3D *p_map);
+	static void create_unit_models(Node3D *p_map);
 	void create_border_meshes(const RID &p_scenario, const Dictionary &p_border_dict, bool is_map_editor);
-	void load_locators();
-	void load_map_data();
+	static void load_locators();
+	static void load_map_data();
 
 	Color get_country_map_mode(ProvinceEntity p_province_entity);
 	Color get_area_map_mode(ProvinceEntity p_province_entity);

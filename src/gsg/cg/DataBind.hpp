@@ -35,7 +35,7 @@ private:
 	};
 
 	struct DataBindNode {
-		Control *node;
+		Control *node{};
 		TightLocalVector<DataBindExpressionProperty> expression_properties;
 		TightLocalVector<DataBindCallableProperty> callable_properties;
 	};
@@ -48,8 +48,8 @@ private:
 	void setup_pressed(Control *node);
 	void setup_datamodel(Control *node);
 
-	template <typename T> void execute(T callable_or_expr, Control *node, const StringName &method, Variant::Type expected_type, const StringName &expected_class = "");
-	void update_properties(Control *node, const auto &properties);
+	template <typename T> void execute(const T &callable_or_expr, Control *node, const StringName &method, Variant::Type expected_type, const StringName &expected_class = "");
+	void update_properties(Control *node, const auto &property);
 
 	// Fill node_expressions with all nodes that are Controls, have ceratin metadata properties, and are owned by this->parent.
 	void _find_metadata_properties(Node *node_to_check);

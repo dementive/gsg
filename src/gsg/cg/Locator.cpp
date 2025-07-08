@@ -104,18 +104,18 @@ static constexpr float DEFAULT_LOCATOR_SCALE = 25.0;
 static constexpr float DEFAULT_TEXT_LOCATOR_SCALE = 100.0;
 
 void EditorLocators::_load_locators(LocatorMap &p_locator_map, const String &p_cfg_path, LocatorType p_locator) {
-	Ref<ConfigFile> config = memnew(ConfigFile());
+	const Ref<ConfigFile> config = memnew(ConfigFile());
 
 	if (config->load(p_cfg_path) != OK)
 		return;
 
-	Vector<String> sections = config->get_sections();
+	const Vector<String> sections = config->get_sections();
 
 	const uint32_t sections_size = sections.size();
 	const Vec<Entity> province_ids = get_locator_vec(p_locator);
 
 	AHashMap<int, Locator> existing_locators;
-	Ref<ConfigFile> province_data_config = memnew(ConfigFile());
+	const Ref<ConfigFile> province_data_config = memnew(ConfigFile());
 	province_data_config->load("res://data/gen/province_data.cfg");
 
 	// Have to regenerated missing locators.
@@ -130,7 +130,7 @@ void EditorLocators::_load_locators(LocatorMap &p_locator_map, const String &p_c
 		}
 
 		for (const Entity entity : province_ids) {
-			int i = int(entity) + 1;
+			const int i = int(entity) + 1;
 			if (existing_locators.has(i)) {
 				// Copy existing locator
 				p_locator_map[i] = existing_locators[i];

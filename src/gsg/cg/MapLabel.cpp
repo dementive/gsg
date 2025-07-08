@@ -9,7 +9,7 @@
 
 using namespace CG;
 
-Ref<Font> MapLabel::_get_font_or_default() const {
+Ref<Font> MapLabel::_get_font_or_default() {
 	const StringName theme_name = SceneStringName(font);
 	Vector<StringName> theme_types;
 	ThemeDB::get_singleton()->get_native_type_dependencies("Label3D", theme_types);
@@ -67,10 +67,10 @@ void MapLabel::_generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset,
 		return;
 	}
 
-	bool msdf = TS->font_is_multichannel_signed_distance_field(p_glyph.font_rid);
+	const bool msdf = TS->font_is_multichannel_signed_distance_field(p_glyph.font_rid);
 
 	for (int j = 0; j < p_glyph.repeat; j++) {
-		SurfaceKey key = SurfaceKey(tex.get_id(), p_priority, p_outline_size);
+		const SurfaceKey key = SurfaceKey(tex.get_id(), p_priority, p_outline_size);
 		if (!surfaces.has(key)) {
 			SurfaceData surf;
 			surf.material = RenderingServer::get_singleton()->material_create();
@@ -91,7 +91,7 @@ void MapLabel::_generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset,
 				RS::get_singleton()->material_set_param(surf.material, "msdf_outline_size", p_outline_size);
 			}
 
-			BaseMaterial3D::Transparency mat_transparency = BaseMaterial3D::Transparency::TRANSPARENCY_ALPHA;
+			const BaseMaterial3D::Transparency mat_transparency = BaseMaterial3D::Transparency::TRANSPARENCY_ALPHA;
 
 			RID shader_rid;
 			StandardMaterial3D::get_material_for_2d(
@@ -106,11 +106,11 @@ void MapLabel::_generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset,
 		}
 		SurfaceData &s = surfaces[key];
 
-		s.mesh_vertices.resize((s.offset + 1) * 4);
-		s.mesh_normals.resize((s.offset + 1) * 4);
-		s.mesh_tangents.resize((s.offset + 1) * 16);
-		s.mesh_colors.resize((s.offset + 1) * 4);
-		s.mesh_uvs.resize((s.offset + 1) * 4);
+		s.mesh_vertices.resize(static_cast<size_t>((s.offset + 1) * 4));
+		s.mesh_normals.resize(static_cast<size_t>((s.offset + 1)) * 4);
+		s.mesh_tangents.resize(static_cast<size_t>((s.offset + 1)) * 16);
+		s.mesh_colors.resize(static_cast<size_t>((s.offset + 1)) * 4);
+		s.mesh_uvs.resize(static_cast<size_t>((s.offset + 1)) * 4);
 
 		s.mesh_vertices.write[(s.offset * 4) + 3] = Vector3(r_offset.x + gl_of.x, r_offset.y - gl_of.y - gl_sz.y, s.z_shift);
 		s.mesh_vertices.write[(s.offset * 4) + 2] = Vector3(r_offset.x + gl_of.x + gl_sz.x, r_offset.y - gl_of.y - gl_sz.y, s.z_shift);
@@ -134,7 +134,7 @@ void MapLabel::_generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset,
 			s.mesh_uvs.write[(s.offset * 4) + 0] = Vector2(gl_uv.position.x / texs.x, gl_uv.position.y / texs.y);
 		}
 
-		s.indices.resize((s.offset + 1) * 6);
+		s.indices.resize(static_cast<size_t>((s.offset + 1)) * 6);
 		s.indices.write[(s.offset * 6) + 0] = (s.offset * 4) + 0;
 		s.indices.write[(s.offset * 6) + 1] = (s.offset * 4) + 1;
 		s.indices.write[(s.offset * 6) + 2] = (s.offset * 4) + 2;
@@ -168,7 +168,7 @@ void MapLabel::_shape() {
 		RenderingServer::get_singleton()->free(E.value.material);
 	surfaces.clear();
 
-	Ref<Font> font = _get_font_or_default();
+	const Ref<Font> font = _get_font_or_default();
 	ERR_FAIL_COND(font.is_null());
 
 	// Update text buffer.
@@ -176,7 +176,7 @@ void MapLabel::_shape() {
 		TS->shaped_text_clear(text_rid);
 		TS->shaped_text_set_direction(text_rid, TextServer::DIRECTION_AUTO);
 
-		String txt = (uppercase) ? TS->string_to_upper(xl_text, "") : xl_text;
+		const String txt = (uppercase) ? TS->string_to_upper(xl_text, "") : xl_text;
 		TS->shaped_text_add_string(text_rid, txt, font->get_rids(), font_size, font->get_opentype_features(), "");
 
 		TypedArray<Vector3i> stt;
@@ -187,7 +187,7 @@ void MapLabel::_shape() {
 		dirty_font = false;
 		dirty_lines = true;
 	} else if (dirty_font) {
-		int spans = TS->shaped_get_span_count(text_rid);
+		const int spans = TS->shaped_get_span_count(text_rid);
 		for (int i = 0; i < spans; i++)
 			TS->shaped_set_span_update_font(text_rid, i, font->get_rids(), font_size, font->get_opentype_features());
 
@@ -200,12 +200,12 @@ void MapLabel::_shape() {
 			TS->free_rid(i);
 		lines_rid.clear();
 
-		BitField<TextServer::LineBreakFlag> autowrap_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
+		const BitField<TextServer::LineBreakFlag> autowrap_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
 
-		PackedInt32Array line_breaks = TS->shaped_text_get_line_breaks(text_rid, width, 0, autowrap_flags);
+		const PackedInt32Array line_breaks = TS->shaped_text_get_line_breaks(text_rid, width, 0, autowrap_flags);
 		float max_line_w = 0.0;
 		for (int i = 0; i < line_breaks.size(); i = i + 2) {
-			RID line = TS->shaped_text_substr(text_rid, line_breaks[i], line_breaks[i + 1] - line_breaks[i]);
+			const RID line = TS->shaped_text_substr(text_rid, line_breaks[i], line_breaks[i + 1] - line_breaks[i]);
 			max_line_w = MAX(max_line_w, TS->shaped_text_get_width(line));
 			lines_rid.push_back(line);
 		}
@@ -216,12 +216,12 @@ void MapLabel::_shape() {
 	float total_h = 0.0;
 	for (const RID i : lines_rid)
 		total_h += (TS->shaped_text_get_size(i).y + line_spacing) * pixel_size;
-	float vbegin = (total_h - line_spacing * pixel_size) / 2.0;
+	const float vbegin = (total_h - line_spacing * pixel_size) / 2.0;
 	Vector2 offset = Vector2(0, vbegin * pixel_size);
 	for (const RID i : lines_rid) {
 		const Glyph *glyphs = TS->shaped_text_get_glyphs(i);
-		int gl_size = TS->shaped_text_get_glyph_count(i);
-		float line_width = TS->shaped_text_get_width(i) * pixel_size;
+		const int gl_size = TS->shaped_text_get_glyph_count(i);
+		const float line_width = TS->shaped_text_get_width(i) * pixel_size;
 		offset.x = -line_width / 2.0;
 		offset.x += pixel_size;
 		offset.y -= TS->shaped_text_get_ascent(i) * pixel_size;

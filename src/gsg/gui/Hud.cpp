@@ -20,6 +20,6 @@ String Hud::GetPlayerName() {
 }
 
 void Hud::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("SetMapMode"), &Hud::SetMapMode);
+	ClassDB::bind_static_method("Hud", D_METHOD("SetMapMode"), &Hud::SetMapMode);
 	ClassDB::bind_method(D_METHOD("GetPlayerName"), &Hud::GetPlayerName);
 }

@@ -38,7 +38,7 @@ private:
 
 	static Vec<Entity> get_locator_vec(LocatorType p_locator);
 	static String get_type_string(LocatorType p_type);
-	void _load_locators(LocatorMap &p_locator_map, const String &p_cfg_path, LocatorType p_locator);
+	static void _load_locators(LocatorMap &p_locator_map, const String &p_cfg_path, LocatorType p_locator);
 	void _save_config(const LocatorMap &p_locator_map, const String &p_cfg_path, LocatorType p_locator_type);
 
 public:

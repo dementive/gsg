@@ -34,7 +34,7 @@ Ref<Expression> DataBind::get_expression(const String &expression_string) {
 
 const Array dummy_input_array; // empty array must be passed into Expression::execute and it would be stupid to construct a new one every time.
 
-template <typename T> void DataBind::execute(T callable, Control *node, const StringName &method, Variant::Type expected_type, const StringName &expected_class) {
+template <typename T> void DataBind::execute(const T &callable, Control *node, const StringName &method, Variant::Type expected_type, const StringName &expected_class) {
 	// If the method to call doesn't exist there is no reason to even execute the expression
 #ifdef DEBUG_ENABLED
 	if (!node->has_method(method)) [[unlikely]] {
@@ -97,7 +97,7 @@ void DataBind::setup_pressed(Control *node) {
 
 		if (!pressed_callable.is_valid()) {
 			// If callable has arguments try making it an Expression
-			Ref<Expression> expression = get_expression(pressed_method);
+			const Ref<Expression> expression = get_expression(pressed_method);
 			pressed_expressions.push_back(expression); // need to take ownership or connect won't work
 			pressed_callable = callable_mp(*expression, &Expression::execute).bind(dummy_input_array, base_instance, true, false);
 
@@ -130,16 +130,16 @@ void DataBind::setup_datamodel(Control *node) {
 		MethodBind *method = ClassDB::get_method(base_instance->get_class_name(), node->get_meta(m_property));                                                                               \
                                                                                                                                                                                              \
 		if (method != nullptr) {                                                                                                                                                             \
-			DataBindCallableProperty property{ .property_type = m_type, .callable = method };                                                                                                \
+			const DataBindCallableProperty property{ .property_type = m_type, .callable = method };                                                                                                \
 			data_bind_node.callable_properties.push_back(property);                                                                                                                          \
 		} else {                                                                                                                                                                             \
-			DataBindExpressionProperty property{ .property_type = m_type, .callable = get_expression(node->get_meta(m_property)) };                                                          \
+			const DataBindExpressionProperty property{ .property_type = m_type, .callable = get_expression(node->get_meta(m_property)) };                                                          \
 			data_bind_node.expression_properties.push_back(property);                                                                                                                        \
 		}                                                                                                                                                                                    \
 	}
 
 void DataBind::_find_metadata_properties(Node *node_to_check) { // NOLINT(misc-no-recursion)
-	TypedArray<Node> children = node_to_check->get_children(false);
+	const TypedArray<Node> children = node_to_check->get_children(false);
 	for (const Variant &child : children) {
 		Control *node = Object::cast_to<Control>(child);
 		if (node == nullptr)
