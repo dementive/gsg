@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING
 
 # pyright doesn't understand the above import since the module is outside of the godot tree, it can figure out the relative imports though
 if TYPE_CHECKING:
-	from ....godot.misc.utility.scons_hints import *
-	from ....godot.misc.gsg.scons_funcs import *
+    from ....godot.misc.utility.scons_hints import *
+    from ....godot.misc.gsg.scons_funcs import *
 
 
 Import("env")
@@ -27,25 +27,33 @@ env_gsg.Append(CPPPATH=find_header_dirs())
 set_cpp_standard(env_gsg)
 enable_all_warnings(env_gsg)
 
+
 def build():
-	build_pch = ARGUMENTS.get('build_pch', 'no') == 'yes'
-	use_pch = ARGUMENTS.get('use_pch', 'no') == 'yes'
-	if using_clang(env_gsg) and (build_pch or use_pch):
-		env_gsg.Append(CXXFLAGS=["-fpch-codegen", "-fpch-preprocess", "-fpch-instantiate-templates"])
+    build_pch = ARGUMENTS.get("build_pch", "no") == "yes"
+    use_pch = ARGUMENTS.get("use_pch", "no") == "yes"
+    if using_clang(env_gsg) and (build_pch or use_pch):
+        env_gsg.Append(
+            CXXFLAGS=[
+                "-fpch-codegen",
+                "-fpch-preprocess",
+                "-fpch-instantiate-templates",
+            ]
+        )
 
-		if use_pch:
-			env_gsg.Append(CXXFLAGS=["-include-pch", f"{os.path.abspath("./pch.hpp.pch")}"])
+        if use_pch:
+            env_gsg.Append(CXXFLAGS=["-include-pch", f"{os.path.abspath('./pch.hpp.pch')}"])
 
-	# Shared lib compilation
-	if ARGUMENTS.get('shared_library_module', 'no') == 'yes':
-		env_gsg.Append(CCFLAGS=['-fPIC'])
-		env_gsg['LIBS'] = []
-		shared_lib = env_gsg.SharedLibrary(target='#bin/gsg', source=sources)
-		shared_lib_shim = shared_lib[0].name.rsplit('.', 1)[0]
-		env.Append(LIBS=[shared_lib_shim])
-		env.Append(LIBPATH=['#bin'])
-	else:
-		# Static compilation
-		env_gsg.add_source_files(env.modules_sources, sources)
+    # Shared lib compilation
+    if ARGUMENTS.get("shared_library_module", "no") == "yes":
+        env_gsg.Append(CCFLAGS=["-fPIC"])
+        env_gsg["LIBS"] = []
+        shared_lib = env_gsg.SharedLibrary(target="#bin/gsg", source=sources)
+        shared_lib_shim = shared_lib[0].name.rsplit(".", 1)[0]
+        env.Append(LIBS=[shared_lib_shim])
+        env.Append(LIBPATH=["#bin"])
+    else:
+        # Static compilation
+        env_gsg.add_source_files(env.modules_sources, sources)
+
 
 build()

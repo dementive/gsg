@@ -1,5 +1,5 @@
 # debug stuff
-platform="windows"
+platform = "windows"
 custom_modules = "../gsg/src"
 optimize = "debug"
 
@@ -10,7 +10,7 @@ progress = "no"
 engine_update_check = "no"
 
 # disabled modules
-disable_xr="yes"
+disable_xr = "yes"
 module_enet_enabled = "no"
 module_gridmap_enabled = "no"
 module_mbedtls_enabled = "no"

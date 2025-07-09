@@ -1,63 +1,61 @@
 #!/usr/bin/env python
 
 import os
-from pathlib import Path
 
-from misc.gsg.scons_funcs import * # Imports are relative to the godot SConstruct file
+from misc.gsg.scons_funcs import *  # Imports are relative to the godot SConstruct file
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-	from ....godot.misc.utility.scons_hints import *
-	from ....godot.misc.gsg.scons_funcs import *
+    from ....godot.misc.utility.scons_hints import *
+    from ....godot.misc.gsg.scons_funcs import *
 
 Import("env")
 Import("env_modules")
 
+
 def find_flecs_header_dirs(path):
-	hpp_dirs = set()
-	for root, _, files in os.walk(path):
-		if any(file.endswith(".h") for file in files):
-			hpp_dirs.add(root)
-	return list(hpp_dirs)
+    hpp_dirs = set()
+    for root, _, files in os.walk(path):
+        if any(file.endswith(".h") for file in files):
+            hpp_dirs.add(root)
+    return list(hpp_dirs)
+
 
 def build_flecs():
-	env_flecs = env_modules.Clone()
+    env_flecs = env_modules.Clone()
 
-	flecs_sources : list[str] = [
-		"flecs.c"
-	]
+    flecs_sources: list[str] = ["flecs.c"]
 
-	env_flecs.Append(CPPPATH=find_header_dirs())
-	set_flecs_defines(env_flecs)
+    env_flecs.Append(CPPPATH=find_header_dirs())
+    set_flecs_defines(env_flecs)
 
-	# Compile flecs.c with C99
-	if not env_flecs.msvc:
-		env_flecs["CFLAGS"].remove("-std=gnu17")
-		env_flecs["CFLAGS"].insert(0, "-std=gnu99")
-	else:
-		env_flecs["CFLAGS"].remove("/std:c17")
-		env_flecs["CFLAGS"].insert(0, "/std:c99")
+    # Compile flecs.c with C99
+    if not env_flecs.msvc:
+        env_flecs["CFLAGS"].remove("-std=gnu17")
+        env_flecs["CFLAGS"].insert(0, "-std=gnu99")
+    else:
+        env_flecs["CFLAGS"].remove("/std:c17")
+        env_flecs["CFLAGS"].insert(0, "/std:c99")
 
-	env_flecs.force_optimization_on_debug()
-	env_flecs.disable_warnings()
-	env_flecs.add_source_files(env.modules_sources, flecs_sources)
+    env_flecs.force_optimization_on_debug()
+    env_flecs.disable_warnings()
+    env_flecs.add_source_files(env.modules_sources, flecs_sources)
+
 
 def build_module():
-	# Build modules files
-	env_module = env_modules.Clone()
+    # Build modules files
+    env_module = env_modules.Clone()
 
-	module_sources : list[str] = [
-		"register_types.cpp",
-		"ecs.cpp"
-	]
+    module_sources: list[str] = ["register_types.cpp", "ecs.cpp"]
 
-	set_cpp_standard(env_module)
-	enable_all_warnings(env_module)
-	set_flecs_defines(env_module)
+    set_cpp_standard(env_module)
+    enable_all_warnings(env_module)
+    set_flecs_defines(env_module)
 
-	env_module.Append(CPPPATH=find_header_dirs())
-	env_module.add_source_files(env.modules_sources, module_sources)
+    env_module.Append(CPPPATH=find_header_dirs())
+    env_module.add_source_files(env.modules_sources, module_sources)
+
 
 build_flecs()
 build_module()
