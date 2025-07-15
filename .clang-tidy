@@ -14,8 +14,3 @@ clang-analyzer-*,-clang-analyzer-osx*,bugprone-*,concurrency-*,cppcoreguidelines
 -cppcoreguidelines-macro-to-enum,-cppcoreguidelines-avoid-c-arrays,-cppcoreguidelines-pro-bounds-constant-array-index, -readability-function-cognitive-complexity, -cppcoreguidelines-no-malloc, -cppcoreguidelines-pro-bounds-pointer-arithmetic, -cppcoreguidelines-avoid-do-while, -readability-identifier-length
 '
 FormatStyle: file
-HeaderFilterRegex: '.*/gsg/src/.*\.(hpp|.h)'
-ExcludeHeaderFilterRegex: '.*/gsg/src/.*/Vec.hpp'
-CheckOptions:
-    - key: cppcoreguidelines-avoid-non-const-global-variables.AllowInternalLinkage
-      value: 1

@@ -14,18 +14,6 @@ def run(cmd: str):
     return subprocess.run(cmd, shell=True)
 
 
-def clean_build(build_cmd, so_path):
-    # The big up side of building as a shared library is incremental builds are fast
-    # The big down side of building the module as a shared library is you get linker errors when adding any new includes from the engine that haven't been used in the module before.
-    # These errors also only happen when actually running the newly unlinked code, so can show up at weird times which sucks.
-    # To fix this have to delete the existing binaries and rebuild them, this takes about 5 extra seconds than only targeting the .so though.
-
-    run("rm -f ./bin/*")
-    result = run(f"{build_cmd} {so_path}")
-    if result.returncode == 0:  # only build the engine if there are no compiler errors so the errors don't show twice.
-        run(build_cmd)
-
-
 def get_pch_build_command(file_path: str, json_file_path: str = "compile_commands.json") -> str:
     """
     Extracts the "command" associated with a given "file" from compile_commands.json.
@@ -81,21 +69,19 @@ parser.add_argument(
     "command",
     choices=[
         "linux_debug",
-        "linux_debug_gcc",
-        "clean",
-        "fix",
         "linux_debug_engine",
+        "engine",
+        "linux_debug_gcc",
         "linux_debug_engine_gcc",
+        "engine_gcc",
         "static",
         "linux_debug_static",
         "linux_release",
-        "windows_debug",
-        "windows_release",
-        "engine_compile_timing",
         "compile_timing",
         "build_pch",
         "use_pch",
-        "use_pch_fix",
+        "windows_debug",
+        "windows_release",
     ],
     nargs="?",
     help="Build command to execute.",
@@ -112,16 +98,12 @@ if args.command == "linux_debug":
     run(f"scons shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} {llvm_so}")
 elif args.command == "linux_debug_gcc":
     run(f"scons shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} use_llvm=no {gcc_so}")
-elif args.command in ["clean", "fix", "linux_debug_engine"]:
-    clean_build(
-        f"scons shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options}",
-        llvm_so,
-    )
-elif args.command == "linux_debug_engine_gcc":
-    clean_build(
-        f"scons shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} use_llvm=no",
-        gcc_so,
-    )
+elif args.command in ["engine", "linux_debug_engine"]:
+    # Builds the engine with llvm
+    run(f"scons shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options}")
+elif args.command in ["engine_gcc", "linux_debug_engine_gcc"]:
+    # Builds the engine with gcc
+    run(f"scons shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} use_llvm=no")
 elif args.command in ["static", "linux_debug_static"]:
     # Statically links the module into the godot binary
     run(f"scons profile={scripts_dir}/linux_debug.py {debug_options}")
@@ -140,12 +122,8 @@ elif args.command == "build_pch":
     build_pch("gsg/src/gsg/pch")
 elif args.command == "use_pch":
     run(f"scons use_pch=yes shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} {llvm_so}")
-elif args.command == "use_pch_fix":
-    clean_build(
-        f"scons use_pch=yes shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options}",
-        llvm_so,
-    )
 else:
+    # Default with no args is to compile as a shared lib and use pch in debug mode.
     run(f"scons use_pch=yes shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} {llvm_so}")
 
 # Project export

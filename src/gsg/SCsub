@@ -47,6 +47,9 @@ def build():
     if ARGUMENTS.get("shared_library_module", "no") == "yes":
         env_gsg.Append(CCFLAGS=["-fPIC"])
         env_gsg["LIBS"] = []
+        env_gsg.Append(SHLINKFLAGS=["-z", "now"])  # make unresolved symbol linker errors crash the program immediately on startup, not when they are encounter at run time.
+        env.Append(LINKFLAGS=["-rdynamic"])  # required for symbols from godot to link properly when rebuilding shared lib, see: https://stackoverflow.com/a/24016413
+
         shared_lib = env_gsg.SharedLibrary(target="#bin/gsg", source=sources)
         shared_lib_shim = shared_lib[0].name.rsplit(".", 1)[0]
         env.Append(LIBS=[shared_lib_shim])
