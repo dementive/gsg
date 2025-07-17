@@ -8,7 +8,7 @@ extends BaseClass
 
 
 
-func global_function_test() -> void
+func global_function_test() -> void: 
 	print("Hello World!")
 
 
@@ -59,13 +59,13 @@ const TWO_PI: float = 1.5707963267948966
 
 # Conditional compilation with constant expressions
 
-func super_secret_debug_function() -> void
+func super_secret_debug_function() -> void: 
 	print("I like cats")
 
 const cond_comp_var: int = 0
 const cond_comp_var_two: int = 4
 
-func get_favorite_animal() -> void
+func get_favorite_animal() -> void: 
 	return "Frogs are my favorite"
 
 # Constants.
@@ -158,7 +158,7 @@ func other_something(p1: String = "Hello", p2: int = 50):
 func test_thing(p_thing: int = 1, vec_thing := Vector2(0)) -> float: 
 	return 1.0
 
-static func test_static() -> void
+static func test_static() -> void: 
 	pass
 
 class Item: 
@@ -173,7 +173,7 @@ var items: Array[Item] = [Item.new()]
 var array_of_arrays: Array[Array] = [[], []]
 
 # Constructor
-func _init()
+func _init(): 
 	print("Constructed!")
 	var lv = Something.new()
 	print(lv.a)

@@ -3,7 +3,7 @@ import math
 import datetime
 import hashlib
 import random
-from typing import List
+from typing import Any, Dict, List
 
 """
 Gdscript preprocessor
@@ -71,7 +71,7 @@ There is a lot of gdscript syntax and getting 100% of it to transpile without an
 
 """
 
-keywords_map = {
+keywords_map: Dict[str, str] = {
     "yes": "true",
     "no": "false",
     "fn": "func",
@@ -84,10 +84,10 @@ keywords_map = {
     "Map": "Dictionary",
 }
 
-preprocessor_statements = ["#if", "#else", "#endif", "#include"]
+preprocessor_statements: List[str] = ["#if", "#else", "#endif", "#include"]
 
-var_pattern = r"([A-Za-z_0-9]\w*)"
-type_pattern = r"([A-Za-z_0-9]\w*(?:\[[^\[\]]+\])?)"
+var_pattern: str = r"([A-Za-z_0-9]\w*)"
+type_pattern: str = r"([A-Za-z_0-9]\w*(?:\[[^\[\]]+\])?)"
 
 memnew_pattern = re.compile(rf"new\s+{var_pattern}")
 memfree_pattern = re.compile(rf"free\s+{var_pattern}")
@@ -106,18 +106,18 @@ block_comment_pattern = re.compile(r"/\*.*?\*/", flags=re.DOTALL)
 typed_for_pattern = re.compile(rf"for\s+{type_pattern}\s+{var_pattern}")
 typed_function_pattern = re.compile(rf"func\s+{var_pattern}\(")
 
-is_in_multiline_comment = False
-is_in_multiline_doc_comment = False
-is_inside_open_paren = False
-is_compilation_enabled = True
+is_in_multiline_comment: bool = False
+is_in_multiline_doc_comment: bool = False
+is_inside_open_paren: bool = False
+is_compilation_enabled: bool = True
 
 is_compilation_enabled_stack: List[bool] = []
 
-constexpr_variables = {}
-consteval_variables = {}
+constexpr_variables: Dict = {}
+consteval_variables: Dict = {}
 
 
-def exec_and_return(expression: str):
+def exec_and_return(expression: str) -> Any:
     exec_locals = {}
     exec(
         f"""
@@ -133,10 +133,10 @@ value = {expression}
     return exec_locals["value"]
 
 
-def process_line(line: str, outfile):
+def process_line(line: str, outfile) -> None:
     global is_compilation_enabled_stack, is_in_multiline_comment, is_in_multiline_doc_comment, is_inside_open_paren, is_compilation_enabled
 
-    stripped_line = line.strip()
+    stripped_line: str = line.strip()
 
     if stripped_line.startswith("#else"):
         is_compilation_enabled = not is_compilation_enabled
@@ -188,7 +188,7 @@ def process_line(line: str, outfile):
     if stripped_line.startswith("/*"):
         is_in_multiline_comment = True
         line = line.replace("/*", "#")
-        stripped_comment_line = line.strip()
+        stripped_comment_line: str = line.strip()
         if stripped_comment_line == "#":
             return  # return if no other words on the line but the comment character
         else:
@@ -201,7 +201,7 @@ def process_line(line: str, outfile):
             line = line.replace("*/", "#")
         else:
             line = "# " + line.replace("*/", "")
-        stripped_comment_line = line.strip()
+        stripped_comment_line: str = line.strip()
 
         if stripped_comment_line == "#":
             return  # return if no other words on the line but the comment character
@@ -213,9 +213,9 @@ def process_line(line: str, outfile):
     if not is_in_multiline_comment and stripped_line.__contains__("*/"):
         line = re.sub(block_comment_pattern, "", line)
 
-    comment_string = ""
-    line_split = line.split("#")
-    split_line = line_split[0]
+    comment_string: str = ""
+    line_split: List[str] = line.split("#")
+    split_line: str = line_split[0]
 
     # Replace consteval variables with their values
     for variable in consteval_variables:
@@ -234,9 +234,9 @@ def process_line(line: str, outfile):
         if not constexpr_var_match:
             return
 
-        var_name = constexpr_var_match.group(2)
-        expression = constexpr_var_match.group(3).strip()
-        expression_result = exec_and_return(expression)
+        var_name: str = constexpr_var_match.group(2)
+        expression: str = constexpr_var_match.group(3).strip()
+        expression_result: Any = exec_and_return(expression)
         constexpr_variables[var_name] = expression_result
 
         if type(expression_result) == str:
@@ -250,9 +250,9 @@ def process_line(line: str, outfile):
         for variable in constexpr_variables:
             line = re.sub(rf"\b{variable}\b", str(constexpr_variables[variable]), line)
 
-        var_name = consteval_var_match.group(2)
-        expression = consteval_var_match.group(3).strip()
-        expression_result = exec_and_return(expression)
+        var_name: str = consteval_var_match.group(2)
+        expression: str = consteval_var_match.group(3).strip()
+        expression_result: Any = exec_and_return(expression)
         if type(expression_result) == str:
             expression_result = f'"{expression_result}"'
         consteval_variables[var_name] = expression_result
@@ -262,11 +262,11 @@ def process_line(line: str, outfile):
         for variable in constexpr_variables:
             line = re.sub(rf"\b{variable}\b", str(constexpr_variables[variable]), line)
 
-        pp_split = line.split()
+        pp_split: List[str] = line.split()
         if len(pp_split) > 1:
             pp_split.pop(0)
-            expression = " ".join(pp_split)
-            expression_result = exec_and_return(expression)
+            expression: str = " ".join(pp_split)
+            expression_result: Any = exec_and_return(expression)
             if type(expression_result) in (bool, int):
                 is_compilation_enabled = expression_result
                 is_compilation_enabled_stack.append(is_compilation_enabled)
@@ -275,11 +275,13 @@ def process_line(line: str, outfile):
 
         return
 
-    ends_with_colon = stripped_line.endswith(":")
-    starts_with_class_name = stripped_line.startswith("class_name")
+    stripped_line: str = line.strip()  # Update after running preprocessing
 
-    ends_with_open_paren = stripped_line.endswith("(")
-    ends_with_closed_paren = stripped_line.endswith(")") or stripped_line.endswith("):")
+    ends_with_colon: bool = stripped_line.endswith(":")
+    starts_with_class_name: bool = stripped_line.startswith("class_name")
+
+    ends_with_open_paren: bool = stripped_line.endswith("(")
+    ends_with_closed_paren: bool = stripped_line.endswith(")") or stripped_line.endswith("):")
     if ends_with_open_paren:
         is_inside_open_paren = True
 
@@ -370,13 +372,13 @@ def compile(input_filename, output_filename):
     with open(input_filename, "r") as infile, open(output_filename, "w") as outfile:
         for line in infile:
             if line.strip().startswith("#include"):
-                include_path = line.split("#include")
-                include_path = include_path[1].strip().replace('"', "")
-                with open(include_path, "r", encoding="utf-8") as file:
-                    content = file.read()
+                include_path: List[str] = line.split("#include")
+                include_path_str: str = include_path[1].strip().replace('"', "")
+                with open(include_path_str, "r", encoding="utf-8") as file:
+                    content: str = file.read()
                     line = content
 
-                    lines = line.split("\n")
+                    lines: List[str] = line.split("\n")
                     for included_line in lines:
                         process_line(f"{included_line}\n", outfile)
                     continue
