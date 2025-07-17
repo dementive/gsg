@@ -1,0 +1,10 @@
+consteval bool DEBUG_ENABLED = True
+consteval bool DEV_ENABLED = False
+consteval bool TOOLS_ENABLED = False
+
+consteval bool WIN32 = True
+consteval bool LINUX = False
+consteval bool OSX = False
+
+fn global_function_test() -> void
+	print("Hello World!")
