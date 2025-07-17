@@ -20,7 +20,7 @@ var s = "Hello"
 var arr = [1, 2, 3]
 var dict = {"key": "value", 2: 3}
 
-Map[String, int] other_dict = {key = "value": other_key = 2}
+Dictionary[String, int] other_dict = {key = "value": other_key = 2}
 
 int typed_var
 int static_typed_var

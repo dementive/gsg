@@ -11,35 +11,35 @@ Gdscript preprocessor
 Features:
 
 - Some hardcoded macros to make typing some keywords easier. See keywords_map for the full list of keywords.
-    Ex: 'fn' instead of 'func'.
-    Note that these act like keywords so you cannot use these words in your code as variable or function names, they are reserved for the compiler.
+	Ex: 'fn' instead of 'func'.
+	Note that these act like keywords so you cannot use these words in your code as variable or function names, they are reserved for the compiler.
 
 - Improved static typing syntax that looks more like C typing for declaring variables
-    For example instead of doing `var test_var: int = 999` you can now do `int test_var = 999`.
-    Or `int test_var` would be `var test_var: int`.
-    This will work for all types, even user defined ones and container types like Array[String].
+	For example instead of doing `var test_var: int = 999` you can now do `int test_var = 999`.
+	Or `int test_var` would be `var test_var: int`.
+	This will work for all types, even user defined ones and container types like Array[String].
 
 - Same static typing rules for typing loop variables.
-    For example `for int i in range(5)` compiles to `for i: int in range(5)`
+	For example `for int i in range(5)` compiles to `for i: int in range(5)`
 
 - Same static typing rules for typing function parameters.
-    For example `func something(int p1, int p2)` compiles to `func something(p1: int, p2: int)`
+	For example `func something(int p1, int p2)` compiles to `func something(p1: int, p2: int)`
 
 - Using ':' at the end of most statements is now optional instead of required.
-    This includes the keywords if/elif/else, func, class, while, for, and match. Multiline statements will still require a colon.
+	This includes the keywords if/elif/else, func, class, while, for, and match. Multiline statements will still require a colon.
 
 - Multi line comments with /* and */.
-    For this to work start a line with /*. All other lines until a line that has */ is found will be commented out.
+	For this to work start a line with /*. All other lines until a line that has */ is found will be commented out.
 
 - Multi line documentation comments using triple quotes just like how they work in python.
 
 - In block comments using /* and */ work.
-    This allows you to comment out only a part of a line, which isn't possible with just gdscript.
-    Example: `int test_doc_comment_var /* = 999 */ = 500` would compile to `var test_doc_comment_var: int = 500`
+	This allows you to comment out only a part of a line, which isn't possible with gdscript.
+	Example: `int test_doc_comment_var /* = 999 */ = 500` would compile to `var test_doc_comment_var: int = 500`
 
 - Easier to write `@export` and  `@onready` notation
-    Example: `export String string_export` gets compiled to `@export var string_export: String`
-             `onready int ready_int_number = 5` gets compiled to `@onready var ready_int_number: int = 5`
+	Example: `export String string_export` gets compiled to `@export var string_export: String`
+			 `onready int ready_int_number = 5` gets compiled to `@onready var ready_int_number: int = 5`
 
 - Adds a keyword: "new" that can be used to write `new Object` instead of `Object.new()`. This works for any object type that .new() gets called on.
 
@@ -48,16 +48,16 @@ Features:
 - Adds a keyword: "qfree" that can be used to write `qfree node` instead of `node.queue_free()`. This works for any node type that .queue_free() gets called on.
 
 - "constexpr" keyword for variables that can have their values computed at compile time and are then made const for use in gdscript.
-    The expression after the = operator in a constexpr variable declaration gets sent into the python exec() function.
-    So any code that is valid python can go there.
-    The python exec function imports the following python modules before executing any constant expressions: math, datetime, hashlib, random
+	The expression after the = operator in a constexpr variable declaration gets sent into the python exec() function.
+	So any code that is valid python can go there.
+	The python exec function imports the following python modules before executing any constant expressions: math, datetime, hashlib, random
 
 - "consteval" keyword that works the same as constexpr variables except their value will instead be inlined directly everywhere it is used.
-    This way you can precompute values at compile time and also have them not use any memory at run time.
-    consteval variables will not exist as variables in the resulting gdscript, everywhere they are referenced they will be replaced with their value at compile time.
+	This way you can precompute values at compile time and also have them not use any memory at run time.
+	consteval variables will not exist as variables in the resulting gdscript, everywhere they are referenced they will be replaced with their value at compile time.
 
 - C style conditional compilation using constant expressions using #if/#else/#endif preprocessor statements
-    The expression after the preprocessor statement can be any constant expressions, any kind of python code or constexpr/consteval variables will work.
+	The expression after the preprocessor statement can be any constant expressions, any kind of python code or constexpr/consteval variables will work.
 
 - C style preprocessor #include statements that can be used to paste the contents of another file directly where the #include is found.
 
@@ -88,14 +88,15 @@ preprocessor_statements: List[str] = ["#if", "#else", "#endif", "#include"]
 
 var_pattern: str = r"([A-Za-z_0-9]\w*)"
 type_pattern: str = r"([A-Za-z_0-9]\w*(?:\[[^\[\]]+\])?)"
+var_declaration_patter: str = rf"{type_pattern}\s+{var_pattern}\s+=(.*)"
 
 memnew_pattern = re.compile(rf"new\s+{var_pattern}")
 memfree_pattern = re.compile(rf"free\s+{var_pattern}")
 memqueue_free_pattern = re.compile(rf"qfree\s+{var_pattern}")
-static_type_pattern = re.compile(rf"{type_pattern}\s+{var_pattern}\s+=(.*)")
+static_type_pattern = re.compile(var_declaration_patter)
 
-constexpr_var_pattern = re.compile(rf"constexpr\s+{type_pattern}\s+{var_pattern}\s+=(.*)")
-consteval_var_pattern = re.compile(rf"consteval\s+{type_pattern}\s+{var_pattern}\s+=(.*)")
+constexpr_var_pattern = re.compile(rf"constexpr\s+{var_declaration_patter}")
+consteval_var_pattern = re.compile(rf"consteval\s+{var_declaration_patter}")
 
 static_type_no_equals_pattern = re.compile(rf"{type_pattern}\s+{var_pattern}\n")
 static_type_func_no_equals_pattern = re.compile(rf"{type_pattern}\s+{var_pattern},?")
@@ -158,7 +159,7 @@ def process_line(line: str, outfile) -> None:
 
     # Macros that I think are nice
     for keyword in keywords_map:
-        line = re.sub(rf"\b{keyword}\b", keywords_map[keyword], line)
+        line = re.sub(rf"\b^{keyword}\b", keywords_map[keyword], line)
 
     # Multi line documentation comments
     if stripped_line.startswith('"""'):
@@ -386,4 +387,4 @@ def compile(input_filename, output_filename):
             process_line(line, outfile)
 
 
-compile("test.gdp", "output.gd")
+compile("gdp_compiler.gdp", "gdp_compiler.gd")
