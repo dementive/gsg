@@ -4,7 +4,7 @@
 class_name MyClass
 
 # Inheritance:
-extends BaseClass
+extends Node
 
 #include "test_include.gdp"
 
@@ -15,12 +15,15 @@ onready int ready_int_number = 5
 onready ProgressBar health_bar = get_node("UI/LifeBar")
 
 # Member variables.
-var a = 5
+var a = 5 # hmm
 var s = "Hello"
 var arr = [1, 2, 3]
 var dict = {"key": "value", 2: 3}
 
-Dictionary[String, int] other_dict = {key = "value": other_key = 2}
+Dictionary[String, int] other_dict = {"1": 22, "3": 2}
+
+using StringDict = Dictionary[String, String]
+StringDict another_dict = {"1": "22", "3": "2"}
 
 int typed_var
 int static_typed_var
@@ -35,41 +38,54 @@ static int new_typed_var_2 = 0
 static var inferred_type_2 := "String"
 
 const int new_typed_var_23 = 0
-static const int new_typed_var_234 = 0
+static int new_typed_var_234 = 0
 
 constexpr float constexpr_test = sqrt(2)
 constexpr float constexpr_test2 = constexpr_test + sqrt(2)
 
-fn constexpr_usage_test_func(int x) -> void:
+#define TEST_MACRO really_long_variable_name_that_is_very_long
+int TEST_MACRO = 0
+
+#define TEST_MULTI_LINE_MACRO \
+	int x = 999 \
+	for int i in range(x): \
+		print(i) \
+	var y = 9999
+
+fn macro_func() -> void:
+	TEST_MULTI_LINE_MACRO
+	print(x - y)
+
+fn macro_func2() -> void:
+	TEST_MULTI_LINE_MACRO
+	print(x + y)
+
+fn constexpr_usage_test_func(int x) -> int:
 	int value = constexpr_test2 + x
 	return value
 
 
-consteval int consteval_test = sqrt(2)
-fn consteval_usage_test_func(int x) -> void:
+consteval float consteval_test = pow(2, 12)
+fn consteval_usage_test_func(int x) -> int:
 	int value = consteval_test + x
 	return value
 
-consteval String test_str = f"Square root of 8: {sqrt(8)}"
-constexpr String constexpr_test_str = test_str + f"\\nSquare root of 12: {sqrt(12)}"
-
-constexpr float TWO_PI = math.pi / 2.0
-
 # Conditional compilation with constant expressions
-
 #if DEBUG_ENABLED
-fn super_secret_debug_function() -> void
+fn super_secret_debug_function() -> void:
 	print("I like cats")
 #else
-fn normal_non_debug_function() -> void
+fn normal_non_debug_function() -> void:
 	print("I like dogs")
 #endif
 
 constexpr int cond_comp_var = 0
 constexpr int cond_comp_var_two = cond_comp_var + 4
 
-#if True if cond_comp_var_two > math.pi else False
-fn get_favorite_animal() -> void
+consteval int power_level = sqrt(9001 + sqrt(2) * pow(4, 9)) * 5000
+
+#if power_level > 9000
+fn get_favorite_animal() -> String:
 #if DEBUG_ENABLED
 	return "Frogs are my favorite"
 #else
@@ -86,72 +102,47 @@ const int ANSWER_2 = 999
 enum {UNIT_NEUTRAL, UNIT_ENEMY, UNIT_ALLY}
 enum Named {THING_1, THING_2, ANOTHER_THING = -1}
 
-/* multiline comments?!
-Built-in vector types.
-var v2 := vec2(1, 2)
-var v3 := vec3(1, 2, 3)
-var v4 := vec4(1, 2, 3, 4)
-they work here too? */
-
-/*
-	Whoa
-	There
-*/
-
-"""
-The description of the variable. Using multi line doc comments works!
-
-More words.
-
-@deprecated: Use [member other_var] instead.
-"""
-int test_doc_comment_var /* = 999 */ = 500
-
-fn some_function(int param1, int param2, int param3) -> int
+fn some_function(int param1, int param2, int param3) -> int:
 	const local_const = 5
-	bool is_thing_enabled = no
+	bool is_thing_enabled = false
 
-	if param1 < local_const # Don't need a : at the end of the line.
+	if param1 < local_const:
 		print(param1)
-	elif param2 > 5
+	elif param2 > 5:
 		print(param2)
-	else
+	else:
 		print("Fail!")
 
-	for i in range(20)
+	for i in range(20):
 		print(i)
 
-	for int i in range(10)
+	for int i in range(10):
 		print(i)
 
-	# Single and multiline if statements need a ":"
-	if 1 > 0: return
+	if param1 < local_const and 1 > 0:
+		print(param1)
 
-	if param1 < local_const \
-		1 > 0:
-			print(param1)
-
-	next_state = "idle" if yes != no else "fall"
+	var next_state = "idle" if true != false else "fall"
 
 	int angle_degrees = 135
 	String quadrant = (
-			"northeast" if angle_degrees <= 90
-			else "southeast" if angle_degrees <= 180
-			else "southwest" if angle_degrees <= 270
-			else "northwest"
+		"northeast" if angle_degrees <= 90
+		else "southeast" if angle_degrees <= 180
+		else "southwest" if angle_degrees <= 270
+		else "northwest"
 	)
 
-	var position := vec2(250, 350)
+	var position := Vector2(250, 350)
 	if (
-			position.x > 200 and position.x < 400
-			and position.y > 300 and position.y < 400
+		position.x > 200 and position.x < 400
+		and position.y > 300 and position.y < 400
 	):
 		pass
 
-	while param2 != 0
+	while param2 != 0:
 		param2 -= 1
 
-	match param3
+	match param3:
 		3:
 			print("param3 is 3!")
 		_:
@@ -161,23 +152,23 @@ fn some_function(int param1, int param2, int param3) -> int
 	return local_var
 
 
-fn something(int p1, p2: int)
-	super(p1, p2)
+# fn something(int p1, p2: int):
+# 	super(p1, p2)
 
 
-fn other_something(String p1 = "Hello", int p2 = 50)
-	super.something(p1, p2)
+# fn other_something(String p1 = "Hello", int p2 = 50):
+# 	super.something(p1, p2)
 
-fn test_thing(int p_thing = 1,/* int another_thing = 2,*/ vec_thing := vec2(0)) -> float
+fn test_thing(int p_thing = 1, vec_thing := Vector2(0, 0)) -> float:
 	return 1.0
 
-static fn test_static() -> void
+static fn test_static() -> void:
 	pass
 
-class Item
+class Item:
 	int a = 10
 
-fn add(Item reference, int amount) -> Item
+fn add(Item reference, int amount) -> Item:
 	reference.add(amount)
 	return reference
 
@@ -186,9 +177,9 @@ Array[Item] items = [new Item]
 Array[Array] array_of_arrays = [[], []]
 
 # Constructor
-fn _init()
+fn _init():
 	print("Constructed!")
-	var lv = new Something
+	var lv = new Object
 	print(lv.a)
 
 	Node custom_node = new Node

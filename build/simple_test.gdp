@@ -1,17 +1,2 @@
-var test := Vector3(0,0,0)
-
-int test2 = 999
-
-fn test_thing(int p_thing = 1,/* int another_thing = 2,*/ vec_thing := Vector2(0, 0)) -> float
-	return 1.0
-
-fn _init()
-	print("Hello World!")
-	var obj := new Object
-
-	if param1 < local_const # Don't need a : at the end of the line.
-		print(param1)
-	elif param2 > 5
-		print(param2)
-	else
-		print("Fail!")
+constexpr float constexpr_test = sqrt(2)
+constexpr float constexpr_test2 = constexpr_test + sqrt(2)
