@@ -90,6 +90,17 @@ fn consteval_usage_test_func(int x) -> int:
 	int value = consteval_test + x
 	return value
 
+using Union[String,int,float] = Array
+fn test_union_alias() -> Union[String,int,float]:
+	return Array()
+
+using Optional[String] = Variant
+fn test_union_alias() -> Optional[String]:
+	if 1:
+		return String()
+	else:
+		return null
+
 # Conditional compilation with constant expressions
 #if DEBUG_ENABLED
 fn super_secret_debug_function() -> void:

@@ -91,6 +91,15 @@ func consteval_usage_test_func(x: int) -> int:
 	var value: int = 4096.0 + x
 	return value
 
+func test_union_alias() -> Array:
+	return Array()
+
+func test_union_alias() -> Variant:
+	if 1:
+		return String()
+	else:
+		return null
+
 # Conditional compilation with constant expressions
 func normal_non_debug_function() -> void:
 	print("I like dogs")

@@ -248,10 +248,22 @@ func process_line(line: String, file: FileAccess) -> void:
 
 
 	var iter_idx: int = 0
+	var alias_token: String = ""
 	for token in line_tokens:
 		for alias in type_aliases:
+			if token.ends_with(",") or token.ends_with("]"):
+				alias_token += token
+			if token.ends_with("]:"):
+				alias_token += token.replace(":", "")
 			if token == alias:
 				line_tokens[iter_idx] = type_convert(type_aliases[alias], TYPE_STRING)
+				alias_token = ""
+
+			if type_aliases.has(alias_token):
+				var full_line_str: String = " ".join(line_tokens)
+				full_line_str = full_line_str.replace(alias_token, type_convert(type_aliases[alias_token], TYPE_STRING))
+				line_tokens = whitespace_split(full_line_str)
+
 
 		for macro in macro_dict:
 			if token == macro:
