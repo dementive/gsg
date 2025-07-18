@@ -14,6 +14,9 @@ export String string_export
 onready int ready_int_number = 5
 onready ProgressBar health_bar = get_node("UI/LifeBar")
 
+export if DEBUG_ENABLED: int debug_number = 999
+onready if not DEBUG_ENABLED: int runtime_number = 9000
+
 # Member variables.
 var a = 5 # hmm
 var s = "Hello"
@@ -52,6 +55,11 @@ int TEST_MACRO = 0
 		print(i) \
 	var y = 9999
 
+#define THING int thing1 = 0
+THING
+#undef THING
+int THING = 0
+
 fn macro_func() -> void:
 	TEST_MULTI_LINE_MACRO
 	print(x - y)
@@ -63,7 +71,6 @@ fn macro_func2() -> void:
 fn constexpr_usage_test_func(int x) -> int:
 	int value = constexpr_test2 + x
 	return value
-
 
 consteval float consteval_test = pow(2, 12)
 fn consteval_usage_test_func(int x) -> int:
@@ -91,6 +98,16 @@ fn get_favorite_animal() -> String:
 #else
 	return "Rabbits are cool"
 #endif
+#endif
+
+constexpr String x = "Hello" + " World " + "!"
+constexpr Vector3 y = Vector3(5, 5, 5)
+constexpr int z = 999
+consteval Vector2 TEST = Vector2(0, 0)
+
+#if TEST == Vector2(1, 0)
+fn test_test_test():
+	print("hello")
 #endif
 
 # Constants.
@@ -165,6 +182,9 @@ fn test_thing(int p_thing = 1, vec_thing := Vector2(0, 0)) -> float:
 static fn test_static() -> void:
 	pass
 
+static fn test_static2(int x = 999) -> void:
+	pass
+
 class Item:
 	int a = 10
 
@@ -187,3 +207,7 @@ fn _init():
 
 	Object obj = new Object
 	free obj
+
+@abstract class ABClassTest:
+	@abstract func ab_test() -> void
+	@abstract func ab_test2(int x = 999) -> void

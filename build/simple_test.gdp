@@ -1,2 +1,4 @@
-constexpr float constexpr_test = sqrt(2)
-constexpr float constexpr_test2 = constexpr_test + sqrt(2)
+consteval bool DEBUG_ENABLED = false
+
+export if DEBUG_ENABLED: int debug_number = 999
+onready if not DEBUG_ENABLED: int runtime_number = 9000

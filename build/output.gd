@@ -18,6 +18,8 @@ func global_function_test() -> void:
 @onready var ready_int_number: int = 5
 @onready var health_bar: ProgressBar = get_node("UI/LifeBar")
 
+@onready var runtime_number: int = 9000
+
 # Member variables.
 var a = 5 # hmm
 var s = "Hello"
@@ -43,11 +45,14 @@ static var inferred_type_2 := "String"
 const new_typed_var_23: int = 0
 static var new_typed_var_234: int = 0
 
-const constexpr_test: float = 1.4142135623731
-const constexpr_test2: float = 2.8284271247462
+const constexpr_test: float = 1.4142135623730951
+const constexpr_test2: float = 2.8284271247461903
 
 var really_long_variable_name_that_is_very_long: int = 0
 
+
+var thing1: int = 0
+var THING: int = 0
 
 func macro_func() -> void:
 	var x: int = 999 
@@ -69,7 +74,6 @@ func constexpr_usage_test_func(x: int) -> int:
 	var value: int = constexpr_test2 + x
 	return value
 
-
 func consteval_usage_test_func(x: int) -> int:
 	var value: int = 4096.0 + x
 	return value
@@ -84,6 +88,11 @@ const cond_comp_var_two: int = 4
 
 func get_favorite_animal() -> String:
 	return "Rabbits are cool"
+
+const x: String = "Hello World !"
+const y: Vector3 = Vector3(5, 5, 5)
+const z: int = 999
+
 
 # Constants.
 const ANSWER: int = 42
@@ -157,6 +166,9 @@ func test_thing(p_thing: int = 1, vec_thing := Vector2(0, 0)) -> float:
 static func test_static() -> void:
 	pass
 
+static func test_static2(x: int = 999) -> void:
+	pass
+
 class Item:
 	var a: int = 10
 
@@ -180,3 +192,6 @@ func _init():
 	var obj: Object = Object.new()
 	obj.free()
 
+@abstract class ABClassTest:
+	@abstract func ab_test() -> void
+	@abstract func ab_test2(x: int = 999) -> void

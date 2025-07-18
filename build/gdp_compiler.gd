@@ -11,6 +11,7 @@ var memqueue_free_pattern: RegEx
 
 var static_type_func_no_equals_pattern: RegEx
 var annotation_pattern: RegEx
+var annotation_if_pattern: RegEx
 var static_type_pattern: RegEx
 
 var static_type_no_equals_pattern: RegEx
@@ -19,9 +20,7 @@ var typed_for_pattern: RegEx
 var type_alias_pattern: RegEx
 var macro_pattern: RegEx
 
-var is_inside_open_paren: bool = false
 var is_compilation_enabled: bool = true
-
 var macro_line_continuation: bool = false
 var macro_line_continuation_first: bool = false
 
@@ -104,6 +103,9 @@ func compile_regex() -> void:
 	annotation_pattern = RegEx.new()
 	annotation_pattern.compile(r"^(export|onready)\s+{type_pattern}\s+{var_pattern}(.*)".format({"type_pattern": type_pattern, "var_pattern": var_pattern}))
 
+	annotation_if_pattern = RegEx.new()
+	annotation_if_pattern.compile(r"^(export|onready)\s+if\s+(.*):\s+{type_pattern}\s+{var_pattern}(.*)".format({"type_pattern": type_pattern, "var_pattern": var_pattern}))
+
 	static_type_pattern = RegEx.new()
 	static_type_pattern.compile(var_declaration_pattern)
 
@@ -116,7 +118,7 @@ func compile_regex() -> void:
 	type_alias_pattern = RegEx.new()
 	type_alias_pattern.compile(r"using\s+{type_pattern}\s+=\s+{type_pattern}".format({"type_pattern": type_pattern}))
 
-func exec_and_return(expression: String) -> Variant: 
+func exec_and_return(expression: String): 
 	var expr := Expression.new()
 	expr.parse(expression)
 	var result: Variant = expr.execute() 
@@ -129,7 +131,7 @@ func replace_consteval_vars(line_tokens: PackedStringArray) -> PackedStringArray
 		var iter_idx: int = 0
 		for token in line_tokens:
 			if token == variable:
-				line_tokens[iter_idx] = type_convert(consteval_variables[variable], TYPE_STRING)
+				line_tokens[iter_idx] = var_to_str(consteval_variables[variable])
 			iter_idx += 1
 
 	return line_tokens
@@ -139,7 +141,7 @@ func replace_constexpr_vars(line_tokens: PackedStringArray) -> PackedStringArray
 		var iter_idx: int = 0
 		for token in line_tokens:
 			if token == variable:
-				line_tokens[iter_idx] = type_convert(constexpr_variables[variable], TYPE_STRING)
+				line_tokens[iter_idx] = var_to_str(constexpr_variables[variable])
 			iter_idx += 1
 
 	return line_tokens
@@ -171,7 +173,9 @@ func process_line(line: String, file: FileAccess) -> void:
 		var macro_tokens: PackedStringArray = line.split(" ")
 		macro_tokens.remove_at(0)
 		current_macro_key = macro_tokens[0]
-		current_macro_value = macro_tokens[1]
+		for i in macro_tokens:
+			if i != current_macro_key:
+				current_macro_value = current_macro_value + " " + i
 
 		if current_macro_value.ends_with("\\"):
 			macro_line_continuation = true
@@ -179,6 +183,14 @@ func process_line(line: String, file: FileAccess) -> void:
 		elif not current_macro_value.is_empty():
 			macro_dict[current_macro_key] = current_macro_value
 
+		current_macro_value = ""
+		return
+
+	if line.begins_with("#undef"):
+		var macro_tokens: PackedStringArray = line.split(" ")
+		macro_tokens.remove_at(0)
+		current_macro_key = macro_tokens[0]
+		macro_dict.erase(current_macro_key)
 		return
 
 	var indentation_level: int = get_indentation_level(line)
@@ -188,14 +200,11 @@ func process_line(line: String, file: FileAccess) -> void:
 	# Replace consteval variables with their values
 	line_tokens = replace_consteval_vars(line_tokens)
 	for variable in consteval_variables:
-		line = line.replacen(variable, type_convert(consteval_variables[variable], TYPE_STRING))
+		line = line.replacen(variable, var_to_str(consteval_variables[variable]))
 
 	if line.begins_with("#if"):
-		line_tokens = replace_constexpr_vars(line.split(" "))
-		line_tokens.remove_at(0)
-
-		var expression: String = " ".join(line_tokens)
-		var expression_result = exec_and_return(expression)
+		var expression: String = line.replace("#if", "")
+		var expression_result = exec_and_return(expression.strip_edges())
 		if (expression_result is bool or expression_result is int):
 			is_compilation_enabled = expression_result
 			is_compilation_enabled_stack.append(is_compilation_enabled)
@@ -302,7 +311,7 @@ func process_line(line: String, file: FileAccess) -> void:
 			idx += 1
 
 		line_tokens = new_tokens
-		line_tokens.append(str(expression_result))
+		line_tokens.append(var_to_str(expression_result))
 
 	if first_token == "consteval":
 		line_tokens = replace_constexpr_vars(line_tokens)
@@ -317,26 +326,35 @@ func process_line(line: String, file: FileAccess) -> void:
 		var groups: PackedStringArray = consteval_var_match.strings
 		var var_name: String = groups[2]
 		var expression: String = groups[3].strip_edges()
-		var expression_result: Variant = exec_and_return(expression)
+		var expression_result = exec_and_return(expression)
 		consteval_variables[var_name] = expression_result
 
 		return
 
-	if last_token == '(':
-		is_inside_open_paren = true
+	var line_str: String = " ".join(line_tokens)
 
-	if is_inside_open_paren and (last_token == ')' or last_token == '):'):
-		is_inside_open_paren = false
+	var annotation_if_match: RegExMatch = annotation_if_pattern.search(line_str)
+	if annotation_if_match:
+		var annotation_if_match_groups: PackedStringArray = annotation_if_match.strings
+		var expression: String = annotation_if_match_groups[2]
+		var expression_tokens: PackedStringArray = replace_consteval_vars(expression.split(" "))
+		expression = " ".join(expression_tokens)
+		var expression_result = exec_and_return(expression)
+		if (expression_result and expression_result is bool or expression_result is int):
+			line_str = annotation_if_pattern.sub(line_str, r"@$1 $3 $4 $5").replace(":", "")
+			line_tokens = whitespace_split(line_str)
+		else:
+			return
 
-	var line_str = " ".join(line_tokens)
+	line_str = " ".join(line_tokens)
 
 	# Typed function params
-	if first_token == "func":
+	if line_str.begins_with("func") or line_str.begins_with("static func") or line_str.begins_with("@abstract func"):
 		var no_equals_match: Array[RegExMatch] = static_type_func_no_equals_pattern.search_all(line_str)
 		if no_equals_match.size() > 1:
 			for match: RegExMatch in no_equals_match:
 				var groups: PackedStringArray = match.strings
-				if not groups[1].begins_with("func") and not groups[1].begins_with("static"):
+				if not groups[1].begins_with("func") and not groups[1].begins_with("static") and not groups[1].begins_with("abstract"):
 					line_str = line_str.replace("%s %s" % [groups[1], groups[2]], "%s: %s" % [groups[2], groups[1]])
 
 	var pattern_match: RegExMatch = memnew_pattern.search(line_str)
