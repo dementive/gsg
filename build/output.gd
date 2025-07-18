@@ -30,6 +30,19 @@ var other_dict: Dictionary[String, int] = {"1": 22, "3": 2}
 
 var another_dict: Dictionary[String, String] = {"1": "22", "3": "2"}
 
+var milliseconds: int = 10
+var seconds: int:
+	get:
+		return milliseconds / 1000
+	set(value):
+		milliseconds = value * 1000
+
+var minutes: int = 60:
+	get:
+		return milliseconds / 10000
+	set(value):
+		milliseconds = value * 10000
+
 var typed_var: int
 var static_typed_var: int
 var new_typed_var: int = 0
@@ -106,6 +119,9 @@ enum Named {THING_1, THING_2, ANOTHER_THING = -1}
 func some_function(param1: int, param2: int, param3: int) -> int:
 	const local_const = 5
 	var is_thing_enabled: bool = false
+
+	if true:
+		pass
 
 	if param1 < local_const:
 		print(param1)

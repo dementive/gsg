@@ -81,6 +81,9 @@ func compile_regex() -> void:
 	var var_declaration_pattern_fmt: String = r"%s\s+%s\s+=(.*)"
 	var var_declaration_pattern: String = var_declaration_pattern_fmt % [type_pattern, var_pattern]
 
+	var full_var_declaration_pattern_fmt: String = r"%s\s+%s\s+=(.*):?"
+	var full_var_declaration_pattern: String = full_var_declaration_pattern_fmt % [type_pattern, var_pattern]
+
 	var constant_expression_fmt = r"%s\s+%s"
 	constexpr_var_pattern = RegEx.new()
 	constexpr_var_pattern.compile(constant_expression_fmt % ["constexpr", var_declaration_pattern])
@@ -107,10 +110,10 @@ func compile_regex() -> void:
 	annotation_if_pattern.compile(r"^(export|onready)\s+if\s+(.*):\s+{type_pattern}\s+{var_pattern}(.*)".format({"type_pattern": type_pattern, "var_pattern": var_pattern}))
 
 	static_type_pattern = RegEx.new()
-	static_type_pattern.compile(var_declaration_pattern)
+	static_type_pattern.compile(full_var_declaration_pattern)
 
 	type_no_equals_pattern = RegEx.new()
-	type_no_equals_pattern.compile(r"{type_pattern}\s+{var_pattern}\n".format({"type_pattern": type_pattern, "var_pattern": var_pattern}))
+	type_no_equals_pattern.compile(r"{type_pattern}\s+{var_pattern}(:?)\n".format({"type_pattern": type_pattern, "var_pattern": var_pattern}))
 
 	typed_for_pattern = RegEx.new()
 	typed_for_pattern.compile(r"for\s+{type_pattern}\s+{var_pattern}".format({"type_pattern": type_pattern, "var_pattern": var_pattern}))
@@ -391,8 +394,8 @@ func process_line(line: String, file: FileAccess) -> void:
 	# Variable definitions
 	var no_eq_line_str: String = line_str + "\n"
 	var no_equals_match: RegExMatch = type_no_equals_pattern.search(no_eq_line_str)
-	if no_equals_match and not (first_token == "return" or first_token == "extends" or first_token == "class_name" or first_token == "func"):
-		line_str = type_no_equals_pattern.sub(no_eq_line_str, r"var $2: $1")
+	if no_equals_match and not (first_token == "@abstract" or first_token == "class" or first_token == "for" or first_token == "elif" or first_token == "if" or first_token == "while" or first_token == "match" or first_token == "return" or first_token == "extends" or first_token == "class_name" or first_token == "func"):
+		line_str = type_no_equals_pattern.sub(no_eq_line_str, r"var $2: $1$3")
 
 	if first_token == "const":
 		line_str = line_str.replace("const var", "const")

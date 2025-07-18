@@ -28,6 +28,19 @@ Dictionary[String, int] other_dict = {"1": 22, "3": 2}
 using StringDict = Dictionary[String, String]
 StringDict another_dict = {"1": "22", "3": "2"}
 
+int milliseconds = 10
+int seconds:
+	get:
+		return milliseconds / 1000
+	set(value):
+		milliseconds = value * 1000
+
+int minutes = 60:
+	get:
+		return milliseconds / 10000
+	set(value):
+		milliseconds = value * 10000
+
 int typed_var
 int static_typed_var
 int new_typed_var = 0
@@ -122,6 +135,9 @@ enum Named {THING_1, THING_2, ANOTHER_THING = -1}
 fn some_function(int param1, int param2, int param3) -> int:
 	const local_const = 5
 	bool is_thing_enabled = false
+
+	if true:
+		pass
 
 	if param1 < local_const:
 		print(param1)
