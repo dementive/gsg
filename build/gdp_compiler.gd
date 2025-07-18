@@ -2,7 +2,6 @@ extends MainLoop
 
 var preprocessor_statements: Array[String] = ["#if", "#else", "#endif", "#include"]
 
-var block_comment_pattern: RegEx
 var constexpr_var_pattern: RegEx
 var consteval_var_pattern: RegEx
 
@@ -15,10 +14,9 @@ var annotation_pattern: RegEx
 var static_type_pattern: RegEx
 
 var static_type_no_equals_pattern: RegEx
+var type_no_equals_pattern: RegEx
 var typed_for_pattern: RegEx
 
-var is_in_multiline_comment: bool = false
-var is_in_multiline_doc_comment: bool = false
 var is_inside_open_paren: bool = false
 var is_compilation_enabled: bool = true
 
@@ -74,9 +72,6 @@ func compile_regex() -> void:
 	var var_declaration_pattern_fmt: String = r"%s\s+%s\s+=(.*)"
 	var var_declaration_pattern: String = var_declaration_pattern_fmt % [type_pattern, var_pattern]
 
-	block_comment_pattern = RegEx.new()
-	block_comment_pattern.compile(r"/\*.*?\*/")
-
 	var constant_expression_fmt = r"%s\s+%s"
 	constexpr_var_pattern = RegEx.new()
 	constexpr_var_pattern.compile(constant_expression_fmt % ["constexpr", var_declaration_pattern])
@@ -102,8 +97,8 @@ func compile_regex() -> void:
 	static_type_pattern = RegEx.new()
 	static_type_pattern.compile(var_declaration_pattern)
 
-	static_type_no_equals_pattern = RegEx.new()
-	static_type_no_equals_pattern.compile(r"{type_pattern}\s+{var_pattern}\n".format({"type_pattern": type_pattern, "var_pattern": var_pattern}))
+	type_no_equals_pattern = RegEx.new()
+	type_no_equals_pattern.compile(r"{type_pattern}\s+{var_pattern}\n".format({"type_pattern": type_pattern, "var_pattern": var_pattern}))
 
 	typed_for_pattern = RegEx.new()
 	typed_for_pattern.compile(r"for\s+{type_pattern}\s+{var_pattern}".format({"type_pattern": type_pattern, "var_pattern": var_pattern}))
@@ -187,52 +182,6 @@ func process_line(line: String, file: FileAccess) -> void:
 	if (first_token == "static" and line_tokens[1] == "fn"):
 		line_tokens[1] = "func"
 
-	# Multi line documentation comments
-	if first_token == '"""':
-		if not is_in_multiline_doc_comment:
-			is_in_multiline_doc_comment = true
-		else:
-			is_in_multiline_doc_comment = false
-
-		return
-
-	if is_in_multiline_doc_comment:
-		file.store_line("## " + line)
-		return
-
-	# Ignore comments
-	if first_token == "#":
-		for token in preprocessor_statements:
-			if token == first_token:
-				file.store_line(line)
-				return
-
-	# Multi line comments
-	if first_token == "/*":
-		is_in_multiline_comment = true
-		line_tokens[0] = "#"
-
-		write_array(line_tokens, file)
-		return
-
-	if is_in_multiline_comment and first_token == "*/" or last_token == "*/":
-		is_in_multiline_comment = false
-		if first_token == "*/":
-			line_tokens[0] = "#"
-		else:
-			line_tokens[line_tokens.size() - 1] = "# "
-
-		write_array(line_tokens, file)
-		return
-
-	if not is_in_multiline_comment:
-		var line_str: String = " ".join(line_tokens)
-		line_str = block_comment_pattern.sub(line_str, "", false)
-		line_tokens = whitespace_split(line_str)
-
-		first_token= line_tokens[0]
-		last_token= line_tokens[line_tokens.size() - 1]
-
 	# Replace consteval variables with their values
 	line_tokens = replace_consteval_vars(line_tokens)
 
@@ -301,7 +250,7 @@ func process_line(line: String, file: FileAccess) -> void:
 
 	# Make it so you don't need to use colons when the compiler can figure out where one should go
 	if (
-		first_token == "static func"
+		line_str.begins_with("static func")
 		or first_token == "func"
 		or first_token == "for"
 		or first_token == "while"
@@ -360,10 +309,12 @@ func process_line(line: String, file: FileAccess) -> void:
 	first_token = line_tokens[0]
 	last_token = line_tokens[line_tokens.size() - 1]
 
+	# onready and export annotations
 	var annotation_match: RegExMatch = annotation_pattern.search(line_str)
 	if annotation_match:
 		line_str = annotation_pattern.sub(line_str, r"@$1 var $3: $2$4")
 
+	# Variable declarations
 	var static_type_var_declaration_match: RegExMatch = static_type_pattern.search(line_str)
 	if static_type_var_declaration_match:
 		var static_type_var_groups: PackedStringArray = static_type_var_declaration_match.strings
@@ -372,9 +323,11 @@ func process_line(line: String, file: FileAccess) -> void:
 		):
 			line_str = static_type_pattern.sub(line_str, r"var $2: $1 =$3")
 
-	var no_equals_match: RegExMatch = static_type_no_equals_pattern.search(line_str)
-	if no_equals_match and not (first_token == "return" or first_token == "extends" or first_token == "class_name" or first_token == "func" or first_token == "static"):
-		line_str = static_type_no_equals_pattern.sub(line_str, r"var $2: $1\n")
+	# Variable definitions
+	var no_eq_line_str: String = line_str + "\n"
+	var no_equals_match: RegExMatch = type_no_equals_pattern.search(no_eq_line_str)
+	if no_equals_match and not (first_token == "return" or first_token == "extends" or first_token == "class_name" or first_token == "func"):
+		line_str = type_no_equals_pattern.sub(no_eq_line_str, r"var $2: $1")
 
 	if first_token == "const":
 		line_str = line_str.replace("const var", "const")
@@ -386,11 +339,9 @@ func process_line(line: String, file: FileAccess) -> void:
 		if typed_for_match and typed_for_match_groups[2] != "in":
 			line_str = typed_for_pattern.sub(line_str, r"for $2: $1")
 
-	if is_in_multiline_comment:
-		line_str = "# " + line_str
-
 	for level in range(indentation_level):
 		line_str = "\t" + line_str
+
 	file.store_line(line_str)
 
 
@@ -403,4 +354,4 @@ func compile(input_file_name: String, output_file_name: String) -> void:
 
 func _init(): 
 	compile_regex()
-	compile("test.gdp", "output.gd")
+	compile("simple_test.gdp", "output.gd")
