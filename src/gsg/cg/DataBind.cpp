@@ -130,10 +130,10 @@ void DataBind::setup_datamodel(Control *node) {
 		MethodBind *method = ClassDB::get_method(base_instance->get_class_name(), node->get_meta(m_property));                                                                               \
                                                                                                                                                                                              \
 		if (method != nullptr) {                                                                                                                                                             \
-			const DataBindCallableProperty property{ .property_type = m_type, .callable = method };                                                                                                \
+			const DataBindCallableProperty property{ .property_type = m_type, .callable = method };                                                                                          \
 			data_bind_node.callable_properties.push_back(property);                                                                                                                          \
 		} else {                                                                                                                                                                             \
-			const DataBindExpressionProperty property{ .property_type = m_type, .callable = get_expression(node->get_meta(m_property)) };                                                          \
+			const DataBindExpressionProperty property{ .property_type = m_type, .callable = get_expression(node->get_meta(m_property)) };                                                    \
 			data_bind_node.expression_properties.push_back(property);                                                                                                                        \
 		}                                                                                                                                                                                    \
 	}

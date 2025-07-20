@@ -5,7 +5,7 @@
 class MeshInstance3D;
 
 namespace flecs {
-	struct entity;
+struct entity;
 }
 
 namespace CG {

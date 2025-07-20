@@ -55,6 +55,7 @@ def get_pch_build_command(file_path: str, json_file_path: str = "compile_command
 
     return ""
 
+
 def build_pch(pch_path: str):
     result = run(f"scons build_pch=yes shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} compiledb=yes")
     if result.returncode != 0:
