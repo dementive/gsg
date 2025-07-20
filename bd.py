@@ -35,8 +35,12 @@ def get_pch_build_command(file_path: str, json_file_path: str = "compile_command
 
         if isinstance(data, list):
             for entry in data:
-                if isinstance(entry, dict) and file_path in entry.get("file"):
-                    command = entry.get("command")
+                if not isinstance(entry, dict):
+                    continue
+
+                command = entry.get("command")
+                file = entry.get("file")
+                if command and file and file_path in file:
                     return command
 
         print(f"No pch command found for file: {file_path}")
@@ -49,6 +53,7 @@ def get_pch_build_command(file_path: str, json_file_path: str = "compile_command
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+    return ""
 
 def build_pch(pch_path: str):
     result = run(f"scons build_pch=yes shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} compiledb=yes")
