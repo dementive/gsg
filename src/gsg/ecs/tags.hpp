@@ -17,6 +17,9 @@ struct RiverProvinceTag {};
 struct ImpassableProvinceTag {};
 struct UninhabitableProvinceTag {};
 
+/* Generic tags */
+struct Selected {};
+
 // Special country tags
 static constexpr const char *OBSERVER_TAG = "OBSERVER_NATION";
 

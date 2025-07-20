@@ -22,20 +22,22 @@ class MapUnit;
 			same_type_value(std::move(p_##same_type_value)) {}                                                                                                                               \
 	operator m_type() const { return same_type_value; }
 
-// Use for storing godot Node pointers in the ECS
-#define MAKE_SAME_PTR(m_class, m_type)                                                                                                                                                       \
-	m_type *pointer;                                                                                                                                                                         \
-	m_class() = default;                                                                                                                                                                     \
-	m_class(m_type *p_ptr) :                                                                                                                                                                 \
-			pointer(p_ptr) {}                                                                                                                                                                \
-	m_type *ptr() { return pointer; }                                                                                                                                                        \
-	const m_type *ptr() const { return pointer; }
-
 /* Generic components */
 
 struct LocKey {
 	MAKE_SAME(LocKey, String)
 	MAKE_SAME_OTHER(LocKey, StringName)
+};
+
+// Use for storing godot Node pointers in the ECS
+template <typename T> struct Ptr {
+	T *pointer;
+	Ptr() = default;
+	Ptr(T *p_ptr) :
+			pointer(p_ptr) {}
+	operator T *() { return pointer; }
+	operator const T *() const { return pointer; }
+	T *operator->() { return pointer; }
 };
 
 /* Province components */
@@ -57,12 +59,7 @@ struct Player {
 	MAKE_SAME(Player, Entity)
 };
 
-struct UnitModel {
-	MAKE_SAME_PTR(UnitModel, MapUnit)
-};
-
 #undef MAKE_SAME
 #undef MAKE_SAME_OTHER
-#undef MAKE_SAME_PTR
 
 } // namespace CG

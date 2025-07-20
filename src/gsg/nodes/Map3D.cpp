@@ -16,6 +16,7 @@
 #include "ecs/tags.hpp"
 
 #include "gui/Hud.hpp"
+#include "MapUnit.hpp"
 
 using namespace CG;
 
@@ -102,6 +103,22 @@ void Map3D::_ctrl_click(const ProvinceEntity &p_province_entity) {
 }
 
 void Map3D::_right_click(const ProvinceEntity &p_province_entity) {
+	const auto selected_units_query = ECS::self->query<Ptr<MapUnit>, Selected>();
+	if (selected_units_query.count() > 0) {
+		const UnitLocator locator = p_province_entity.get<UnitLocator>();
+
+		selected_units_query.each([&locator](const Entity p_entity, Ptr<MapUnit> p_model, Selected) {
+			Transform3D unit_transform;
+			unit_transform.origin = Vector3((locator.position.x - (map_dimensions.x / 2.0)), unit_map_layer, (locator.position.y - (map_dimensions.y / 2.0)));
+			unit_transform.basis.scale(Vector3(locator.scale, locator.scale, locator.scale));
+			unit_transform.basis.rotate(Vector3(unit_x_rotation, locator.orientation, 0.0));
+
+			p_model->set_transform(unit_transform);
+		});
+
+		return;
+	}
+
 	if (!ECS::self->has_relation(p_province_entity, Relation::Owner))
 		return;
 

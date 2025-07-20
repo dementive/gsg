@@ -1,16 +1,6 @@
 #include "MapUnit.hpp"
 
-#include "scene/3d/camera_3d.h"
-#include "scene/main/viewport.h"
-
 using namespace CG;
-
-bool MapUnit::is_inside_selection_box(const Rect2 &p_box) {
-	Camera3D *camera = get_viewport()->get_camera_3d();
-	const Vector2 point = camera->unproject_position(get_global_position());
-
-	return p_box.has_point(point);
-}
 
 void MapUnit::select() {
 	if (selected)

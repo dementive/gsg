@@ -108,7 +108,7 @@ ProvinceColorMap Map::load_map_config() {
 	ecs.component<ProvinceAdjacencyType>();
 	ecs.component<ProvinceBorderType>();
 	ecs.component<Player>();
-	ecs.component<UnitModel>();
+	ecs.component<Ptr<MapUnit>>();
 
 	// Register tag components
 	ecs.component<AreaTag>();
@@ -123,6 +123,8 @@ ProvinceColorMap Map::load_map_config() {
 	ecs.component<LakeProvinceTag>();
 	ecs.component<ImpassableProvinceTag>();
 	ecs.component<UninhabitableProvinceTag>();
+
+	ecs.component<Selected>();
 
 	// Top level scope entities. Adding each entity types to these as children allows using ecs.lookup("p::1") syntax to lookup entities.
 	// These entities hold no data they just act as namespaces inside of flecs.
@@ -401,13 +403,19 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vec<Vector4> &p_segments, float p_b
 void Map::create_unit_models(Node3D *p_map) {
 	const auto unit_query = ECS::self->query_builder<>().with<UnitTag>().build();
 
-	unit_query.each([p_map](UnitEntity unit_entity) {
+	const int count = unit_query.count();
+	int iter_idx = 0;
+
+	unit_query.each([p_map, &iter_idx, count](const UnitEntity &unit_entity) {
+		if (iter_idx >= count)
+			return;
+
 		const CountryEntity owner = ECS::self->get_target(unit_entity, Relation::Owner);
 		const ProvinceEntity capital = ECS::self->get_target(owner, Relation::Capital);
 		const UnitLocator locator = capital.get<UnitLocator>();
 
-		MapUnit *unit_mesh = memnew(MapUnit());
-		unit_entity.set<UnitModel>(unit_mesh);
+		Ptr<MapUnit> unit_mesh = memnew(MapUnit());
+		unit_entity.set<Ptr<MapUnit>>(unit_mesh);
 
 		Transform3D unit_transform;
 		unit_transform.origin = Vector3((locator.position.x - (map_dimensions.x / 2.0)), unit_map_layer, (locator.position.y - (map_dimensions.y / 2.0)));
@@ -421,6 +429,7 @@ void Map::create_unit_models(Node3D *p_map) {
 		unit_mesh->set_alpha_cut_mode(Sprite3D::AlphaCutMode::ALPHA_CUT_DISCARD);
 
 		p_map->add_child(unit_mesh);
+		iter_idx++;
 	});
 }
 

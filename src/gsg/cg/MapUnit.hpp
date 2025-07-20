@@ -11,7 +11,6 @@ protected:
 	static void _bind_methods() {}
 
 public:
-	bool is_inside_selection_box(const Rect2 &p_box);
 	void select();
 	void deselect();
 

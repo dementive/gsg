@@ -7,6 +7,7 @@
 
 #include "ecs/components.hpp"
 #include "ecs/ecs.hpp"
+#include "ecs/tags.hpp"
 
 #include "MapUnit.hpp"
 
@@ -61,9 +62,9 @@ template <bool is_click> void ClickLayer::update_selected_units() {
 	int idx{};
 	Vector3 pos;
 	Viewport *vp = get_viewport();
+	const Camera3D *camera = vp->get_camera_3d();
 
 	if constexpr (is_click) {
-		const Camera3D *camera = vp->get_camera_3d();
 		const Vector2 mouse_position = vp->get_mouse_position();
 
 		const Vector3 origin = camera->project_ray_origin(mouse_position);
@@ -75,21 +76,25 @@ template <bool is_click> void ClickLayer::update_selected_units() {
 	}
 
 	while ((unit = player.target(unit_relation, idx++))) {
-		MapUnit *unit_mesh = unit.get_mut<UnitModel>().ptr();
+		MapUnit *unit_mesh = unit.get_mut<Ptr<MapUnit>>();
 
 		if constexpr (is_click) {
 			const AABB aabb = unit_mesh->get_global_transform().xform(unit_mesh->get_aabb());
 			if (aabb.has_point(pos)) {
 				unit_mesh->select();
+				unit.add<Selected>();
 				vp->set_input_as_handled();
 			} else if (select_box.get_size() == Vector2(0, 0)) {
 				unit_mesh->deselect();
+				unit.remove<Selected>();
 			}
-		} else if (unit_mesh->is_inside_selection_box(select_box)) {
+		} else if (select_box.has_point(camera->unproject_position(unit_mesh->get_global_position()))) {
 			unit_mesh->select();
+			unit.add<Selected>();
 			vp->set_input_as_handled();
 		} else {
 			unit_mesh->deselect();
+			unit.remove<Selected>();
 		}
 	}
 }
