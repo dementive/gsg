@@ -401,15 +401,10 @@ Ref<ArrayMesh> Map::create_border_mesh(const Vec<Vector4> &p_segments, float p_b
 }
 
 void Map::create_unit_models(Node3D *p_map) {
-	const auto unit_query = ECS::self->query_builder<>().with<UnitTag>().build();
+	const auto unit_query = ECS::self->query<UnitTag>();
+	ECS::self->defer_begin();
 
-	const int count = unit_query.count();
-	int iter_idx = 0;
-
-	unit_query.each([p_map, &iter_idx, count](const UnitEntity &unit_entity) {
-		if (iter_idx >= count)
-			return;
-
+	unit_query.each([p_map](const UnitEntity &unit_entity, UnitTag) {
 		const CountryEntity owner = ECS::self->get_target(unit_entity, Relation::Owner);
 		const ProvinceEntity capital = ECS::self->get_target(owner, Relation::Capital);
 		const UnitLocator locator = capital.get<UnitLocator>();
@@ -429,8 +424,9 @@ void Map::create_unit_models(Node3D *p_map) {
 		unit_mesh->set_alpha_cut_mode(Sprite3D::AlphaCutMode::ALPHA_CUT_DISCARD);
 
 		p_map->add_child(unit_mesh);
-		iter_idx++;
 	});
+
+	ECS::self->defer_end();
 }
 
 void Map::create_map_labels() {
