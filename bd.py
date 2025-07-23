@@ -120,9 +120,9 @@ elif args.command == "windows_debug":
 elif args.command == "windows_release":
     run(f"scons profile={scripts_dir}/windows_release.py")
 elif args.command == "compile_timing":
-    run("/home/dm/Documents/ClangBuildAnalyzer/build/ClangBuildAnalyzer --start /home/dm/dev/gsg/src/game")
+    run("/home/dm/Documents/ClangBuildAnalyzer/build/ClangBuildAnalyzer --start /home/dm/dev/gsg/src/gsg")
     run(f"scons ccflags=-ftime-trace use_pch=yes shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} {llvm_so}")
-    run("/home/dm/Documents/ClangBuildAnalyzer/build/ClangBuildAnalyzer --stop /home/dm/dev/gsg/src/game /home/dm/dev/gsg/build/test_timing")
+    run("/home/dm/Documents/ClangBuildAnalyzer/build/ClangBuildAnalyzer --stop /home/dm/dev/gsg/src/gsg /home/dm/dev/gsg/build/test_timing")
     run("/home/dm/Documents/ClangBuildAnalyzer/build/ClangBuildAnalyzer --analyze /home/dm/dev/gsg/build/test_timing")
 elif args.command == "build_pch":
     build_pch("gsg/src/gsg/pch")

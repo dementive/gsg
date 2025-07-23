@@ -7,8 +7,10 @@
 #include "scene/main/viewport.h"
 #include "scene/resources/3d/world_3d.h"
 
+#include "cg/Locator.hpp"
 #include "cg/Map.hpp"
 #include "cg/MapMode.hpp"
+#include "cg/MapUnit.hpp"
 #include "cg/MapUtils.hpp"
 #include "cg/NodeManager.hpp"
 
@@ -16,7 +18,6 @@
 #include "ecs/tags.hpp"
 
 #include "gui/Hud.hpp"
-#include "MapUnit.hpp"
 
 using namespace CG;
 

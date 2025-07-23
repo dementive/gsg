@@ -3,7 +3,7 @@
 #include "core/templates/hashfuncs.h"
 #include "core/templates/pair.h"
 
-#include "ecs/ecs.hpp"
+#include "flecs/ecs.hpp"
 
 namespace CG {
 

@@ -1,13 +1,10 @@
 #pragma once
 
-#include "core/math/vector4.h"
-#include "core/templates/rid.h"
+#include "core/variant/variant.h"
 
-#include "cg/Locator.hpp"
+#include "flecs/ecs.hpp"
 
 namespace CG {
-
-class MapUnit;
 
 #define MAKE_SAME(m_class, m_type)                                                                                                                                                           \
 	m_type same_type_value;                                                                                                                                                                  \
@@ -49,9 +46,6 @@ struct CrossingLocator {
 struct ProvinceBorderMeshRID {
 	MAKE_SAME(ProvinceBorderMeshRID, RID)
 };
-
-struct UnitLocator : Locator {};
-struct TextLocator : Locator {};
 
 /* Country components */
 

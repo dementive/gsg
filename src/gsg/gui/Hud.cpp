@@ -3,10 +3,9 @@
 #include "cg/MapMode.hpp"
 #include "cg/NodeManager.hpp"
 
-#include "ecs/ecs.hpp"
+#include "ecs/components.hpp"
 
-#include "components.hpp"
-#include "Map3D.hpp"
+#include "nodes/Map3D.hpp"
 
 using namespace CG;
 

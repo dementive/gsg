@@ -13,15 +13,14 @@
 #include "scene/resources/shader.h"
 #include "scene/resources/surface_tool.h"
 
+#include "cg/astar.hpp"
 #include "cg/csv.hpp"
 #include "cg/MapMode.hpp"
 
 #include "ecs/components.hpp"
-#include "ecs/ecs.hpp"
-#include "ecs/entity.hpp"
 #include "ecs/Provinces.hpp"
-#include "ecs/tags.hpp"
 
+#include "Locator.hpp"
 #include "MapLabel.hpp"
 #include "MapUnit.hpp"
 #include "MapUtils.hpp"
@@ -109,6 +108,7 @@ ProvinceColorMap Map::load_map_config() {
 	ecs.component<ProvinceBorderType>();
 	ecs.component<Player>();
 	ecs.component<Ptr<MapUnit>>();
+	ecs.component<AStar>();
 
 	// Register tag components
 	ecs.component<AreaTag>();
@@ -246,7 +246,8 @@ ProvinceColorMap Map::load_map_config() {
 		country_entity.set<Color>(color);
 		country_entity.set<LocKey>(section);
 
-		// Add a unit entity at every countries capital
+		// country_entity.set<AStar>(section);
+		//  Add a unit entity at every countries capital
 		const UnitEntity unit_entity = ecs.entity();
 
 		unit_entity.add(Relationship(Owner), country_entity);

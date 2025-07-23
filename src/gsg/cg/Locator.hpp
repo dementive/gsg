@@ -5,7 +5,7 @@
 
 #include "ecs/entity.hpp"
 
-#include "Vec.hpp"
+#include "templates/Vec.hpp"
 
 #endif
 
@@ -19,6 +19,9 @@ struct Locator {
 	bool operator!=(const Locator &other) const;
 	bool operator==(const Locator &other) const;
 };
+
+struct UnitLocator : Locator {};
+struct TextLocator : Locator {};
 
 #ifdef TOOLS_ENABLED
 

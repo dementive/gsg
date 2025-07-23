@@ -5,11 +5,11 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/main/viewport.h"
 
-#include "ecs/components.hpp"
-#include "ecs/ecs.hpp"
-#include "ecs/tags.hpp"
+#include "cg/MapUnit.hpp"
 
-#include "MapUnit.hpp"
+#include "ecs/components.hpp"
+#include "ecs/entity.hpp"
+#include "ecs/tags.hpp"
 
 using namespace CG;
 

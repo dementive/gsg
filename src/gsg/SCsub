@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 import os
 
-from misc.gsg.scons_funcs import *
-
-
 from typing import TYPE_CHECKING
 
 # pyright doesn't understand the above import since the module is outside of the godot tree, it can figure out the relative imports though
 if TYPE_CHECKING:
     from ....godot.misc.utility.scons_hints import *
     from ....godot.misc.gsg.scons_funcs import *
+else:
+    from misc.gsg.scons_funcs import *
 
 
 Import("env")
@@ -22,7 +21,7 @@ set_flecs_defines(env_gsg)
 
 # Get sources
 sources = find_cpp_files(env_gsg)
-env_gsg.Append(CPPPATH=find_header_dirs())
+env_gsg.Append(CPPPATH=".")
 
 set_cpp_standard(env_gsg)
 enable_all_warnings(env_gsg)

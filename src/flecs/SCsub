@@ -2,13 +2,14 @@
 
 import os
 
-from misc.gsg.scons_funcs import *  # Imports are relative to the godot SConstruct file
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ....godot.misc.utility.scons_hints import *
     from ....godot.misc.gsg.scons_funcs import *
+else:
+    from misc.gsg.scons_funcs import *
 
 Import("env")
 Import("env_modules")
@@ -27,8 +28,8 @@ def build_flecs():
 
     flecs_sources: list[str] = ["flecs.c"]
 
-    env_flecs.Append(CPPPATH=find_header_dirs())
     set_flecs_defines(env_flecs)
+    env_flecs.Append(CPPPATH=".")
 
     # Compile flecs.c with C99
     if not env_flecs.msvc:
@@ -53,7 +54,7 @@ def build_module():
     enable_all_warnings(env_module)
     set_flecs_defines(env_module)
 
-    env_module.Append(CPPPATH=find_header_dirs())
+    env_module.Append(CPPPATH=".")
     env_module.add_source_files(env.modules_sources, module_sources)
 
 
