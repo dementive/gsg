@@ -92,8 +92,8 @@ void Map::register_ecs() {
 	ecs.component<ProvinceBorderType>();
 	ecs.component<Player>();
 	ecs.component<Ptr<MapUnit>>();
-	ecs.component<LandAStar>();
-	ecs.component<NavalAStar>();
+	ecs.component<Ptr<LandAStar>>();
+	ecs.component<Ptr<NavalAStar>>();
 
 	// Register tag components
 	ecs.component<AreaTag>();
@@ -281,18 +281,41 @@ void Map::load_country_config() {
 		// Calculate astar pathfinding for land and water
 		// Land points are everywhere the country has military access
 		// Water points are every navigable water province a country has in naval range or ports they have military access in.
-		LandAStar land_nav = LandAStar();
+		LandAStar *land_nav = memnew(LandAStar());
 
 		const RelationEntity province_relation = ECS::self->get_relation(Relation::Province);
+		const RelationEntity adjacency_relation = ECS::self->get_relation(Relation::Adjacency);
 
-		ProvinceEntity entity;
+		ProvinceEntity province_entity;
 		int idx = 0;
 
-		// while ((entity = country_entity.target(province_relation, idx++))) {
-		// 	entity.get<UnitLocator>();
-		// }
+		LocalVector<ProvinceEntity> points;
 
-		country_entity.set<LandAStar>(land_nav);
+		// Add points for every owned province
+		while ((province_entity = country_entity.target(province_relation, idx++))) {
+			const UnitLocator &locator = province_entity.get<UnitLocator>();
+			land_nav->add_point(atoi(province_entity.name().c_str()), locator.position);
+			points.push_back(province_entity);
+		}
+
+		// Connect points to adjacencies that are also points in the graph
+		for (const ProvinceEntity point : points) {
+			Entity adjacency_entity;
+			int adj_idx = 0;
+			while ((adjacency_entity = point.target(adjacency_relation, adj_idx++))) {
+				const ProvinceEntity to = ecs.get_target(adjacency_entity, Relation::AdjacencyTo);
+				const ProvinceEntity from = ecs.get_target(adjacency_entity, Relation::AdjacencyFrom);
+
+				const int p_to = atoi(to.name().c_str());
+				const int p_from = atoi(from.name().c_str());
+
+				if (land_nav->has_point(p_to) and land_nav->has_point(p_from))
+					land_nav->connect_points(p_to, p_from);
+			}
+		}
+
+		country_entity.set<Ptr<LandAStar>>(land_nav);
+		// TODO - naval astar path finding
 	}
 }
 
@@ -447,6 +470,7 @@ void Map::create_unit_models(Node3D *p_map) {
 		const CountryEntity owner = ECS::self->get_target(unit_entity, Relation::Owner);
 		const ProvinceEntity capital = ECS::self->get_target(owner, Relation::Capital);
 		const UnitLocator locator = capital.get<UnitLocator>();
+		unit_entity.add(ECS::self->get_relation(Relation::Location), capital);
 
 		Ptr<MapUnit> unit_mesh = memnew(MapUnit());
 		unit_entity.set<Ptr<MapUnit>>(unit_mesh);
@@ -738,13 +762,33 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 
 	register_ecs();
 	const ProvinceColorMap provinces_map = load_provinces_config();
-	if constexpr (!is_map_editor)
+	if constexpr (!is_map_editor) {
 		load_locators();
 
-	load();
+		// Parse border crossings
+		const Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
+
+		// Fill in crossing adjacencies
+		for (const Vector<Variant> &crossing : crossings) {
+			const Entity adjacency_entity = ecs.entity();
+			const ProvinceEntity to_entity = ecs.scope_lookup(Scope::Province, crossing[0]);
+			const ProvinceEntity from_entity = ecs.scope_lookup(Scope::Province, crossing[1]);
+
+			adjacency_entity.add(Relationship(AdjacencyTo), to_entity);
+			adjacency_entity.add(Relationship(AdjacencyFrom), from_entity);
+			adjacency_entity.set<ProvinceAdjacencyType>(ProvinceAdjacencyType::Crossing);
+			adjacency_entity.set<CrossingLocator>(Vector4(crossing[2], crossing[3], crossing[4], crossing[5]));
+
+			to_entity.add(Relationship(Adjacency), adjacency_entity);
+			from_entity.add(Relationship(Adjacency), adjacency_entity);
+		}
+	}
 
 	const Ref<ConfigFile> map_data_config = memnew(ConfigFile());
 	map_data_config->load("res://data/gen/map_data.cfg");
+
+	create_border_meshes(p_map->get_world_3d()->get_scenario(), map_data_config->get_value("map_data", "borders"), false);
+	load();
 
 	const int province_image_width = map_data_config->get_value("map_data", "width");
 	const int province_image_height = map_data_config->get_value("map_data", "height");
@@ -762,27 +806,7 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 
 		create_map_labels();
 		create_unit_models(p_map);
-
-		// Parse border crossings
-		const Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
-
-		// Fill in crossing adjacencies
-		for (const Vector<Variant> &crossing : crossings) {
-			const Entity adjacency_entity = ecs.entity();
-			const ProvinceEntity to_entity = ecs.scope_lookup(Scope::Province, crossing[0]);
-			const ProvinceEntity from_entity = ecs.scope_lookup(Scope::Province, crossing[1]);
-
-			adjacency_entity.add(Relationship(AdjacencyTo), to_entity);
-			adjacency_entity.add(Relationship(AdjacencyFrom), from_entity);
-			adjacency_entity.set<ProvinceAdjacencyType>(ProvinceAdjacencyType::Crossing);
-			adjacency_entity.set<CrossingLocator>(Vector4(crossing[2], crossing[3], crossing[4], crossing[5]));
-		}
-
-		create_border_meshes(p_map->get_world_3d()->get_scenario(), map_data_config->get_value("map_data", "borders"), false);
 	}
-
-	if constexpr (is_map_editor)
-		create_border_meshes(p_map->get_world_3d()->get_scenario(), map_data_config->get_value("map_data", "borders"), true);
 }
 
 Ref<ImageTexture> Map::get_lookup_texture() { return ImageTexture::create_from_image(lookup_image); }

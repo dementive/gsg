@@ -7,6 +7,7 @@
 #include "scene/main/viewport.h"
 #include "scene/resources/3d/world_3d.h"
 
+#include "cg/astar.hpp"
 #include "cg/Locator.hpp"
 #include "cg/Map.hpp"
 #include "cg/MapMode.hpp"
@@ -106,15 +107,31 @@ void Map3D::_ctrl_click(const ProvinceEntity &p_province_entity) {
 void Map3D::_right_click(const ProvinceEntity &p_province_entity) {
 	const auto selected_units_query = ECS::self->query<Ptr<MapUnit>, Selected>();
 	if (selected_units_query.count() > 0) {
-		const UnitLocator locator = p_province_entity.get<UnitLocator>();
+		const UnitLocator destination_locator = p_province_entity.get<UnitLocator>();
 
-		selected_units_query.each([&locator](const Entity p_entity, Ptr<MapUnit> p_model, Selected) {
+		const CountryEntity player = ECS::self->get<Player>();
+		Ptr<LandAStar> land_nav = player.get<Ptr<LandAStar>>();
+
+		selected_units_query.each([&destination_locator, &p_province_entity, &land_nav](const UnitEntity unit_entity, Ptr<MapUnit> p_model, Selected) {
+			const ProvinceEntity current_location = ECS::self->get_target(unit_entity, Relation::Location);
+
+			// Return if already at destination
+			if (current_location == p_province_entity)
+				return;
+
+			// Return if unit can't navigate from current point to destination point.
+			if (!land_nav->are_points_connected(atoi(p_province_entity.name().c_str()), atoi(current_location.name().c_str())))
+				return;
+
 			Transform3D unit_transform;
-			unit_transform.origin = Vector3((locator.position.x - (map_dimensions.x / 2.0)), unit_map_layer, (locator.position.y - (map_dimensions.y / 2.0)));
-			unit_transform.basis.scale(Vector3(locator.scale, locator.scale, locator.scale));
-			unit_transform.basis.rotate(Vector3(unit_x_rotation, locator.orientation, 0.0));
+			unit_transform.origin = Vector3((destination_locator.position.x - (map_dimensions.x / 2.0)), unit_map_layer, (destination_locator.position.y - (map_dimensions.y / 2.0)));
+			unit_transform.basis.scale(Vector3(destination_locator.scale, destination_locator.scale, destination_locator.scale));
+			unit_transform.basis.rotate(Vector3(unit_x_rotation, destination_locator.orientation, 0.0));
 
 			p_model->set_transform(unit_transform);
+
+			unit_entity.remove(ECS::self->get_relation(Relation::Location), current_location);
+			unit_entity.add(ECS::self->get_relation(Relation::Location), p_province_entity);
 		});
 
 		return;

@@ -30,6 +30,7 @@ void ECS::register_relations() {
 		{ Relation::Owner, Scope::Country },
 		{ Relation::Unit, Scope::Unit },
 		{ Relation::Province, Scope::Province },
+		{ Relation::Location, Scope::Province },
 		{ Relation::InArea, Scope::Area }, // Province in an area
 		{ Relation::InRegion, Scope::Region }, // Province/area in a region
 		{ Relation::ProvinceIn, Scope::Province }, // Province in a region/area

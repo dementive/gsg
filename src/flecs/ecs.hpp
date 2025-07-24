@@ -16,6 +16,7 @@ enum class Relation : uint8_t {
 	Owner,
 	Unit,
 	Province, // owned province
+	Location,
 	InArea,
 	InRegion,
 	ProvinceIn,
