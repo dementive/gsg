@@ -111,4 +111,7 @@ public:
 	~AStar();
 };
 
+class LandAStar : public AStar {};
+class NavalAStar : public AStar {};
+
 } // namespace CG

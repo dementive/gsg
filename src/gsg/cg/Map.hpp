@@ -46,7 +46,12 @@ private:
 
 	static Color get_random_area_color();
 	static Color get_lookup_color(ProvinceIndex p_province_id);
-	ProvinceColorMap load_map_config();
+
+	void load();
+	void register_ecs();
+	ProvinceColorMap load_provinces_config();
+	void load_map_config();
+	void load_country_config();
 
 	static bool is_lake_border(const Border &p_border);
 	static void fill_province_adjacency_data(const Border &p_border);

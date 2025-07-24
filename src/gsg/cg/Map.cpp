@@ -70,29 +70,13 @@ Color Map::get_lookup_color(ProvinceIndex p_province_id) {
 		static_cast<float>(std::floor(float(p_province_id) / COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1)), 0.0 };
 }
 
-ProvinceColorMap Map::load_map_config() {
+void Map::load() {
+	load_map_config();
+	load_country_config();
+}
+
+void Map::register_ecs() {
 	ECS &ecs = *ECS::self;
-
-	ProvinceColorMap provinces_map{};
-
-	const Ref<ConfigFile> province_config = memnew(ConfigFile());
-	const Ref<ConfigFile> area_config = memnew(ConfigFile());
-	const Ref<ConfigFile> region_config = memnew(ConfigFile());
-	const Ref<ConfigFile> country_config = memnew(ConfigFile());
-
-	if (province_config->load("res://data/provinces.cfg") != OK)
-		return provinces_map;
-	if (country_config->load("res://data/countries.cfg") != OK)
-		return provinces_map;
-	if (region_config->load("res://data/regions.cfg") != OK)
-		return provinces_map;
-	if (area_config->load("res://data/areas.cfg") != OK)
-		return provinces_map;
-
-	const Vector<String> province_sections = province_config->get_sections();
-	const Vector<String> country_sections = country_config->get_sections();
-	const Vector<String> region_sections = region_config->get_sections();
-	const Vector<String> area_sections = area_config->get_sections();
 
 	// Register variant components
 	ecs.component<LocKey>();
@@ -108,7 +92,8 @@ ProvinceColorMap Map::load_map_config() {
 	ecs.component<ProvinceBorderType>();
 	ecs.component<Player>();
 	ecs.component<Ptr<MapUnit>>();
-	ecs.component<AStar>();
+	ecs.component<LandAStar>();
+	ecs.component<NavalAStar>();
 
 	// Register tag components
 	ecs.component<AreaTag>();
@@ -132,6 +117,19 @@ ProvinceColorMap Map::load_map_config() {
 
 	// Create all relationship entities
 	ecs.register_relations();
+}
+
+ProvinceColorMap Map::load_provinces_config() {
+	ECS &ecs = *ECS::self;
+
+	ProvinceColorMap provinces_map{};
+
+	const Ref<ConfigFile> province_config = memnew(ConfigFile());
+
+	if (province_config->load("res://data/provinces.cfg") != OK)
+		return provinces_map;
+
+	const Vector<String> province_sections = province_config->get_sections();
 
 	for (const String &section : province_sections) {
 		const ProvinceIndex province_id = section.to_int();
@@ -166,6 +164,23 @@ ProvinceColorMap Map::load_map_config() {
 		const Color lookup_color = get_lookup_color(province_id);
 		color_to_id_map[lookup_color] = province_id;
 	}
+
+	return provinces_map;
+}
+
+void Map::load_map_config() {
+	ECS &ecs = *ECS::self;
+
+	const Ref<ConfigFile> area_config = memnew(ConfigFile());
+	const Ref<ConfigFile> region_config = memnew(ConfigFile());
+
+	if (region_config->load("res://data/regions.cfg") != OK)
+		return;
+	if (area_config->load("res://data/areas.cfg") != OK)
+		return;
+
+	const Vector<String> region_sections = region_config->get_sections();
+	const Vector<String> area_sections = area_config->get_sections();
 
 	for (const String &section : area_sections) {
 		Color color = area_config->get_value(section, "color", get_random_area_color());
@@ -218,6 +233,16 @@ ProvinceColorMap Map::load_map_config() {
 		region_entity.set<Color>(color);
 		region_entity.set<LocKey>(section);
 	}
+}
+
+void Map::load_country_config() {
+	ECS &ecs = *ECS::self;
+	const Ref<ConfigFile> country_config = memnew(ConfigFile());
+
+	if (country_config->load("res://data/countries.cfg") != OK)
+		return;
+
+	const Vector<String> country_sections = country_config->get_sections();
 
 	const CountryEntity observer_country_entity = ecs.entity(OBSERVER_TAG);
 	observer_country_entity.set<LocKey>(String(OBSERVER_TAG));
@@ -246,16 +271,29 @@ ProvinceColorMap Map::load_map_config() {
 		country_entity.set<Color>(color);
 		country_entity.set<LocKey>(section);
 
-		// country_entity.set<AStar>(section);
-		//  Add a unit entity at every countries capital
+		// Add a unit entity at every countries capital
 		const UnitEntity unit_entity = ecs.entity();
 
 		unit_entity.add(Relationship(Owner), country_entity);
 		country_entity.add(Relationship(Unit), unit_entity);
 		unit_entity.add<UnitTag>();
-	}
 
-	return provinces_map;
+		// Calculate astar pathfinding for land and water
+		// Land points are everywhere the country has military access
+		// Water points are every navigable water province a country has in naval range or ports they have military access in.
+		LandAStar land_nav = LandAStar();
+
+		const RelationEntity province_relation = ECS::self->get_relation(Relation::Province);
+
+		ProvinceEntity entity;
+		int idx = 0;
+
+		// while ((entity = country_entity.target(province_relation, idx++))) {
+		// 	entity.get<UnitLocator>();
+		// }
+
+		country_entity.set<LandAStar>(land_nav);
+	}
 }
 
 bool Map::is_lake_border(const Border &p_border) {
@@ -515,7 +553,9 @@ void Map::load_map_editor(Node3D *p_map) {
 	map_data_cache->store_string(hash_string);
 	print_line("Map data has changed, regenerating data");
 
-	ProvinceColorMap provinces_map = load_map_config();
+	register_ecs();
+	const ProvinceColorMap provinces_map = load_provinces_config();
+	load();
 
 	TypedDictionary<PackedInt32Array, PackedVector4Array> borders_dict;
 	AHashMap<ProvinceEntity, Vec<Vector2>, EntityHasher> pixel_dict;
@@ -696,7 +736,12 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	// probably just add a "bool reloading" parameter to load_map but it's tough because some parts of load_map write to the registry.
 	ecs.reset();
 
-	const ProvinceColorMap provinces_map = load_map_config();
+	register_ecs();
+	const ProvinceColorMap provinces_map = load_provinces_config();
+	if constexpr (!is_map_editor)
+		load_locators();
+
+	load();
 
 	const Ref<ConfigFile> map_data_config = memnew(ConfigFile());
 	map_data_config->load("res://data/gen/map_data.cfg");
@@ -713,7 +758,6 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBF);
 
 	if constexpr (!is_map_editor) {
-		load_locators();
 		load_map_data();
 
 		create_map_labels();
