@@ -71,8 +71,7 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 		return;
 
 	const ProvinceEntity province_entity = ECS::self->scope_lookup(Scope::Province, uitos(province_id));
-	ECS &ecs = *ECS::self;
-	if (mb->is_ctrl_pressed() and ecs.has_relation(province_entity, Relation::Owner)) {
+	if (mb->is_ctrl_pressed() and ECS::self->has_relation(province_entity, Relation::Owner)) {
 		_ctrl_click(province_entity);
 		return;
 	}
@@ -93,14 +92,12 @@ void Map3D::_ctrl_click(const ProvinceEntity &p_province_entity) {
 	const CountryEntity owner = ecs.get_target(p_province_entity, Relation::Owner);
 	const CountryEntity current_player = ecs.get<Player>();
 
-	if (current_player == owner) {
-		ecs.set<Player>(ecs.lookup(OBSERVER_TAG));
-		print_line("Set player to: Observer");
-	} else {
-		ecs.set<Player>(owner);
-		print_line("Set player to: ", owner.name().c_str());
-	}
+	if (current_player == owner)
+		Map::self->set_player(ecs.lookup(OBSERVER_TAG));
+	else
+		Map::self->set_player(owner);
 
+	const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
 	get_viewport()->set_input_as_handled();
 }
 

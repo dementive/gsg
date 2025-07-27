@@ -82,6 +82,8 @@ public:
 	ProvinceColorMap get_color_to_id_map();
 	template <MapMode T> Ref<ImageTexture> get_map_mode();
 
+	void set_player(const CountryEntity &p_player);
+
 	~Map();
 
 private:

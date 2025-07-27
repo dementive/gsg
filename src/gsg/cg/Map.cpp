@@ -19,6 +19,7 @@
 
 #include "ecs/components.hpp"
 #include "ecs/Provinces.hpp"
+#include "ecs/tags.hpp"
 
 #include "Locator.hpp"
 #include "MapLabel.hpp"
@@ -108,6 +109,8 @@ void Map::register_ecs() {
 	ecs.component<LakeProvinceTag>();
 	ecs.component<ImpassableProvinceTag>();
 	ecs.component<UninhabitableProvinceTag>();
+	ecs.component<InFogOfWar>();
+	ecs.component<Discovered>();
 
 	ecs.component<Selected>();
 
@@ -586,7 +589,7 @@ void Map::load_map_editor(Node3D *p_map) {
 
 	const Ref<Image> province_image = province_texture->get_image();
 	const int province_image_width = province_image->get_width();
-	const int province_image_height = province_image->get_width();
+	const int province_image_height = province_image->get_height();
 
 	const Ref<ConfigFile> map_data_config = memnew(ConfigFile());
 	map_data_config->set_value("map_data", "width", province_image_width);
@@ -599,8 +602,7 @@ void Map::load_map_editor(Node3D *p_map) {
 	float *lookup_write_ptr{};
 	Vector<uint8_t> lookup_image_data;
 	lookup_image_data.resize(static_cast<size_t>(province_image_width) * province_image_height * 2 * sizeof(float));
-	uint8_t *lookup_ptr = lookup_image_data.ptrw();
-	lookup_write_ptr = reinterpret_cast<float *>(lookup_ptr);
+	lookup_write_ptr = reinterpret_cast<float *>(lookup_image_data.ptrw());
 
 	ECS &ecs = *ECS::self;
 
@@ -919,6 +921,67 @@ template <MapMode T> Ref<ImageTexture> Map::get_map_mode() {
 	}
 
 	return ImageTexture::create_from_image(map_mode_image);
+}
+
+// Ref<Image> Map::get_fow_image() {
+// 	static constexpr int FOW_IMAGE_SCALE = 1;
+// 	const int fow_image_width = map_dimensions.x / FOW_IMAGE_SCALE;
+// 	const int fow_image_height = map_dimensions.y / FOW_IMAGE_SCALE;
+
+// 	// Create fow image as RGF Image
+// 	float *fow_write_ptr{};
+// 	Vector<uint8_t> fow_image_data;
+// 	fow_image_data.resize(static_cast<size_t>(fow_image_width) * fow_image_height * 2 * sizeof(float));
+// 	fow_write_ptr = reinterpret_cast<float *>(fow_image_data.ptrw());
+
+// 	for (int x = 0; x < fow_image_width; ++x) {
+// 		for (int y = 0; y < fow_image_height; ++y) {
+// 			const Color province_color = lookup_image->get_pixelv(Vector2(x * FOW_IMAGE_SCALE, y * FOW_IMAGE_SCALE));
+// 			const ProvinceIndex province_id = get_color_to_id_map().get(province_color);
+// 			if (province_id == 0)
+// 				continue;
+
+// 			const ProvinceEntity province_entity = ECS::self->scope_lookup(Scope::Province, uitos(province_id));
+// 			const size_t fow_index = (static_cast<size_t>(y) * fow_image_width + x) * 2;
+
+// 			if (province_entity.has<InFogOfWar>()) {
+// 				fow_write_ptr[fow_index + 0] = 1.0;
+// 				fow_write_ptr[fow_index + 1] = 0.0;
+// 			} else {
+// 				fow_write_ptr[fow_index + 0] = 0.0;
+// 				fow_write_ptr[fow_index + 1] = 1.0;
+// 			}
+// 		}
+// 	}
+
+// 	Ref<Image> fow_image = Image::create_from_data(fow_image_width, fow_image_height, false, Image::FORMAT_RGF, fow_image_data);
+// 	fow_image->save_exr("res://gfx/gen/fow_mask.exr");
+// 	return fow_image;
+// }
+
+void Map::set_player(const CountryEntity &p_player) {
+	ECS::self->set<Player>(p_player);
+
+	const auto province_query = ECS::self->query<ProvinceTag>();
+
+	// disable fow for all provinces if observer
+	if (p_player == ECS::self->lookup(OBSERVER_TAG)) {
+		province_query.each([](const ProvinceEntity &province_entity, ProvinceTag) {
+			if (province_entity.has<InFogOfWar>())
+				province_entity.remove<InFogOfWar>();
+		});
+
+		return;
+	}
+
+	// enable fow for owned provinces
+	const RelationEntity province_relation = ECS::self->get_relation(Relation::Province);
+	province_query.each([&p_player, &province_relation](const ProvinceEntity &province_entity, ProvinceTag) {
+		if (p_player.has(province_relation, province_entity))
+			province_entity.add<InFogOfWar>();
+		else if (province_entity.has<InFogOfWar>())
+			province_entity.remove<InFogOfWar>();
+	});
 }
 
 Map::~Map() {

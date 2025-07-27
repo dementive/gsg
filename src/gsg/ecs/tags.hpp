@@ -17,6 +17,9 @@ struct RiverProvinceTag {};
 struct ImpassableProvinceTag {};
 struct UninhabitableProvinceTag {};
 
+struct InFogOfWar {};
+struct Discovered {};
+
 /* Generic tags */
 struct Selected {};
 
