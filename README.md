@@ -30,23 +30,13 @@ Thankfully this data doesn't actually have to be computed every time the game is
 
 - Grand strategy map camera with camera bounds, zooming, movement, mouse panning, rotation, and edge scrolling.
 
-## TODO
-
-- Province adjacency and crossings
-
 - Unit path finding between province unit locators for ships and land units.
 
-- Tooltip that shows up when hovering over a province with info about it.
+## TODO
 
-- Dynamic map objects placed at locator positions (ports, cities, special buildings, etc...)
-
-- Fog of war system
+- Fog of war system. Currently the simulation knows which provinces are in fog of war and can appropriately hide models but there is no fog of war rendering yet.
 
 - Surround map clouds shader. This is sorta implemented but not working how I want, the clouds should extend to everywhere the camera can see.
-
-- 3D map objects like trees
-
-- Roads spline network
 
 - Subdivide map mesh into a bunch of quads so culling will work. Will need to figure out correct number of subdivisions, generate the meshes, and then do some UV adjustments in the Map vertex shader.
 
