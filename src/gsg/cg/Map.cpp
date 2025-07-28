@@ -586,8 +586,6 @@ void Map::load_map_editor(Node3D *p_map) {
 	const int province_image_height = province_image->get_height();
 	map_dimensions = Vector2i(province_image_width, province_image_height);
 
-	const Ref<ConfigFile> map_data_config = memnew(ConfigFile());
-
 	// Set Map node position, makes the world coords the same as the map coords
 	p_map->set_position(Vector3(province_image_width / 2.0, 0, province_image_height / 2.0));
 
@@ -689,8 +687,9 @@ void Map::load_map_editor(Node3D *p_map) {
 	}
 
 	province_data_config->save("res://data/gen/province_data.cfg");
-	map_data_config->set_value("map_data", "borders", borders_dict);
-	map_data_config->save("res://data/gen/map_data.cfg");
+
+	const Ref<FileAccess> map_data_save_cache = FileAccess::open("res://data/gen/map_data.cache", FileAccess::WRITE);
+	map_data_save_cache->store_var(borders_dict);
 }
 
 #endif
@@ -780,10 +779,10 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 		}
 	}
 
-	const Ref<ConfigFile> map_data_config = memnew(ConfigFile());
-	map_data_config->load("res://data/gen/map_data.cfg");
+	const Ref<FileAccess> map_data_save_cache = FileAccess::open("res://data/gen/map_data.cache", FileAccess::READ);
+	const Dictionary borders_dict = map_data_save_cache->get_var();
 
-	create_border_meshes(p_map->get_world_3d()->get_scenario(), map_data_config->get_value("map_data", "borders"), false);
+	create_border_meshes(p_map->get_world_3d()->get_scenario(), borders_dict, false);
 
 	// Load lookup image
 	const Ref<CompressedTexture2D> compressed_lookup_texture = ResourceLoader::load("res://gfx/gen/province_lookup.exr");
