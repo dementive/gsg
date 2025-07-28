@@ -48,10 +48,10 @@ private:
 	static Color get_lookup_color(ProvinceIndex p_province_id);
 
 	void load();
-	void register_ecs();
+	static void register_ecs();
 	ProvinceColorMap load_provinces_config();
-	void load_map_config();
-	void load_country_config();
+	static void load_map_config();
+	static void load_country_config();
 
 	static bool is_lake_border(const Border &p_border);
 	static void fill_province_adjacency_data(const Border &p_border);
@@ -82,7 +82,7 @@ public:
 	ProvinceColorMap get_color_to_id_map();
 	template <MapMode T> Ref<ImageTexture> get_map_mode();
 
-	void set_player(const CountryEntity &p_player);
+	static void set_player(const CountryEntity &p_player);
 
 	~Map();
 
