@@ -1,9 +1,8 @@
 #pragma once
 
 #include "scene/3d/camera_3d.h"
-namespace CG {
 
-static const Vector2i map_dimensions{ 1024, 1024 }; // TODO don't hardcode.
+namespace CG {
 
 inline Vector2 get_map_click_position(const Camera3D *p_camera, Vector2 p_mouse_position) {
 	const Vector3 origin = p_camera->project_ray_origin(p_mouse_position);

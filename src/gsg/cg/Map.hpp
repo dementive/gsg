@@ -50,7 +50,7 @@ private:
 	void load();
 	static void register_ecs();
 	ProvinceColorMap load_provinces_config();
-	static void load_map_config();
+	static void load_setup_config();
 	static void load_country_config();
 
 	static bool is_lake_border(const Border &p_border);
@@ -61,7 +61,7 @@ private:
 	void create_border_materials();
 	static Ref<ArrayMesh> create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
 	void create_map_labels();
-	static void create_unit_models(Node3D *p_map);
+	void create_unit_models(Node3D *p_map);
 	void create_border_meshes(const RID &p_scenario, const Dictionary &p_border_dict, bool is_map_editor);
 	static void load_locators();
 	static void load_map_data();
@@ -85,6 +85,8 @@ public:
 	static void set_player(const CountryEntity &p_player);
 
 	~Map();
+
+	Vector2i map_dimensions;
 
 private:
 	ProvinceColorMap color_to_id_map; // lookup image color -> province id

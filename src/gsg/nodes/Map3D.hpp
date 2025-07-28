@@ -19,7 +19,6 @@ class Map3D : public Node3D {
 
 private:
 	MeshInstance3D *map_mesh{};
-	static inline Vector2i map_dimensions{ 1024, 1024 }; // TODO don't hardcode.
 
 	void _right_click(const ProvinceEntity &p_province_entity);
 	void _left_click(const ProvinceEntity &p_province_entity, const Color &province_color);

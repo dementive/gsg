@@ -459,7 +459,7 @@ EditorPlugin::AfterGUIInput MapEditorPlugin::forward_3d_gui_input(Camera3D *p_ca
 		const Vector2i click_position = get_map_click_position(p_camera, mouse_position);
 
 		// Ignore clicks outside the map
-		if (click_position.x > map_dimensions.x or click_position.x < 0 or click_position.y > map_dimensions.y or click_position.y < 0)
+		if (click_position.x > Map::self->map_dimensions.x or click_position.x < 0 or click_position.y > Map::self->map_dimensions.y or click_position.y < 0)
 			return AFTER_GUI_INPUT_CUSTOM;
 
 		const Color province_color = Map::self->get_lookup_image()->get_pixelv(click_position);

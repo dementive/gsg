@@ -71,11 +71,6 @@ Color Map::get_lookup_color(ProvinceIndex p_province_id) {
 		static_cast<float>(std::floor(float(p_province_id) / COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1)), 0.0 };
 }
 
-void Map::load() {
-	load_map_config();
-	load_country_config();
-}
-
 void Map::register_ecs() {
 	ECS &ecs = *ECS::self;
 
@@ -171,7 +166,7 @@ ProvinceColorMap Map::load_provinces_config() {
 	return provinces_map;
 }
 
-void Map::load_map_config() {
+void Map::load_setup_config() {
 	ECS &ecs = *ECS::self;
 
 	const Ref<ConfigFile> area_config = memnew(ConfigFile());
@@ -469,7 +464,7 @@ void Map::create_unit_models(Node3D *p_map) {
 	const auto unit_query = ECS::self->query<UnitTag>();
 	ECS::self->defer_begin();
 
-	unit_query.each([p_map](const UnitEntity &unit_entity, UnitTag) {
+	unit_query.each([p_map, this](const UnitEntity &unit_entity, UnitTag) {
 		const CountryEntity owner = ECS::self->get_target(unit_entity, Relation::Owner);
 		const ProvinceEntity capital = ECS::self->get_target(owner, Relation::Capital);
 		const UnitLocator locator = capital.get<UnitLocator>();
@@ -582,7 +577,6 @@ void Map::load_map_editor(Node3D *p_map) {
 
 	register_ecs();
 	const ProvinceColorMap provinces_map = load_provinces_config();
-	load();
 
 	TypedDictionary<PackedInt32Array, PackedVector4Array> borders_dict;
 	AHashMap<ProvinceEntity, Vec<Vector2>, EntityHasher> pixel_dict;
@@ -590,10 +584,9 @@ void Map::load_map_editor(Node3D *p_map) {
 	const Ref<Image> province_image = province_texture->get_image();
 	const int province_image_width = province_image->get_width();
 	const int province_image_height = province_image->get_height();
+	map_dimensions = Vector2i(province_image_width, province_image_height);
 
 	const Ref<ConfigFile> map_data_config = memnew(ConfigFile());
-	map_data_config->set_value("map_data", "width", province_image_width);
-	map_data_config->set_value("map_data", "height", province_image_height);
 
 	// Set Map node position, makes the world coords the same as the map coords
 	p_map->set_position(Vector3(province_image_width / 2.0, 0, province_image_height / 2.0));
@@ -677,7 +670,6 @@ void Map::load_map_editor(Node3D *p_map) {
 
 	// Fill in Provinces data from pixel data
 	const Ref<ConfigFile> province_data_config = memnew(ConfigFile());
-	const Ref<ConfigFile> runtime_province_data_config = memnew(ConfigFile());
 
 	for (const KeyValue<ProvinceEntity, Vec<Vector2>> &kv : pixel_dict) {
 		const Vector2 centroid = calculate_centroid(kv.value);
@@ -690,15 +682,13 @@ void Map::load_map_editor(Node3D *p_map) {
 		if (kv.key.has<LandProvinceTag>()) {
 			const CachedMapData map_data = calc_map_data(kv.value, centroid);
 			province_data_config->set_value(province_id_string, "orientation", map_data.orientation);
-			runtime_province_data_config->set_value(province_id_string, "aabb", map_data.aabb);
+			province_data_config->set_value(province_id_string, "aabb", map_data.aabb);
 		}
 
 		province_data_config->set_value(province_id_string, "centroid", centroid);
 	}
 
 	province_data_config->save("res://data/gen/province_data.cfg");
-	runtime_province_data_config->save("res://data/gen/runtime_province_data.cfg");
-
 	map_data_config->set_value("map_data", "borders", borders_dict);
 	map_data_config->save("res://data/gen/map_data.cfg");
 }
@@ -707,13 +697,17 @@ void Map::load_map_editor(Node3D *p_map) {
 
 void Map::load_map_data() {
 	const Ref<ConfigFile> config = memnew(ConfigFile());
-	config->load("res://data/gen/runtime_province_data.cfg");
+	config->load("res://data/gen/province_data.cfg");
 	const Vector<String> sections = config->get_sections();
+	const AABB default_value = AABB();
 
 	for (const String &section : sections) {
 		const ProvinceEntity entity = ECS::self->scope_lookup(Scope::Province, section);
 
-		const AABB aabb = config->get_value(section, "aabb");
+		const AABB aabb = config->get_value(section, "aabb", default_value);
+		if (aabb.is_same(default_value))
+			continue;
+
 		entity.set<AABB>(aabb);
 	}
 }
@@ -790,21 +784,21 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	map_data_config->load("res://data/gen/map_data.cfg");
 
 	create_border_meshes(p_map->get_world_3d()->get_scenario(), map_data_config->get_value("map_data", "borders"), false);
-	load();
-
-	const int province_image_width = map_data_config->get_value("map_data", "width");
-	const int province_image_height = map_data_config->get_value("map_data", "height");
-
-	// Set Map node position, makes the world coords the same as the map coords
-	p_map->set_position(Vector3(province_image_width / 2.0, 0, province_image_height / 2.0));
 
 	// Load lookup image
 	const Ref<CompressedTexture2D> compressed_lookup_texture = ResourceLoader::load("res://gfx/gen/province_lookup.exr");
 	lookup_image = compressed_lookup_texture->get_image();
+
+	map_dimensions = Vector2i(lookup_image->get_width(), lookup_image->get_height());
 	map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBF);
+
+	// Set Map node position, makes the world coords the same as the map coords
+	p_map->set_position(Vector3(map_dimensions.x / 2.0, 0, map_dimensions.y / 2.0));
 
 	if constexpr (!is_map_editor) {
 		load_map_data();
+		load_setup_config();
+		load_country_config();
 
 		create_map_labels();
 		create_unit_models(p_map);

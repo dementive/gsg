@@ -62,7 +62,7 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 	const Vector2i click_position = get_map_click_position(camera, mouse_position);
 
 	// Ignore clicks outside the map
-	if (click_position.x > map_dimensions.x or click_position.x < 0 or click_position.y > map_dimensions.y or click_position.y < 0)
+	if (click_position.x > Map::self->map_dimensions.x or click_position.x < 0 or click_position.y > Map::self->map_dimensions.y or click_position.y < 0)
 		return;
 
 	const Color province_color = Map::self->get_lookup_image()->get_pixelv(click_position);
@@ -121,7 +121,8 @@ void Map3D::_right_click(const ProvinceEntity &p_province_entity) {
 				return;
 
 			Transform3D unit_transform;
-			unit_transform.origin = Vector3((destination_locator.position.x - (map_dimensions.x / 2.0)), unit_map_layer, (destination_locator.position.y - (map_dimensions.y / 2.0)));
+			unit_transform.origin =
+					Vector3((destination_locator.position.x - (Map::self->map_dimensions.x / 2.0)), unit_map_layer, (destination_locator.position.y - (Map::self->map_dimensions.y / 2.0)));
 			unit_transform.basis.scale(Vector3(destination_locator.scale, destination_locator.scale, destination_locator.scale));
 			unit_transform.basis.rotate(Vector3(unit_x_rotation, destination_locator.orientation, 0.0));
 
