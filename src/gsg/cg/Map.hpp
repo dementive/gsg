@@ -78,20 +78,19 @@ public:
 #endif
 
 	Ref<Image> get_lookup_image();
-	Ref<ImageTexture> get_lookup_texture();
 	ProvinceColorMap get_color_to_id_map();
-	template <MapMode T> Ref<ImageTexture> get_map_mode();
+	template <MapMode T> void set_map_mode();
 
 	static void set_player(const CountryEntity &p_player);
 
 	~Map();
 
 	Vector2i map_dimensions;
+	Ref<ImageTexture> map_mode_image;
+	Ref<ImageTexture> lookup_image;
 
 private:
 	ProvinceColorMap color_to_id_map; // lookup image color -> province id
-	Ref<Image> lookup_image;
-	Ref<Image> map_mode_image;
 
 	struct BorderMeshStorage {
 		Ref<ArrayMesh> mesh;

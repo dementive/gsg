@@ -9,6 +9,7 @@
 #include "scene/3d/node_3d.h"
 #include "scene/3d/sprite_3d.h"
 #include "scene/resources/compressed_texture.h"
+#include "scene/resources/image_texture.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/shader.h"
 #include "scene/resources/surface_tool.h"
@@ -663,8 +664,9 @@ void Map::load_map_editor(Node3D *p_map) {
 	}
 
 	// Create lookup image from bytes
-	lookup_image = Image::create_from_data(province_image_width, province_image_height, false, Image::FORMAT_RGF, lookup_image_data);
-	lookup_image->save_exr("res://gfx/gen/province_lookup.exr");
+	const Ref<Image> lookup_img = Image::create_from_data(province_image_width, province_image_height, false, Image::FORMAT_RGF, lookup_image_data);
+	lookup_image = ImageTexture::create_from_image(lookup_img);
+	lookup_img->save_exr("res://gfx/gen/province_lookup.exr");
 
 	// Fill in Provinces data from pixel data
 	const Ref<ConfigFile> province_data_config = memnew(ConfigFile());
@@ -786,10 +788,10 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 
 	// Load lookup image
 	const Ref<CompressedTexture2D> compressed_lookup_texture = ResourceLoader::load("res://gfx/gen/province_lookup.exr");
-	lookup_image = compressed_lookup_texture->get_image();
+	lookup_image = ImageTexture::create_from_image(compressed_lookup_texture->get_image());
 
 	map_dimensions = Vector2i(lookup_image->get_width(), lookup_image->get_height());
-	map_mode_image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBF);
+	map_mode_image = ImageTexture::create_from_image(Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBF));
 
 	// Set Map node position, makes the world coords the same as the map coords
 	p_map->set_position(Vector3(map_dimensions.x / 2.0, 0, map_dimensions.y / 2.0));
@@ -804,9 +806,7 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	}
 }
 
-Ref<ImageTexture> Map::get_lookup_texture() { return ImageTexture::create_from_image(lookup_image); }
-
-Ref<Image> Map::get_lookup_image() { return lookup_image; }
+Ref<Image> Map::get_lookup_image() { return lookup_image->get_image(); }
 
 ProvinceColorMap Map::get_color_to_id_map() { return color_to_id_map; }
 
@@ -888,12 +888,13 @@ Color Map::get_country_map_mode(ProvinceEntity p_province_entity) {
 	return discard_color;
 }
 
-template Ref<ImageTexture> Map::get_map_mode<MapMode::Area>();
-template Ref<ImageTexture> Map::get_map_mode<MapMode::Region>();
-template Ref<ImageTexture> Map::get_map_mode<MapMode::Country>();
+template void Map::set_map_mode<MapMode::Area>();
+template void Map::set_map_mode<MapMode::Region>();
+template void Map::set_map_mode<MapMode::Country>();
 
-template <MapMode T> Ref<ImageTexture> Map::get_map_mode() {
-	float *write_ptr = reinterpret_cast<float *>(map_mode_image->ptrw());
+template <MapMode T> void Map::set_map_mode() {
+	const Ref<Image> mm_image = map_mode_image->get_image();
+	float *write_ptr = reinterpret_cast<float *>(mm_image->ptrw());
 
 	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
 		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, std::floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
@@ -913,7 +914,7 @@ template <MapMode T> Ref<ImageTexture> Map::get_map_mode() {
 		write_ptr[(ofs * 3) + 2] = color.b;
 	}
 
-	return ImageTexture::create_from_image(map_mode_image);
+	map_mode_image->update(mm_image);
 }
 
 void Map::set_player(const CountryEntity &p_player) {

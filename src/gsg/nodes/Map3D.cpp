@@ -41,8 +41,9 @@ void Map3D::_notification(int p_what) {
 
 			const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
 
-			material->set_shader_parameter("color_texture", Map::self->get_map_mode<MapMode::Country>());
-			material->set_shader_parameter("lookup_texture", Map::self->get_lookup_texture());
+			Map::self->set_map_mode<MapMode::Country>();
+			material->set_shader_parameter("color_texture", Map::self->map_mode_image);
+			material->set_shader_parameter("lookup_texture", Map::self->lookup_image);
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			NM::clear_temporary_nodes();
@@ -172,13 +173,16 @@ void Map3D::set_map_mode(MapMode p_map_mode) {
 
 	switch (p_map_mode) {
 		case MapMode::Country: {
-			material->set_shader_parameter("color_texture", Map::self->get_map_mode<MapMode::Country>());
+			Map::self->set_map_mode<MapMode::Country>();
+			material->set_shader_parameter("color_texture", Map::self->map_mode_image);
 		} break;
 		case MapMode::Area: {
-			material->set_shader_parameter("color_texture", Map::self->get_map_mode<MapMode::Area>());
+			Map::self->set_map_mode<MapMode::Area>();
+			material->set_shader_parameter("color_texture", Map::self->map_mode_image);
 		} break;
 		case MapMode::Region: {
-			material->set_shader_parameter("color_texture", Map::self->get_map_mode<MapMode::Region>());
+			Map::self->set_map_mode<MapMode::Region>();
+			material->set_shader_parameter("color_texture", Map::self->map_mode_image);
 		} break;
 	}
 }
