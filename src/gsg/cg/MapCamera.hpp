@@ -57,12 +57,12 @@ public:
 
 	void camera_base_move();
 	void camera_zoom_update();
-	void camera_rotate_to_mouse_offsets();
+	void camera_rotate_to_mouse_offsets(const Vector2 &p_mouse_position);
 	void camera_base_rotate();
 	void camera_socket_rotate(float direction);
 	void camera_base_rotate_left_right(float direction);
-	void camera_automatic_pan();
-	void pan_camera();
+	void camera_automatic_pan(const Vector2 &p_mouse_position);
+	void pan_camera(const Vector2 &p_mouse_position);
 	static void set_edge_scrolling(bool checked);
 };
 

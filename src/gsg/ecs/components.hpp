@@ -22,8 +22,8 @@ namespace CG {
 /* Generic components */
 
 struct LocKey {
-	MAKE_SAME(LocKey, String)
-	MAKE_SAME_OTHER(LocKey, StringName)
+	MAKE_SAME(LocKey, StringName)
+	MAKE_SAME_OTHER(LocKey, String)
 };
 
 // Use for storing godot Node pointers in the ECS

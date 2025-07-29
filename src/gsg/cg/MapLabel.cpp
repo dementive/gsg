@@ -69,6 +69,14 @@ void MapLabel::_generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset,
 
 	const bool msdf = TS->font_is_multichannel_signed_distance_field(p_glyph.font_rid);
 
+	const BaseMaterial3D::Transparency mat_transparency = BaseMaterial3D::Transparency::TRANSPARENCY_ALPHA;
+
+	if (dirty_shader) {
+		StandardMaterial3D::get_material_for_2d(
+			false, mat_transparency, false, false, false, msdf, false, false, StandardMaterial3D::TEXTURE_FILTER_LINEAR, StandardMaterial3D::ALPHA_ANTIALIASING_OFF, &shader_rid);
+		dirty_shader = false;
+	}
+
 	for (int j = 0; j < p_glyph.repeat; j++) {
 		const SurfaceKey key = SurfaceKey(tex.get_id(), p_priority, p_outline_size);
 		if (!surfaces.has(key)) {
@@ -91,11 +99,6 @@ void MapLabel::_generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset,
 				RS::get_singleton()->material_set_param(surf.material, "msdf_outline_size", p_outline_size);
 			}
 
-			const BaseMaterial3D::Transparency mat_transparency = BaseMaterial3D::Transparency::TRANSPARENCY_ALPHA;
-
-			RID shader_rid;
-			StandardMaterial3D::get_material_for_2d(
-					false, mat_transparency, false, false, false, msdf, false, false, StandardMaterial3D::TEXTURE_FILTER_LINEAR, StandardMaterial3D::ALPHA_ANTIALIASING_OFF, &shader_rid);
 
 			RS::get_singleton()->material_set_shader(surf.material, shader_rid);
 			RS::get_singleton()->material_set_param(surf.material, "texture_albedo", tex);

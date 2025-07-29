@@ -1,13 +1,12 @@
 #pragma once
-// Static utility functions
+
+#include "core/string/string_name.h"
 
 class Node;
-class String;
 
 namespace CG {
 
-struct UT {
-	static Node *init_scene(const String &p_path);
-};
+Node *init_scene(const String &p_path);
+StringName translate(const StringName &p_message, const StringName &p_context = "");
 
 } // namespace CG

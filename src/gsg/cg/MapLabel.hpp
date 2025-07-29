@@ -13,6 +13,7 @@ class MapLabel {
 private:
 	RID instance;
 	RID mesh;
+	RID shader_rid;
 
 	String text;
 	String xl_text;
@@ -59,6 +60,7 @@ private:
 	bool dirty_lines = true;
 	bool dirty_font = true;
 	bool dirty_text = true;
+	bool dirty_shader = true;
 
 	static constexpr int font_size = 32;
 	static constexpr int outline_size = 1;

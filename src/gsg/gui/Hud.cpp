@@ -14,8 +14,8 @@ Hud::Hud() { set_base_instance(this); }
 void Hud::SetMapMode(int p_map_mode) { NM::map->set_map_mode(static_cast<MapMode>(p_map_mode)); }
 
 String Hud::GetPlayerName() {
-	const Entity player = ECS::self->get<Player>();
-	return tr(player.get<LocKey>());
+	const Entity &player = ECS::self->get<Player>();
+	return player.get<LocKey>();
 }
 
 void Hud::_bind_methods() {

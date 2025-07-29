@@ -25,7 +25,7 @@
 #include "Locator.hpp"
 #include "MapLabel.hpp"
 #include "MapUnit.hpp"
-#include "MapUtils.hpp"
+#include "cg/Utility.hpp"
 
 using namespace CG;
 
@@ -144,7 +144,7 @@ ProvinceColorMap Map::load_provinces_config() {
 		const ProvinceEntity province_entity = ecs.entity(province_name.utf8().ptr());
 		province_entity.child_of(ecs.get_scope(Scope::Province));
 
-		province_entity.set<LocKey>(String("PROV") + section);
+		province_entity.set<LocKey>(translate(String("PROV") + section));
 		province_entity.add<ProvinceTag>();
 
 		if (province_type == "land")
@@ -202,7 +202,7 @@ void Map::load_setup_config() {
 		area_entity.add(Relationship(Capital), capital_entity);
 
 		area_entity.set<Color>(color);
-		area_entity.set<LocKey>(section);
+		area_entity.set<LocKey>(translate(section));
 	}
 
 	for (const String &section : region_sections) {
@@ -230,7 +230,7 @@ void Map::load_setup_config() {
 		region_entity.add(Relationship(Capital), capital_entity);
 
 		region_entity.set<Color>(color);
-		region_entity.set<LocKey>(section);
+		region_entity.set<LocKey>(translate(section));
 	}
 }
 
@@ -244,7 +244,7 @@ void Map::load_country_config() {
 	const Vector<String> country_sections = country_config->get_sections();
 
 	const CountryEntity observer_country_entity = ecs.entity(OBSERVER_TAG);
-	observer_country_entity.set<LocKey>(String(OBSERVER_TAG));
+	observer_country_entity.set<LocKey>(translate(String(OBSERVER_TAG)));
 	ecs.set<Player>(observer_country_entity);
 
 	for (const String &section : country_sections) {
@@ -268,7 +268,7 @@ void Map::load_country_config() {
 		country_entity.add(Relationship(Capital), capital_entity);
 
 		country_entity.set<Color>(color);
-		country_entity.set<LocKey>(section);
+		country_entity.set<LocKey>(translate(section));
 
 		// Add a unit entity at every countries capital
 		const UnitEntity unit_entity = ecs.entity();
@@ -665,7 +665,8 @@ void Map::load_map_editor(Node3D *p_map) {
 
 	// Create lookup image from bytes
 	const Ref<Image> lookup_img = Image::create_from_data(province_image_width, province_image_height, false, Image::FORMAT_RGF, lookup_image_data);
-	lookup_image = ImageTexture::create_from_image(lookup_img);
+	lookup_image.image_texture = ImageTexture::create_from_image(lookup_img);
+	lookup_image.image = lookup_image.image_texture->get_image();
 	lookup_img->save_exr("res://gfx/gen/province_lookup.exr");
 
 	// Fill in Provinces data from pixel data
@@ -788,12 +789,15 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 
 	// Load lookup image
 	const Ref<CompressedTexture2D> compressed_lookup_texture = ResourceLoader::load("res://gfx/gen/province_lookup.exr");
-	lookup_image = ImageTexture::create_from_image(compressed_lookup_texture->get_image());
+	lookup_image.image = compressed_lookup_texture->get_image();
+	lookup_image.image_texture = ImageTexture::create_from_image(lookup_image.image);
 
-	map_dimensions = Vector2i(lookup_image->get_width(), lookup_image->get_height());
-	map_mode_image = ImageTexture::create_from_image(Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBF));
+	map_mode_image.image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBF);
+	map_mode_image.image_texture = ImageTexture::create_from_image(map_mode_image.image);
+	map_mode_image.write_ptr = reinterpret_cast<float *>(map_mode_image.image->ptrw());
 
 	// Set Map node position, makes the world coords the same as the map coords
+	map_dimensions = Vector2i(lookup_image.image_texture->get_width(), lookup_image.image_texture->get_height());
 	p_map->set_position(Vector3(map_dimensions.x / 2.0, 0, map_dimensions.y / 2.0));
 
 	if constexpr (!is_map_editor) {
@@ -805,8 +809,6 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 		create_unit_models(p_map);
 	}
 }
-
-Ref<Image> Map::get_lookup_image() { return lookup_image->get_image(); }
 
 ProvinceColorMap Map::get_color_to_id_map() { return color_to_id_map; }
 
@@ -893,9 +895,6 @@ template void Map::set_map_mode<MapMode::Region>();
 template void Map::set_map_mode<MapMode::Country>();
 
 template <MapMode T> void Map::set_map_mode() {
-	const Ref<Image> mm_image = map_mode_image->get_image();
-	float *write_ptr = reinterpret_cast<float *>(mm_image->ptrw());
-
 	for (uint32_t i = 1; i < color_to_id_map.size() + 1; ++i) {
 		const Vector2i uv = Vector2i(i % COLOR_TEXTURE_DIMENSIONS, std::floor(float(i) / COLOR_TEXTURE_DIMENSIONS));
 		const ProvinceEntity province_entity = ECS::self->scope_lookup(Scope::Province, uitos(i));
@@ -909,12 +908,12 @@ template <MapMode T> void Map::set_map_mode() {
 			color = get_country_map_mode(province_entity);
 
 		const uint32_t ofs = (uv.y * COLOR_TEXTURE_DIMENSIONS) + uv.x;
-		write_ptr[(ofs * 3) + 0] = color.r;
-		write_ptr[(ofs * 3) + 1] = color.g;
-		write_ptr[(ofs * 3) + 2] = color.b;
+		map_mode_image.write_ptr[(ofs * 3) + 0] = color.r;
+		map_mode_image.write_ptr[(ofs * 3) + 1] = color.g;
+		map_mode_image.write_ptr[(ofs * 3) + 2] = color.b;
 	}
 
-	map_mode_image->update(mm_image);
+	map_mode_image.image_texture->update(map_mode_image.image);
 }
 
 void Map::set_player(const CountryEntity &p_player) {
@@ -948,6 +947,8 @@ Map::~Map() {
 
 	for (const RID &material_rid : border_materials)
 		RS::get_singleton()->free(material_rid);
+
+	map_mode_image.write_ptr = nullptr;
 
 	for (const auto &kv : map_labels)
 		if (kv.value != nullptr)

@@ -462,7 +462,7 @@ EditorPlugin::AfterGUIInput MapEditorPlugin::forward_3d_gui_input(Camera3D *p_ca
 		if (click_position.x > Map::self->map_dimensions.x or click_position.x < 0 or click_position.y > Map::self->map_dimensions.y or click_position.y < 0)
 			return AFTER_GUI_INPUT_CUSTOM;
 
-		const Color province_color = Map::self->get_lookup_image()->get_pixelv(click_position);
+		const Color province_color = Map::self->lookup_image.image->get_pixelv(click_position);
 		const ProvinceIndex province_id = Map::self->get_color_to_id_map().get(province_color);
 		if (province_id == 0)
 			return AFTER_GUI_INPUT_CUSTOM;

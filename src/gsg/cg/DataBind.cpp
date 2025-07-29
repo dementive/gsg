@@ -7,7 +7,7 @@
 using namespace CG;
 
 DataBind *DataBind::init(const String &p_path) {
-	Node *scene = UT::init_scene(p_path);
+	Node *scene = init_scene(p_path);
 	DataBind *databind = Object::cast_to<DataBind>(scene->get_child(0));
 
 	if (databind == nullptr) [[unlikely]]
@@ -187,25 +187,25 @@ _ALWAYS_INLINE_ void DataBind::update_properties(Control *node, const auto &prop
 
 	switch (property.property_type) {
 		case VISIBLE: {
-			execute(property.callable, node, "set_visible", Variant::BOOL);
+			execute(property.callable, node, SNAME("set_visible"), Variant::BOOL);
 		} break;
 		case DISABLED: {
-			execute(property.callable, node, "set_disabled", Variant::BOOL);
+			execute(property.callable, node, SNAME("set_disabled"), Variant::BOOL);
 		} break;
 		case TEXT: {
-			execute(property.callable, node, "set_text", Variant::STRING);
+			execute(property.callable, node, SNAME("set_text"), Variant::STRING);
 		} break;
 		case TEXTURE: {
-			execute(property.callable, node, "set_texture", Variant::OBJECT, "Texture2D");
+			execute(property.callable, node, SNAME("set_texture"), Variant::OBJECT, SNAME("Texture2D"));
 		} break;
 		case ICON: {
-			execute(property.callable, node, "set_button_icon", Variant::OBJECT, "Texture2D");
+			execute(property.callable, node, SNAME("set_button_icon"), Variant::OBJECT, SNAME("Texture2D"));
 		} break;
 		case TOOLTIP: {
-			execute(property.callable, node, "set_tooltip_text", Variant::STRING);
+			execute(property.callable, node, SNAME("set_tooltip_text"), Variant::STRING);
 		} break;
 		case PROGRESS: {
-			execute(property.callable, node, "set_value_no_signal", Variant::FLOAT);
+			execute(property.callable, node, SNAME("set_value_no_signal"), Variant::FLOAT);
 		} break;
 	}
 }

@@ -64,56 +64,56 @@ void MapCamera::_notification(int p_what) {
 				return;
 
 			camera_zoom_update();
-			camera_rotate_to_mouse_offsets();
+			camera_rotate_to_mouse_offsets(mouse_position);
 			camera_base_rotate();
 			camera_base_move();
 
-			if (Input::get_singleton()->is_action_just_pressed("camera_pan"))
+			if (Input::get_singleton()->is_action_just_pressed(SNAME("camera_pan")))
 				fixed_mouse_point = mouse_position;
-			if (Input::get_singleton()->is_action_pressed("camera_pan"))
-				pan_camera();
+			if (Input::get_singleton()->is_action_pressed(SNAME("camera_pan")))
+				pan_camera(mouse_position);
 			else
-				camera_automatic_pan(); // don't edge scroll when middle mouse panning
+				camera_automatic_pan(mouse_position); // don't edge scroll when middle mouse panning
 		} break;
 	}
 }
 
 void MapCamera::unhandled_input(const Ref<InputEvent> &event) {
 	// Camera zoom controls
-	if (event->is_action("camera_zoom_in"))
+	if (event->is_action(SNAME("camera_zoom_in")))
 		camera_zoom_direction = -1;
-	else if (event->is_action("camera_zoom_out"))
+	else if (event->is_action(SNAME("camera_zoom_out")))
 		camera_zoom_direction = 1;
 
 	// Keyboard camera rotation
-	if (event->is_action_pressed("camera_rotate_right"))
+	if (event->is_action_pressed(SNAME("camera_rotate_right")))
 		camera_rotation_direction = -1;
-	else if (event->is_action_pressed("camera_rotate_left"))
+	else if (event->is_action_pressed(SNAME("camera_rotate_left")))
 		camera_rotation_direction = 1;
-	else if (event->is_action_released("camera_rotate_right") or event->is_action_released("camera_rotate_left"))
+	else if (event->is_action_released(SNAME("camera_rotate_right")) or event->is_action_released(SNAME("camera_rotate_left")))
 		camera_rotation_direction = 0;
 
 	// Mouse camera rotation
-	if (event->is_action_pressed("camera_rotate"))
+	if (event->is_action_pressed(SNAME("camera_rotate")))
 		mouse_last_position = get_viewport()->get_mouse_position();
-	else if (event->is_action_released("camera_rotate"))
+	else if (event->is_action_released(SNAME("camera_rotate")))
 		mouse_last_position = Vector2(0, 0);
 
 	// Movement
-	if (event->is_action_released("camera_right") or event->is_action_released("camera_left") or event->is_action_released("camera_forward") or event->is_action_released("camera_backward"))
+	if (event->is_action_released(SNAME("camera_right")) or event->is_action_released(SNAME("camera_left")) or event->is_action_released(SNAME("camera_forward")) or event->is_action_released(SNAME("camera_backward")))
 		velocity_direction = Vector3(0, 0, 0);
-	if (Input::get_singleton()->is_action_pressed("camera_forward"))
+	if (Input::get_singleton()->is_action_pressed(SNAME("camera_forward")))
 		velocity_direction -= get_transform().get_basis().get_column(2);
-	if (Input::get_singleton()->is_action_pressed("camera_backward"))
+	if (Input::get_singleton()->is_action_pressed(SNAME("camera_backward")))
 		velocity_direction += get_transform().get_basis().get_column(2);
-	if (Input::get_singleton()->is_action_pressed("camera_right"))
+	if (Input::get_singleton()->is_action_pressed(SNAME("camera_right")))
 		velocity_direction += get_transform().get_basis().get_column(0);
-	if (Input::get_singleton()->is_action_pressed("camera_left"))
+	if (Input::get_singleton()->is_action_pressed(SNAME("camera_left")))
 		velocity_direction -= get_transform().get_basis().get_column(0);
 
 	// If holding both left+right or up+down don't do anything
-	if ((Input::get_singleton()->is_action_pressed("camera_left") and Input::get_singleton()->is_action_pressed("camera_right")) or
-			(Input::get_singleton()->is_action_pressed("camera_forward") and Input::get_singleton()->is_action_pressed("camera_backward"))) {
+	if ((Input::get_singleton()->is_action_pressed(SNAME("camera_left")) and Input::get_singleton()->is_action_pressed(SNAME("camera_right"))) or
+			(Input::get_singleton()->is_action_pressed(SNAME("camera_forward")) and Input::get_singleton()->is_action_pressed(SNAME("camera_backward")))) {
 		velocity_direction = Vector3(0, 0, 0);
 	}
 }
@@ -134,13 +134,13 @@ void MapCamera::camera_zoom_update() {
 	camera_zoom_direction *= CAMERA_ZOOM_SPEED_DAMP;
 }
 
-void MapCamera::camera_rotate_to_mouse_offsets() {
+void MapCamera::camera_rotate_to_mouse_offsets(const Vector2 &p_mouse_position) {
 	if (mouse_last_position == Vector2(0, 0))
 		return;
 
-	Vector2 mouse_offset = get_viewport()->get_mouse_position();
+	Vector2 mouse_offset = p_mouse_position;
 	mouse_offset = mouse_offset - mouse_last_position;
-	mouse_last_position = get_viewport()->get_mouse_position();
+	mouse_last_position = p_mouse_position;
 
 	Vector3 current_rotation = get_rotation();
 	current_rotation.y += mouse_offset.x * CAMERA_MOUSE_ROTATION_SPEED;
@@ -172,7 +172,7 @@ void MapCamera::camera_base_rotate_left_right(const float direction) {
 	set_rotation(current_rotation);
 }
 
-void MapCamera::camera_automatic_pan() {
+void MapCamera::camera_automatic_pan(const Vector2 &p_mouse_position) {
 	if (!edge_scrolling)
 		return;
 
@@ -180,7 +180,7 @@ void MapCamera::camera_automatic_pan() {
 	Vector2 pan_direction = Vector2(-1, -1);
 	const Rect2i viewport_visible_rect = Rect2i(current_viewport->get_visible_rect());
 	const Vector2i viewport_size = viewport_visible_rect.get_size();
-	const Vector2 current_mouse_position = current_viewport->get_mouse_position();
+	const Vector2 current_mouse_position = p_mouse_position;
 
 	if (!is_mouse_inside)
 		return;
@@ -208,11 +208,10 @@ void MapCamera::camera_automatic_pan() {
 	}
 }
 
-void MapCamera::pan_camera() {
-	const Vector2 position = get_viewport()->get_mouse_position();
+void MapCamera::pan_camera(const Vector2 &p_mouse_position) {
 	Vector3 new_position = get_position();
-	new_position.x = new_position.x + (position.x - fixed_mouse_point.x) / mouse_pan_speed;
-	new_position.z = new_position.z + (position.y - fixed_mouse_point.y) / mouse_pan_speed;
+	new_position.x = new_position.x + (p_mouse_position.x - fixed_mouse_point.x) / mouse_pan_speed;
+	new_position.z = new_position.z + (p_mouse_position.y - fixed_mouse_point.y) / mouse_pan_speed;
 
 	if (new_position.distance_to(Vector3(0, 0, 0)) <= camera_max_distance)
 		set_position(new_position);

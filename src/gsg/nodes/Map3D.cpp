@@ -42,8 +42,8 @@ void Map3D::_notification(int p_what) {
 			const Ref<ShaderMaterial> material = map_mesh->get_mesh()->surface_get_material(0);
 
 			Map::self->set_map_mode<MapMode::Country>();
-			material->set_shader_parameter("color_texture", Map::self->map_mode_image);
-			material->set_shader_parameter("lookup_texture", Map::self->lookup_image);
+			material->set_shader_parameter("color_texture", Map::self->map_mode_image.image_texture);
+			material->set_shader_parameter("lookup_texture", Map::self->lookup_image.image_texture);
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			NM::clear_temporary_nodes();
@@ -66,7 +66,7 @@ void Map3D::unhandled_input(const Ref<InputEvent> &p_event) {
 	if (click_position.x > Map::self->map_dimensions.x or click_position.x < 0 or click_position.y > Map::self->map_dimensions.y or click_position.y < 0)
 		return;
 
-	const Color province_color = Map::self->get_lookup_image()->get_pixelv(click_position);
+	const Color province_color = Map::self->lookup_image.image->get_pixelv(click_position);
 	const ProvinceIndex province_id = Map::self->get_color_to_id_map().get(province_color);
 	if (province_id == 0)
 		return;
@@ -174,15 +174,15 @@ void Map3D::set_map_mode(MapMode p_map_mode) {
 	switch (p_map_mode) {
 		case MapMode::Country: {
 			Map::self->set_map_mode<MapMode::Country>();
-			material->set_shader_parameter("color_texture", Map::self->map_mode_image);
+			material->set_shader_parameter("color_texture", Map::self->map_mode_image.image_texture);
 		} break;
 		case MapMode::Area: {
 			Map::self->set_map_mode<MapMode::Area>();
-			material->set_shader_parameter("color_texture", Map::self->map_mode_image);
+			material->set_shader_parameter("color_texture", Map::self->map_mode_image.image_texture);
 		} break;
 		case MapMode::Region: {
 			Map::self->set_map_mode<MapMode::Region>();
-			material->set_shader_parameter("color_texture", Map::self->map_mode_image);
+			material->set_shader_parameter("color_texture", Map::self->map_mode_image.image_texture);
 		} break;
 	}
 }

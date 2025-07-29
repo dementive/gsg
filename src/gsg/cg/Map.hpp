@@ -77,7 +77,6 @@ public:
 	void load_map_editor(Node3D *p_map);
 #endif
 
-	Ref<Image> get_lookup_image();
 	ProvinceColorMap get_color_to_id_map();
 	template <MapMode T> void set_map_mode();
 
@@ -86,11 +85,25 @@ public:
 	~Map();
 
 	Vector2i map_dimensions;
-	Ref<ImageTexture> map_mode_image;
-	Ref<ImageTexture> lookup_image;
+
+	struct MapModeImage {
+		float *write_ptr{};
+		Ref<Image> image;
+		Ref<ImageTexture> image_texture;
+	};
+
+	struct LookupImage {
+		Ref<Image> image;
+		Ref<ImageTexture> image_texture;
+	};
+
+	MapModeImage map_mode_image;
+	LookupImage lookup_image;
 
 private:
 	ProvinceColorMap color_to_id_map; // lookup image color -> province id
+
+
 
 	struct BorderMeshStorage {
 		Ref<ArrayMesh> mesh;
