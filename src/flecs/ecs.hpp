@@ -9,7 +9,10 @@ using Entity = flecs::entity;
 using RelationEntity = Entity;
 using ScopeEntity = Entity;
 
+class Thread;
+
 #define inc_enum(i) ((decltype(i))(static_cast<int>(i) + 1))
+
 
 enum class Relation : uint8_t {
 	Capital,
@@ -20,6 +23,7 @@ enum class Relation : uint8_t {
 	InArea,
 	InRegion,
 	ProvinceIn,
+	AreaIn,
 	Border,
 	Adjacency, // province entity -> adjacency entity
 	AdjacencyTo,
@@ -43,6 +47,7 @@ struct ECS : flecs::world {
 	static inline ECS *self{};
 
 	ECS();
+	~ECS();
 
 	Entity scope_lookup(const char *p_scope_name, const String &p_arg);
 
@@ -66,6 +71,12 @@ struct ECS : flecs::world {
 
 	// Register top level scopes
 	void register_scopes();
+
+#ifdef DEBUG_ENABLED
+	void run_flecs_explorer();
+
+	Thread *explorer_thread{};
+#endif
 
 private:
 	FixedVector<RelationEntity, int(Relation::RELATION_MAX)> relations;

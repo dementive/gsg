@@ -48,21 +48,19 @@ private:
 	static Color get_lookup_color(ProvinceIndex p_province_id);
 
 	void load();
-	static void register_ecs();
 	ProvinceColorMap load_provinces_config();
 	static void load_setup_config();
 	static void load_country_config();
 
 	static bool is_lake_border(const Border &p_border);
-	static void fill_province_adjacency_data(const Border &p_border);
-	static ProvinceBorderType fill_province_border_data(const Border &p_border, const RID &p_rid);
+	static ProvinceBorderType fill_province_adjacency_data(const Border &p_border, const RID &p_rid);
 
 	static void add_rounded_border_corners(Ref<SurfaceTool> &p_st, const Vector2 &p_v1, const Vector2 &p_v2, float p_radius);
 	void create_border_materials();
 	static Ref<ArrayMesh> create_border_mesh(const Vec<Vector4> &p_segments, float p_border_thickness, float p_border_rounding);
 	void create_map_labels();
 	void create_unit_models(Node3D *p_map);
-	void create_border_meshes(const RID &p_scenario, const Dictionary &p_border_dict, bool is_map_editor);
+	void create_border_meshes(const RID &p_scenario, const Dictionary &p_border_dict);
 	static void load_locators();
 	static void load_map_data();
 

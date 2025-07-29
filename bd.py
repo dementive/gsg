@@ -82,6 +82,7 @@ parser.add_argument(
         "engine_gcc",
         "static",
         "linux_debug_static",
+        "static_gcc",
         "linux_release",
         "compile_timing",
         "build_pch",
@@ -113,6 +114,8 @@ elif args.command in ["engine_gcc", "linux_debug_engine_gcc"]:
 elif args.command in ["static", "linux_debug_static"]:
     # Statically links the module into the godot binary
     run(f"scons profile={scripts_dir}/linux_debug.py {debug_options}")
+elif args.command in ["static_gcc"]:
+    run(f"scons profile={scripts_dir}/linux_debug.py {debug_options} use_llvm=no")
 elif args.command == "linux_release":
     run(f"scons profile={scripts_dir}/linux_release.py")
 elif args.command == "windows_debug":

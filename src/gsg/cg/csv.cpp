@@ -5,10 +5,10 @@
 namespace CSV {
 
 namespace {
-_ALWAYS_INLINE_ Vector<Variant::Type> determine_types(const Vector<String> &p_values) {
-	Vector<Variant::Type> arr{};
+_ALWAYS_INLINE_ LocalVector<Variant::Type> determine_types(const Vector<String> &p_values) {
+	LocalVector<Variant::Type> arr{};
 	arr.resize(p_values.size());
-	Variant::Type *ptr = arr.ptrw();
+	Variant::Type *ptr = arr.ptr();
 
 	for (int i = 0; const String &value : p_values) {
 		if (value.is_valid_int())
@@ -23,10 +23,10 @@ _ALWAYS_INLINE_ Vector<Variant::Type> determine_types(const Vector<String> &p_va
 	return arr;
 }
 
-_ALWAYS_INLINE_ Vector<Variant> convert_types(const Vector<String> &p_values, const Vector<Variant::Type> &p_types) {
-	Vector<Variant> arr{};
+_ALWAYS_INLINE_ Line convert_types(const Vector<String> &p_values, const LocalVector<Variant::Type> &p_types) {
+	Line arr{};
 	arr.resize(p_values.size());
-	Variant *ptr = arr.ptrw();
+	Variant *ptr = arr.ptr();
 
 	for (int i = 0; const String &value : p_values) {
 		const Variant::Type type = p_types[i];
@@ -45,7 +45,7 @@ _ALWAYS_INLINE_ Vector<Variant> convert_types(const Vector<String> &p_values, co
 }
 } // namespace
 
-Vector<Vector<Variant>> parse_file(const String &p_file_name) {
+LocalVector<Line> parse_file(const String &p_file_name) {
 	const Ref<FileAccess> file = FileAccess::open(p_file_name, FileAccess::READ);
 
 	String line = file->get_line(); // skip csv header
@@ -53,16 +53,16 @@ Vector<Vector<Variant>> parse_file(const String &p_file_name) {
 		line = file->get_line();
 
 	const Vector<String> first_line_data = file->get_csv_line();
-	const Vector<Variant::Type> types = determine_types(first_line_data);
+	const LocalVector<Variant::Type> types = determine_types(first_line_data);
 
-	Vector<Vector<Variant>> data{};
-	data.append(convert_types(first_line_data, types));
+	LocalVector<Line> data{};
+	data.push_back(convert_types(first_line_data, types));
 
 	while (!file->eof_reached()) {
 		const Vector<String> line_strings = file->get_csv_line();
 		if (line_strings.size() != types.size()) // ignore lines that are empty, have comments, or are incorrectly formatted.
 			continue;
-		data.append(convert_types(line_strings, types));
+		data.push_back(convert_types(line_strings, types));
 	}
 
 	return data;

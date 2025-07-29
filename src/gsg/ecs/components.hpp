@@ -21,6 +21,7 @@ namespace CG {
 
 /* Generic components */
 
+// Translated localization key
 struct LocKey {
 	MAKE_SAME(LocKey, StringName)
 	MAKE_SAME_OTHER(LocKey, String)

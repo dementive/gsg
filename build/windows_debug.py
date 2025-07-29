@@ -5,7 +5,6 @@ optimize = "debug"
 
 # stuff to make compiling faster
 fast_unsafe = "yes"
-linker = "lld"
 progress = "no"
 engine_update_check = "no"
 

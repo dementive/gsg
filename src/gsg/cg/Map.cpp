@@ -20,6 +20,7 @@
 
 #include "ecs/components.hpp"
 #include "ecs/Provinces.hpp"
+#include "ecs/modules.hpp"
 #include "ecs/tags.hpp"
 
 #include "Locator.hpp"
@@ -70,52 +71,6 @@ Color Map::get_random_area_color() { return { CLAMP(Math::randf(), float(76), fl
 Color Map::get_lookup_color(ProvinceIndex p_province_id) {
 	return { float(int(p_province_id) % COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1),
 		static_cast<float>(std::floor(float(p_province_id) / COLOR_TEXTURE_DIMENSIONS) / (COLOR_TEXTURE_DIMENSIONS - 1)), 0.0 };
-}
-
-void Map::register_ecs() {
-	ECS &ecs = *ECS::self;
-
-	// Register variant components
-	ecs.component<LocKey>();
-	ecs.component<Color>();
-	ecs.component<AABB>();
-
-	// Register components
-	ecs.component<CrossingLocator>();
-	ecs.component<ProvinceBorderMeshRID>();
-	ecs.component<UnitLocator>();
-	ecs.component<TextLocator>();
-	ecs.component<ProvinceAdjacencyType>();
-	ecs.component<ProvinceBorderType>();
-	ecs.component<Player>();
-	ecs.component<Ptr<MapUnit>>();
-	ecs.component<Ptr<LandAStar>>();
-	ecs.component<Ptr<NavalAStar>>();
-
-	// Register tag components
-	ecs.component<AreaTag>();
-	ecs.component<CountryTag>();
-	ecs.component<RegionTag>();
-	ecs.component<ProvinceTag>();
-	ecs.component<UnitTag>();
-
-	ecs.component<LandProvinceTag>();
-	ecs.component<OceanProvinceTag>();
-	ecs.component<RiverProvinceTag>();
-	ecs.component<LakeProvinceTag>();
-	ecs.component<ImpassableProvinceTag>();
-	ecs.component<UninhabitableProvinceTag>();
-	ecs.component<InFogOfWar>();
-	ecs.component<Discovered>();
-
-	ecs.component<Selected>();
-
-	// Top level scope entities. Adding each entity types to these as children allows using ecs.lookup("p::1") syntax to lookup entities.
-	// These entities hold no data they just act as namespaces inside of flecs.
-	ecs.register_scopes();
-
-	// Create all relationship entities
-	ecs.register_relations();
 }
 
 ProvinceColorMap Map::load_provinces_config() {
@@ -222,11 +177,13 @@ void Map::load_setup_config() {
 
 			int idx = 0;
 			Entity province_entity;
-			while ((province_entity = area_entity.target(Relationship(ProvinceIn), idx++)))
+			while ((province_entity = area_entity.target(Relationship(ProvinceIn), idx++))) {
 				province_entity.add(Relationship(InRegion), region_entity);
+				region_entity.add(Relationship(AreaIn), area_entity);
+			}
 		}
 
-		region_entity.add<AreaTag>();
+		region_entity.add<RegionTag>();
 		region_entity.add(Relationship(Capital), capital_entity);
 
 		region_entity.set<Color>(color);
@@ -246,6 +203,7 @@ void Map::load_country_config() {
 	const CountryEntity observer_country_entity = ecs.entity(OBSERVER_TAG);
 	observer_country_entity.set<LocKey>(translate(String(OBSERVER_TAG)));
 	ecs.set<Player>(observer_country_entity);
+	observer_country_entity.child_of(ecs.get_scope(Scope::Country));
 
 	for (const String &section : country_sections) {
 		Color color = country_config->get_value(section, "color", get_random_area_color());
@@ -361,9 +319,11 @@ void Map::create_border_materials() {
 	}
 }
 
-void Map::fill_province_adjacency_data(const Border &p_border) {
+ProvinceBorderType Map::fill_province_adjacency_data(const Border &p_border, const RID &p_rid) {
 	ProvinceAdjacencyType adjacency_type = ProvinceAdjacencyType::Land;
+	ProvinceBorderType border_type = ProvinceBorderType::Country;
 
+	// Get adjacency type
 	if (is_navigable_water_province(p_border.first) and is_navigable_water_province(p_border.second))
 		adjacency_type = ProvinceAdjacencyType::Water;
 	else if (is_impassable_province(p_border.first) or is_impassable_province(p_border.second))
@@ -373,19 +333,7 @@ void Map::fill_province_adjacency_data(const Border &p_border) {
 
 	ECS &ecs = *ECS::self;
 
-	const Entity adjacency_entity = ecs.entity();
-	adjacency_entity.add(Relationship(AdjacencyTo), p_border.first);
-	adjacency_entity.add(Relationship(AdjacencyFrom), p_border.second);
-	adjacency_entity.set<ProvinceAdjacencyType>(adjacency_type);
-
-	p_border.first.add(Relationship(Adjacency), adjacency_entity);
-	p_border.second.add(Relationship(Adjacency), adjacency_entity);
-}
-
-ProvinceBorderType Map::fill_province_border_data(const Border &p_border, const RID &p_rid) {
-	ProvinceBorderType border_type = ProvinceBorderType::Country;
-	ECS &ecs = *ECS::self;
-
+	// Get border type
 	if ((ecs.has_relation(p_border.first, Relation::Owner) and ecs.has_relation(p_border.second, Relation::Owner) and
 				ecs.get_target(p_border.first, Relation::Owner) != ecs.get_target(p_border.second, Relation::Owner)))
 		border_type = ProvinceBorderType::Country;
@@ -405,14 +353,20 @@ ProvinceBorderType Map::fill_province_border_data(const Border &p_border, const 
 			border_type = ProvinceBorderType::Province;
 	}
 
-	const Entity border_entity = ecs.entity();
-	border_entity.add(Relationship(AdjacencyTo), p_border.first);
-	border_entity.add(Relationship(AdjacencyFrom), p_border.second);
-	border_entity.set<ProvinceBorderType>(border_type);
-	border_entity.set<ProvinceBorderMeshRID>(p_rid);
+	// Create adjacency entity
+	const char* name = vformat("%s|%s", p_border.second.name().c_str(), p_border.first.name().c_str()).utf8().get_data();
+	const Entity entity = ecs.entity(name);
 
-	p_border.first.add(Relationship(Border), border_entity);
-	p_border.second.add(Relationship(Border), border_entity);
+	entity.add(Relationship(AdjacencyTo), p_border.first);
+	entity.add(Relationship(AdjacencyFrom), p_border.second);
+	entity.set<ProvinceAdjacencyType>(adjacency_type);
+
+	entity.set<ProvinceBorderType>(border_type);
+	entity.set<ProvinceBorderMeshRID>(p_rid);
+	entity.child_of(p_border.second);
+
+	p_border.first.add(Relationship(Adjacency), entity);
+	p_border.second.add(Relationship(Adjacency), entity);
 
 	return border_type;
 }
@@ -473,6 +427,7 @@ void Map::create_unit_models(Node3D *p_map) {
 
 		Ptr<MapUnit> unit_mesh = memnew(MapUnit());
 		unit_entity.set<Ptr<MapUnit>>(unit_mesh);
+		unit_entity.child_of(ECS::self->get_scope(Scope::Unit));
 
 		Transform3D unit_transform;
 		unit_transform.origin = Vector3((locator.position.x - (map_dimensions.x / 2.0)), unit_map_layer, (locator.position.y - (map_dimensions.y / 2.0)));
@@ -509,7 +464,7 @@ void Map::create_map_labels() {
 	});
 }
 
-void Map::create_border_meshes(const RID &p_scenario, const Dictionary &p_border_dict, bool is_map_editor) {
+void Map::create_border_meshes(const RID &p_scenario, const Dictionary &p_border_dict) {
 	// Create border materials
 	create_border_materials();
 	RenderingServer &rs = *RS::get_singleton();
@@ -531,9 +486,7 @@ void Map::create_border_meshes(const RID &p_scenario, const Dictionary &p_border
 		const BorderMeshStorage border_mesh_storage{ .mesh = border_mesh_resource, .instance = mesh_instance };
 		border_meshes.push_back(border_mesh_storage);
 
-		const ProvinceBorderType border_type = fill_province_border_data(border, border_mesh);
-		if (!is_map_editor)
-			fill_province_adjacency_data(border);
+		const ProvinceBorderType border_type = fill_province_adjacency_data(border, border_mesh);
 
 		const Transform3D mesh_transform = Transform3D(Basis().rotated(Vector3(1, 0, 0), 1.570796), Vector3(0, border_map_layer, 0));
 		rs.instance_set_transform(mesh_instance, mesh_transform);
@@ -576,7 +529,7 @@ void Map::load_map_editor(Node3D *p_map) {
 	map_data_cache->store_string(hash_string);
 	print_line("Map data has changed, regenerating data");
 
-	register_ecs();
+	ecs::import();
 	const ProvinceColorMap provinces_map = load_provinces_config();
 
 	TypedDictionary<PackedInt32Array, PackedVector4Array> borders_dict;
@@ -758,24 +711,26 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	// probably just add a "bool reloading" parameter to load_map but it's tough because some parts of load_map write to the registry.
 	ecs.reset();
 
-	register_ecs();
+	ecs::import();
 	const ProvinceColorMap provinces_map = load_provinces_config();
 	if constexpr (!is_map_editor) {
 		load_locators();
 
 		// Parse border crossings
-		const Vector<Vector<Variant>> crossings = CSV::parse_file("res://data/crossings.txt");
+		const LocalVector<CSV::Line> crossings = CSV::parse_file("res://data/crossings.txt");
 
 		// Fill in crossing adjacencies
-		for (const Vector<Variant> &crossing : crossings) {
-			const Entity adjacency_entity = ecs.entity();
+		for (const CSV::Line &crossing : crossings) {
 			const ProvinceEntity to_entity = ecs.scope_lookup(Scope::Province, crossing[0]);
 			const ProvinceEntity from_entity = ecs.scope_lookup(Scope::Province, crossing[1]);
+			const char* name = vformat("%s|%s", from_entity.name().c_str(), to_entity.name().c_str()).utf8().get_data();
+			const Entity adjacency_entity = ecs.entity(name);
 
 			adjacency_entity.add(Relationship(AdjacencyTo), to_entity);
 			adjacency_entity.add(Relationship(AdjacencyFrom), from_entity);
 			adjacency_entity.set<ProvinceAdjacencyType>(ProvinceAdjacencyType::Crossing);
 			adjacency_entity.set<CrossingLocator>(Vector4(crossing[2], crossing[3], crossing[4], crossing[5]));
+			adjacency_entity.child_of(from_entity);
 
 			to_entity.add(Relationship(Adjacency), adjacency_entity);
 			from_entity.add(Relationship(Adjacency), adjacency_entity);
@@ -785,7 +740,7 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	const Ref<FileAccess> map_data_save_cache = FileAccess::open("res://data/gen/map_data.cache", FileAccess::READ);
 	const Dictionary borders_dict = map_data_save_cache->get_var();
 
-	create_border_meshes(p_map->get_world_3d()->get_scenario(), borders_dict, false);
+	create_border_meshes(p_map->get_world_3d()->get_scenario(), borders_dict);
 
 	// Load lookup image
 	const Ref<CompressedTexture2D> compressed_lookup_texture = ResourceLoader::load("res://gfx/gen/province_lookup.exr");
