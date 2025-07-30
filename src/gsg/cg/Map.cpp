@@ -746,7 +746,7 @@ template <bool is_map_editor> void Map::load_map(Node3D *p_map) {
 	lookup_image.image = compressed_lookup_texture->get_image();
 	lookup_image.image_texture = ImageTexture::create_from_image(lookup_image.image);
 
-	map_mode_image.image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBF);
+	map_mode_image.image = Image::create_empty(COLOR_TEXTURE_DIMENSIONS, COLOR_TEXTURE_DIMENSIONS, false, Image::FORMAT_RGBAF);
 	map_mode_image.image_texture = ImageTexture::create_from_image(map_mode_image.image);
 	map_mode_image.write_ptr = reinterpret_cast<float *>(map_mode_image.image->ptrw());
 
@@ -862,9 +862,10 @@ template <MapMode T> void Map::set_map_mode() {
 			color = get_country_map_mode(province_entity);
 
 		const uint32_t ofs = (uv.y * COLOR_TEXTURE_DIMENSIONS) + uv.x;
-		map_mode_image.write_ptr[(ofs * 3) + 0] = color.r;
-		map_mode_image.write_ptr[(ofs * 3) + 1] = color.g;
-		map_mode_image.write_ptr[(ofs * 3) + 2] = color.b;
+		map_mode_image.write_ptr[(ofs * 4) + 0] = color.r;
+		map_mode_image.write_ptr[(ofs * 4) + 1] = color.g;
+		map_mode_image.write_ptr[(ofs * 4) + 2] = color.b;
+		map_mode_image.write_ptr[(ofs * 4) + 3] = color.a;
 	}
 
 	map_mode_image.image_texture->update(map_mode_image.image);
