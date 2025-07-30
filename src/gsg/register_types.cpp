@@ -13,11 +13,15 @@
 
 using namespace CG;
 
+namespace {
+	ECS* ecs{};
+}
+
 void initialize_gsg_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE)
 		return;
 
-	new ECS;
+	ecs = new ECS;
 
 	GDREGISTER_RUNTIME_CLASS(Map3D)
 	GDREGISTER_RUNTIME_CLASS(MapCamera)
@@ -42,5 +46,5 @@ void uninitialize_gsg_module(ModuleInitializationLevel p_level) {
 	memdelete_notnull(EditorLocators::self);
 #endif
 
-	delete ECS::self;
+	delete ecs;
 }

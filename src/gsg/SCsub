@@ -14,6 +14,13 @@ else:
 Import("env")
 Import("env_modules")
 
+if not env.msvc:
+    env.Append(CXXFLAGS=["-fno-threadsafe-statics"])
+    env_modules.Append(CXXFLAGS=["-fno-threadsafe-statics"])
+else:
+    env.Append(CXXFLAGS=["/Zc:threadSafeInit-"])
+    env_modules.Append(CXXFLAGS=["/Zc:threadSafeInit-"])
+
 # Clone module env
 env_gsg = env_modules.Clone()
 
@@ -28,19 +35,8 @@ enable_all_warnings(env_gsg)
 
 
 def build():
-    build_pch = ARGUMENTS.get("build_pch", "no") == "yes"
-    use_pch = ARGUMENTS.get("use_pch", "no") == "yes"
-    if using_clang(env_gsg) and (build_pch or use_pch):
-        env_gsg.Append(
-            CXXFLAGS=[
-                "-fpch-codegen",
-                "-fpch-preprocess",
-                "-fpch-instantiate-templates",
-            ]
-        )
-
-        if use_pch:
-            env_gsg.Append(CXXFLAGS=["-include-pch", f"{os.path.abspath('./pch.hpp.pch')}"])
+    if using_clang(env_gsg) and ARGUMENTS.get("use_pch", "no") == "yes":
+        env_gsg.Append(CXXFLAGS=["-include-pch", f"{os.path.abspath('./pch.hpp.pch')}"])
 
     # Shared lib compilation
     if ARGUMENTS.get("shared_library_module", "no") == "yes":

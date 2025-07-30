@@ -18,6 +18,7 @@ accesskit = "no"
 deprecated = "no"
 x11 = "no"
 sdl = "no"
+libdecor = "no"
 
 # only for my computer
 wayland = "yes"

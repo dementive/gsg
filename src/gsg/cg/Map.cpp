@@ -203,7 +203,6 @@ void Map::load_country_config() {
 	const CountryEntity observer_country_entity = ecs.entity(OBSERVER_TAG);
 	observer_country_entity.set<LocKey>(translate(String(OBSERVER_TAG)));
 	ecs.set<Player>(observer_country_entity);
-	observer_country_entity.child_of(ecs.get_scope(Scope::Country));
 
 	for (const String &section : country_sections) {
 		Color color = country_config->get_value(section, "color", get_random_area_color());

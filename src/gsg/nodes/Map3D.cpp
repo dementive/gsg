@@ -45,9 +45,9 @@ void Map3D::_notification(int p_what) {
 			material->set_shader_parameter("color_texture", Map::self->map_mode_image.image_texture);
 			material->set_shader_parameter("lookup_texture", Map::self->lookup_image.image_texture);
 
-#ifdef DEBUG_ENABLED
-			ECS::self->run_flecs_explorer();
-#endif
+// #ifdef DEBUG_ENABLED
+// 			ECS::self->run_flecs_explorer();
+// #endif
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			NM::clear_temporary_nodes();

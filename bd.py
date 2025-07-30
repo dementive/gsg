@@ -57,14 +57,13 @@ def get_pch_build_command(file_path: str, json_file_path: str = "compile_command
 
 
 def build_pch(pch_path: str):
-    result = run(f"scons build_pch=yes shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} compiledb=yes")
-    if result.returncode != 0:
-        return
-
-    command = get_pch_build_command(pch_path + ".cpp")
+    command = get_pch_build_command(pch_path + "/register_types.cpp")
+    pch_path += "/pch"
     if command:
         command = command.replace(pch_path + ".os", pch_path + ".hpp.pch")
         command = command.replace(pch_path + ".cpp", pch_path + ".hpp")
+        command = command.replace("-fno-exceptions", "-fno-exceptions -fpch-codegen -fpch-preprocess -fpch-instantiate-templates")
+        command = command.replace("-include-pch /home/dm/dev/gsg/src/gsg/pch.hpp.pch", "")
 
         print("Precompiling header: ", pch_path + ".hpp")
         run(command)
@@ -89,6 +88,8 @@ parser.add_argument(
         "use_pch",
         "windows_debug",
         "windows_release",
+        "sans",
+        "compiledb"
     ],
     nargs="?",
     help="Build command to execute.",
@@ -99,6 +100,9 @@ args = parser.parse_args()
 
 # Change directory to the godot folder
 os.chdir("../godot")
+
+# Default with no args is to compile as a shared lib and use pch in debug mode.
+DEFAULT_COMMAND = f"scons use_pch=yes shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} {llvm_so}"
 
 # Run compile command
 if args.command == "linux_debug":
@@ -116,6 +120,9 @@ elif args.command in ["static", "linux_debug_static"]:
     run(f"scons profile={scripts_dir}/linux_debug.py {debug_options}")
 elif args.command in ["static_gcc"]:
     run(f"scons profile={scripts_dir}/linux_debug.py {debug_options} use_llvm=no")
+elif args.command in ["sans"]:
+    # static llvm debug build with sanitizers
+    run(f"scons profile={scripts_dir}/linux_debug.py {debug_options} scu_build=no use_ubsan=yes")
 elif args.command == "linux_release":
     run(f"scons profile={scripts_dir}/linux_release.py")
 elif args.command == "windows_debug":
@@ -128,12 +135,14 @@ elif args.command == "compile_timing":
     run("/home/dm/Documents/ClangBuildAnalyzer/build/ClangBuildAnalyzer --stop /home/dm/dev/gsg/src/gsg /home/dm/dev/gsg/build/test_timing")
     run("/home/dm/Documents/ClangBuildAnalyzer/build/ClangBuildAnalyzer --analyze /home/dm/dev/gsg/build/test_timing")
 elif args.command == "build_pch":
-    build_pch("gsg/src/gsg/pch")
+    build_pch("gsg/src/gsg")
 elif args.command == "use_pch":
-    run(f"scons use_pch=yes shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} {llvm_so}")
+    run(DEFAULT_COMMAND)
+elif args.command == "compiledb":
+    DEFAULT_COMMAND = DEFAULT_COMMAND.replace("scons", "scons compiledb=yes").replace(llvm_so, "");
+    run(DEFAULT_COMMAND)
 else:
-    # Default with no args is to compile as a shared lib and use pch in debug mode.
-    run(f"scons use_pch=yes shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} {llvm_so}")
+    run(DEFAULT_COMMAND)
 
 # Project export
 if args.command == "linux_release" and args.export == "export":
