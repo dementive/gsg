@@ -49,6 +49,8 @@ struct ECS : flecs::world {
 	ECS();
 	~ECS();
 
+	Entity find(const String &p_name);
+
 	Entity scope_lookup(const char *p_scope_name, const String &p_arg);
 
 	Entity scope_lookup(Scope p_scope, const String &p_arg);

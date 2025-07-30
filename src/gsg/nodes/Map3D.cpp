@@ -20,6 +20,10 @@
 
 #include "gui/Hud.hpp"
 
+#ifdef TOOLS_ENABLED
+#include "tests/test.hpp"
+#endif
+
 using namespace CG;
 
 void Map3D::_bind_methods() {}
@@ -48,6 +52,9 @@ void Map3D::_notification(int p_what) {
 // #ifdef DEBUG_ENABLED
 // 			ECS::self->run_flecs_explorer();
 // #endif
+		#ifdef TOOLS_ENABLED
+			test_game();
+		#endif
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			NM::clear_temporary_nodes();

@@ -14,13 +14,6 @@ else:
 Import("env")
 Import("env_modules")
 
-if not env.msvc:
-    env.Append(CXXFLAGS=["-fno-threadsafe-statics"])
-    env_modules.Append(CXXFLAGS=["-fno-threadsafe-statics"])
-else:
-    env.Append(CXXFLAGS=["/Zc:threadSafeInit-"])
-    env_modules.Append(CXXFLAGS=["/Zc:threadSafeInit-"])
-
 # Clone module env
 env_gsg = env_modules.Clone()
 

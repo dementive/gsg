@@ -48,7 +48,7 @@ def build_module():
     # Build modules files
     env_module = env_modules.Clone()
 
-    module_sources: list[str] = ["register_types.cpp", "ecs.cpp"]
+    module_sources: list[str] = ["ecs.cpp"]
 
     set_cpp_standard(env_module)
     enable_all_warnings(env_module)

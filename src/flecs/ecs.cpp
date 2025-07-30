@@ -22,6 +22,11 @@ ECS::~ECS() {
 #endif
 }
 
+Entity ECS::find(const String &p_name) {
+	const String str = "ecs::gsg::" + p_name;
+	return lookup(str.utf8().ptr());
+}
+
 Entity ECS::scope_lookup(const char *p_scope_name, const String &p_arg) {
 	const String str = String(p_scope_name) + "::" + p_arg;
 	return lookup(str.utf8().ptr());

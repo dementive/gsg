@@ -16,20 +16,15 @@ using namespace CG;
 
 namespace ecs {
 
-struct godot {
-    godot(flecs::world& world) {
-        world.module<godot>();
- 
- 		world.component<LocKey>();
-        world.component<Color>();
-        world.component<AABB>();
-    }
-};
-
 struct gsg {
     gsg(flecs::world& world) {
         world.module<gsg>();
  
+ 		// Register variants
+ 		world.component<LocKey>();
+        world.component<Color>();
+        world.component<AABB>();
+
  		// Register components
  		world.component<CrossingLocator>();
  		world.component<ProvinceBorderMeshRID>();
@@ -70,7 +65,6 @@ struct gsg {
 };
 
 inline void import() {
-	ECS::self->import<ecs::godot>();
 	ECS::self->import<ecs::gsg>();
 }
 

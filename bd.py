@@ -57,15 +57,15 @@ def get_pch_build_command(file_path: str, json_file_path: str = "compile_command
 
 
 def build_pch(pch_path: str):
-    command = get_pch_build_command(pch_path + "/register_types.cpp")
-    pch_path += "/pch"
+    command = get_pch_build_command(pch_path + ".cpp")
     if command:
         command = command.replace(pch_path + ".os", pch_path + ".hpp.pch")
         command = command.replace(pch_path + ".cpp", pch_path + ".hpp")
         command = command.replace("-fno-exceptions", "-fno-exceptions -fpch-codegen -fpch-preprocess -fpch-instantiate-templates")
         command = command.replace("-include-pch /home/dm/dev/gsg/src/gsg/pch.hpp.pch", "")
+        command = command.replace("register_types", "pch")
 
-        print("Precompiling header: ", pch_path + ".hpp")
+        print("Precompiling header: ", pch_path.replace("register_types", "pch") + ".hpp")
         run(command)
 
 
@@ -111,7 +111,7 @@ elif args.command == "linux_debug_gcc":
     run(f"scons shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} use_llvm=no {gcc_so}")
 elif args.command in ["engine", "linux_debug_engine"]:
     # Builds the engine with llvm
-    run(f"scons shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options}")
+    run(f"scons shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} compiledb=yes")
 elif args.command in ["engine_gcc", "linux_debug_engine_gcc"]:
     # Builds the engine with gcc
     run(f"scons shared_library_module=yes profile={scripts_dir}/linux_debug.py {debug_options} use_llvm=no")
@@ -135,7 +135,7 @@ elif args.command == "compile_timing":
     run("/home/dm/Documents/ClangBuildAnalyzer/build/ClangBuildAnalyzer --stop /home/dm/dev/gsg/src/gsg /home/dm/dev/gsg/build/test_timing")
     run("/home/dm/Documents/ClangBuildAnalyzer/build/ClangBuildAnalyzer --analyze /home/dm/dev/gsg/build/test_timing")
 elif args.command == "build_pch":
-    build_pch("gsg/src/gsg")
+    build_pch("gsg/src/gsg/register_types")
 elif args.command == "use_pch":
     run(DEFAULT_COMMAND)
 elif args.command == "compiledb":
