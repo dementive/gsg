@@ -83,6 +83,9 @@ parser.add_argument(
         "linux_debug_static",
         "static_gcc",
         "linux_release",
+        "linux_release_debug",
+        "linux_release_template",
+        "linux_debug_template",
         "compile_timing",
         "build_pch",
         "use_pch",
@@ -125,6 +128,12 @@ elif args.command in ["sans"]:
     run(f"scons profile={scripts_dir}/linux_debug.py {debug_options} scu_build=no use_ubsan=yes")
 elif args.command == "linux_release":
     run(f"scons profile={scripts_dir}/linux_release.py")
+elif args.command == "linux_release_template":
+    run(f"scons profile={scripts_dir}/linux_release.py target=template_release")
+elif args.command == "linux_debug_template":
+    run(f"scons profile={scripts_dir}/linux_release.py {debug_options} target=template_debug")
+elif args.command == "linux_release_debug":
+    run(f"scons profile={scripts_dir}/linux_release.py {debug_options}")
 elif args.command == "windows_debug":
     run(f"scons profile={scripts_dir}/windows_debug.py")
 elif args.command == "windows_release":

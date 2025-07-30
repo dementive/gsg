@@ -7,6 +7,8 @@
 #include "gui/Hud.hpp"
 #include "nodes/Map3D.hpp"
 
+#include "flecs/ecs.hpp"
+
 #ifdef TOOLS_ENABLED
 #include "tools/MapEditor.hpp"
 #endif

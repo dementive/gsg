@@ -18,8 +18,8 @@ public:
 	Point2 _edit_get_position() const final { return {}; };
 	void _edit_set_scale(const Size2 &p_scale) final {};
 	Size2 _edit_get_scale() const final { return {}; };
-	Transform2D get_transform() const final { return {}; };
 #endif
+	Transform2D get_transform() const final { return {}; };
 
 private:
 	template <bool is_click> void update_selected_units();

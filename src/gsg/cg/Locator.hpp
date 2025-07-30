@@ -2,12 +2,11 @@
 
 #ifdef TOOLS_ENABLED
 #include "core/templates/a_hash_map.h"
-
 #include "ecs/entity.hpp"
-
 #include "templates/Vec.hpp"
-
 #endif
+
+#include "core/math/vector2.h"
 
 namespace CG {
 
