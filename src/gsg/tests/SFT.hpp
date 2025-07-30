@@ -15,7 +15,7 @@
 #define PRINT_TEST(message, name, file, line, condition) TEST_PRINT_FUNCTION(vformat(message, name, file, line, condition));
 #define TEST_FAIL_MESSAGE "%-55s | [color=red]Failed[/color] [[color=yellow]%s:%s[/color]] - [code]%s[/code]"
 #define TEST_PASS_MESSAGE "%-55s | [color=green]Passed[/color] %s%s%s"
-#define TEST_CASE_NAME_MESSAGE "[color=cyan]%s[/color]"
+#define TEST_CASE_NAME_MESSAGE "\n[color=cyan]%s[/color]"
 
 #define SCENE_TEST_FAIL_MESSAGE(scene_path, message)                                                                                                                                         \
 	TEST_PRINT_FUNCTION(vformat("\n[color=cyan]Scene Test[/color]: %-43s | [color=red]Failed[/color] [[color=yellow]%s:%s[/color]] - %s %s.", scene_path.replace("res://", ""),       \

@@ -5,11 +5,10 @@
 #include "scene/main/window.h"
 #include "SFT.hpp"
 
-
 namespace CG {
 
 #define test_gui_scene(m_path, m_class) \
-	test_scene(m_path, m_class, root_node) \
+	test_scene(m_path, Control, root_node) \
 	SceneTree::get_singleton()->get_root()->get_child(0)->add_child(root_node);\
 	named_tests( \
 		#m_class, \
@@ -18,7 +17,7 @@ namespace CG {
 	test_scene_end(root_node)	
 
 test(gui) {
-	test_gui_scene("res://scenes/gui/hud.tscn", Control)
+	test_gui_scene("res://scenes/gui/hud.tscn", Hud)
 }
 
 }

@@ -8,6 +8,8 @@ case "$1" in
 	../../godot/bin/godot.linuxbsd.editor.x86_64 scenes/map.tscn $2 ;;
   game)
 	../../godot/bin/godot.linuxbsd.editor.x86_64.llvm scenes/map.tscn $2 ;;
+  test)
+	../../godot/bin/godot.linuxbsd.editor.x86_64.llvm scenes/map.tscn --headless --quit ;;
   *)
 	../../godot/bin/godot.linuxbsd.editor.x86_64.llvm -e ./project.godot $1 ;;
 esac
