@@ -1,5 +1,5 @@
 #pragma once
-#ifdef TOOLS_ENABLED
+#ifdef SFT_TESTS_ENABLED
 
 #include "SFT.hpp"
 #include "flecs/ecs.hpp"

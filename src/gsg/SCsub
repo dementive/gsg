@@ -31,6 +31,9 @@ def build():
     if using_clang(env_gsg) and ARGUMENTS.get("use_pch", "no") == "yes":
         env_gsg.Append(CXXFLAGS=["-include-pch", f"{os.path.abspath('./pch.hpp.pch')}"])
 
+    if ARGUMENTS.get("sft_tests", "no") == "yes":
+        env_gsg.Append(CPPDEFINES=["SFT_TESTS_ENABLED"])
+
     # Shared lib compilation
     if ARGUMENTS.get("shared_library_module", "no") == "yes":
         env_gsg.Append(CCFLAGS=["-fPIC"])

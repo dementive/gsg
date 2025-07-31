@@ -20,7 +20,7 @@
 
 #include "gui/Hud.hpp"
 
-#ifdef TOOLS_ENABLED
+#ifdef SFT_TESTS_ENABLED
 #include "tests/test.hpp"
 #endif
 
@@ -52,7 +52,7 @@ void Map3D::_notification(int p_what) {
 // #ifdef DEBUG_ENABLED
 // 			ECS::self->run_flecs_explorer();
 // #endif
-		#ifdef TOOLS_ENABLED
+		#ifdef SFT_TESTS_ENABLED
 			test_game();
 		#endif
 		} break;

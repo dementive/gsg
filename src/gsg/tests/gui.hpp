@@ -1,5 +1,5 @@
 #pragma once
-#ifdef TOOLS_ENABLED
+#ifdef SFT_TESTS_ENABLED
 
 #include "scene/gui/control.h"
 #include "scene/main/window.h"

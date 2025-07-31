@@ -1,4 +1,5 @@
 #pragma once
+#ifdef SFT_TESTS_ENABLED
 
 #include "scene/resources/packed_scene.h"
 #include "core/core_bind.h"
@@ -6,7 +7,6 @@
 
 #include "defs/ForEachMacro.hpp"
 
-#ifdef TOOLS_ENABLED
 
 #define test(m_name) static inline void test_##m_name()
 
@@ -117,4 +117,4 @@ inline int SFT_check_number = 1;
 	SFT_check_result = condition; \
 	PRINT_TEST(TEST_MESSAGE, check_name, TEST_FILE, TEST_LINE, TEST_CONDITION(condition))
 
-#endif // TOOLS_ENABLED
+#endif // SFT_TESTS_ENABLED
