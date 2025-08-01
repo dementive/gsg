@@ -2,13 +2,83 @@
 import os
 
 from typing import TYPE_CHECKING
-
-# pyright doesn't understand the above import since the module is outside of the godot tree, it can figure out the relative imports though
 if TYPE_CHECKING:
     from ....godot.misc.utility.scons_hints import *
-    from ....godot.misc.gsg.scons_funcs import *
-else:
-    from misc.gsg.scons_funcs import *
+
+# Enable C++23
+def set_cpp_standard(env):
+    if not env.msvc:
+        env["CXXFLAGS"].remove("-std=gnu++17")
+        env["CXXFLAGS"].insert(0, "-std=c++23")
+    else:
+        env["CXXFLAGS"].remove("/std:c++17")
+        env["CXXFLAGS"].insert(0, "/std:c++23")
+        env["CXXFLAGS"].insert(0, "/Zc:preprocessor")
+
+
+def enable_all_warnings(env):
+    if env.debug_features:
+        env.Append(
+            CXXFLAGS=[
+                "-Wall",
+                "-Wextra",
+                "-Wshadow",
+                # Disable warnings from GDCLASS stuff
+                "-Wno-unused-parameter",
+            ]
+        )
+
+        if using_clang(env):
+            env.Append(CXXFLAGS=["-glldb"])
+            env.Append(
+                CXXFLAGS=[
+                    "-Wimplicit-fallthrough",
+                    "-Wno-deprecated-volatile",
+                    "-Wno-missing-field-initializers",
+                ]
+            )
+            env.Append(CXXFLAGS=["-pedantic", "-Wno-nested-anon-types", "-Wno-gnu-anonymous-struct", "-Wno-extra-semi"])
+            env.Append(CPPDEFINES=["_LIBCPP_REMOVE_TRANSITIVE_INCLUDES"])
+
+        if using_gcc(env):
+            env.Append(CXXFLAGS=["-Wno-volatile"])
+
+
+def set_flecs_defines(env):
+    env.Append(
+        CPPDEFINES=[
+            "FLECS_CUSTOM_BUILD",
+            "FLECS_CPP",
+            "FLECS_CPP_NO_AUTO_REGISTRATION",
+            "FLECS_CPP_NO_ENUM_REFLECTION",
+            # "FLECS_PARSER", "FLECS_SCRIPT",
+            "FLECS_SYSTEM",
+            "FLECS_TIMER",
+            "FLECS_PIPELINE",
+            "FLECS_META",
+            "FLECS_STATS",
+            "FLECS_LOG",
+            "FLECS_MODULE",
+        ]
+    )
+    if env.debug_features:
+        env.Append(CPPDEFINES=["FLECS_KEEP_ASSERT", "FLECS_NO_ALWAYS_INLINE", "FLECS_REST"])
+
+
+def find_cpp_files(env):
+    sources = []
+    for dirpath, _, _ in os.walk("."):
+        cpp_files = env.Glob(os.path.join(dirpath, "*.cpp"))
+        sources.extend(cpp_files)
+    return env.Flatten(sources)
+
+
+def using_clang(env):
+    return "clang" in os.path.basename(env["CC"])
+
+
+def using_gcc(env):
+    return "gcc" in os.path.basename(env["CC"])
 
 
 Import("env")

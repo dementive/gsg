@@ -50,7 +50,7 @@ Thankfully this data doesn't actually have to be computed every time the game is
 
 ## Compiling on linux for C++ module development
 
-To compile you'll need to clone this repository and [my fork of the godot repository](https://github.com/dementive/godot) and put them next to each other in a directory. Then in the godot repository switch to the `gsg` branch. There are a ton of different options to pass to scons and a lot of different ways to build, to make this easier there is a script `bd.py` that handles compiling the module.
+To compile you'll need to clone this repository and the godot repository and put them next to each other in a directory. Then in the godot repository switch to the `4.5` branch. There are a ton of different options to pass to scons and a lot of different ways to build, to make this easier there is a script `bd.py` that handles compiling the module.
 
 Compiling as a shared library is faster for incremental builds, for this use the build script `bd.py linux_debug_engine`. This will compile the module as a shared library and then compile the engine and link them together. After doing this once you can use `bd.py linux_debug` to build only the shared library (this only works if you don't have more new symbols to link from godot...see bd.py for more details).
 
